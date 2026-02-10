@@ -84,6 +84,14 @@ export const duplicateContentHash = () =>
 export const duplicateNonce = () =>
     new ApiError(409, 'duplicate_nonce', 'This nonce has already been used by this wallet');
 
+// --- Factory functions para errores de GET /v1/records ---
+
+export const invalidRecordId = () =>
+    new ApiError(400, 'invalid_record_id', 'Record ID is not a valid UUID');
+
+export const recordNotFound = () =>
+    new ApiError(404, 'record_not_found', 'No record found with the given identifier');
+
 /**
  * Error handler global para Fastify.
  * Intercepta ApiError y devuelve el formato estándar.

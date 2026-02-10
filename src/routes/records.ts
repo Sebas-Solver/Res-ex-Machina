@@ -11,6 +11,9 @@ import { generateRecordId } from '../utils/uuid.js';
 import {
     invalidPayload,
     invalidPogSchema,
+    invalidContentHash,
+    invalidRecordId,
+    recordNotFound,
     duplicateContentHash,
     duplicateNonce,
     feeTxReused,
@@ -153,32 +156,154 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         });
     });
 
-    // --- Endpoints de consulta (Issue #5) —- placeholders ---
+    // --- Endpoints de consulta (Issue #5) ---
 
-    fastify.get('/:id', async (_request, reply) => {
-        return reply.status(501).send({
-            error: {
-                code: 'not_implemented',
-                message: 'GET /records/:id will be implemented in Issue #5',
-            },
+    /**
+     * GET /v1/records/:id
+     * Devuelve un record completo por su UUID.
+     */
+    fastify.get<{ Params: { id: string } }>('/:id', async (request, reply) => {
+        const { id } = request.params;
+
+        // Validar formato UUID
+        if (!isValidUUID(id)) {
+            throw invalidRecordId();
+        }
+
+        const result = await db
+            .select()
+            .from(records)
+            .where(eq(records.recordId, id))
+            .limit(1);
+
+        if (result.length === 0) {
+            throw recordNotFound();
+        }
+
+        const record = result[0];
+        return reply.send(formatRecordResponse(record));
+    });
+
+    /**
+     * GET /v1/records/verify?content_hash=sha256:...
+     * Verifica si existe un record con el content_hash dado.
+     */
+    fastify.get<{ Querystring: { content_hash?: string } }>('/verify', async (request, reply) => {
+        const { content_hash } = request.query;
+
+        if (!content_hash || !/^sha256:[a-f0-9]{64}$/.test(content_hash)) {
+            throw invalidContentHash();
+        }
+
+        const result = await db
+            .select()
+            .from(records)
+            .where(eq(records.contentHash, content_hash))
+            .limit(1);
+
+        if (result.length === 0) {
+            throw recordNotFound();
+        }
+
+        const record = result[0];
+        return reply.send({
+            exists: true,
+            record_id: record.recordId,
+            state: record.state,
+            created_at: record.createdAt.toISOString(),
+            receipt_hash: record.receiptHash,
         });
     });
 
-    fastify.get('/verify', async (_request, reply) => {
-        return reply.status(501).send({
-            error: {
-                code: 'not_implemented',
-                message: 'GET /records/verify will be implemented in Issue #5',
-            },
-        });
-    });
+    /**
+     * GET /v1/records/:id/export
+     * Exporta el receipt completo verificable (PoG + anchoring + metadata).
+     */
+    fastify.get<{ Params: { id: string } }>('/:id/export', async (request, reply) => {
+        const { id } = request.params;
 
-    fastify.get('/:id/export', async (_request, reply) => {
-        return reply.status(501).send({
-            error: {
-                code: 'not_implemented',
-                message: 'GET /records/:id/export will be implemented in Issue #5',
+        if (!isValidUUID(id)) {
+            throw invalidRecordId();
+        }
+
+        const result = await db
+            .select()
+            .from(records)
+            .where(eq(records.recordId, id))
+            .limit(1);
+
+        if (result.length === 0) {
+            throw recordNotFound();
+        }
+
+        const record = result[0];
+
+        // Receipt exportable — contiene toda la info para verificación offline
+        return reply.send({
+            schema: 'rex.receipt.v1',
+            record_id: record.recordId,
+            content_hash: record.contentHash,
+            content_type: record.contentType,
+            visibility: record.visibility,
+            pog_bundle: record.pogBundle,
+            receipt_hash: record.receiptHash,
+            created_at: record.createdAt.toISOString(),
+            state: record.state,
+            fee: {
+                amount: record.feeAmount,
+                currency: record.feeCurrency,
+                tx_hash: record.feeTxHash,
             },
+            anchor: record.anchorTxHash
+                ? {
+                    tx_hash: record.anchorTxHash,
+                    block: record.anchorBlock,
+                    chain_id: record.anchorChainId,
+                    anchored_at: record.anchoredAt?.toISOString() ?? null,
+                }
+                : null,
         });
     });
+}
+
+// --- Helpers ---
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isValidUUID(value: string): boolean {
+    return UUID_REGEX.test(value);
+}
+
+/**
+ * Formatea un record de la DB para la respuesta API.
+ * Convierte snake_case de la DB a la respuesta JSON.
+ */
+function formatRecordResponse(record: typeof records.$inferSelect) {
+    return {
+        record_id: record.recordId,
+        content_hash: record.contentHash,
+        content_type: record.contentType,
+        visibility: record.visibility,
+        pog_bundle: record.pogBundle,
+        nonce: record.nonce,
+        agent_wallet: record.agentWallet,
+        state: record.state,
+        created_at: record.createdAt.toISOString(),
+        receipt_hash: record.receiptHash,
+        tags: record.tags,
+        external_ref: record.externalRef,
+        fee: {
+            amount: record.feeAmount,
+            currency: record.feeCurrency,
+            tx_hash: record.feeTxHash,
+        },
+        anchor: record.anchorTxHash
+            ? {
+                tx_hash: record.anchorTxHash,
+                block: record.anchorBlock,
+                chain_id: record.anchorChainId,
+                anchored_at: record.anchoredAt?.toISOString() ?? null,
+            }
+            : null,
+    };
 }
