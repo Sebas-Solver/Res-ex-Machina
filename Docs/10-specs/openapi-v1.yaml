@@ -1,0 +1,390 @@
+openapi: "3.1.0"
+info:
+  title: Res ex Machina API
+  version: "1.0.0"
+  description: |
+    API de registro técnico de hechos de generación por IA.
+    Registra Proof of Generation (PoG) bundles firmados criptográficamente
+    y los ancla en una blockchain L2 EVM.
+  contact:
+    name: Res ex Machina
+    email: sebas.solver@gmail.com
+  license:
+    name: TBD
+    url: https://github.com/Sebas-Solver/Res-ex-Machina
+
+servers:
+  - url: https://api.resexmachina.xyz/v1
+    description: Producción (TBD)
+
+tags:
+  - name: health
+    description: Estado del sistema
+  - name: records
+    description: Registro y consulta de hechos de generación
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Estado del sistema
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Estado del sistema
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /records:
+    post:
+      tags: [records]
+      summary: Registrar un nuevo evento de generación
+      operationId: createRecord
+      description: |
+        Registra un nuevo PoG bundle firmado. Requiere:
+        - Firma EIP-712 válida del agente
+        - fee_tx_hash de la transacción de pago verificable on-chain
+        - Nonce único por wallet
+      security:
+        - walletSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecordRequest"
+      responses:
+        "201":
+          description: Record creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "402":
+          $ref: "#/components/responses/PaymentRequired"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /records/{id}:
+    get:
+      tags: [records]
+      summary: Consultar un registro por ID
+      operationId: getRecord
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID v7 del record
+      responses:
+        "200":
+          description: Record encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /records/verify:
+    get:
+      tags: [records]
+      summary: Verificar existencia por content_hash
+      operationId: verifyRecord
+      security: []
+      parameters:
+        - name: content_hash
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^sha256:[a-f0-9]{64}$"
+          description: "Hash SHA-256 en formato sha256:{64hex}"
+      responses:
+        "200":
+          description: Record encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecordResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /records/{id}/export:
+    get:
+      tags: [records]
+      summary: Exportar receipt verificable (JSON)
+      operationId: exportRecord
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Receipt exportable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReceiptExport"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    walletSignature:
+      type: apiKey
+      in: header
+      name: X-Signature
+      description: |
+        Firma EIP-712 del PoG bundle. El header debe contener los bytes
+        de la firma (65 bytes, hex-encoded con prefijo 0x).
+
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        db:
+          type: string
+          enum: [ok, error]
+        chain:
+          type: string
+          enum: [ok, error, degraded]
+        version:
+          type: string
+          example: "v1"
+
+    CreateRecordRequest:
+      type: object
+      required: [content_hash, pog_bundle, fee_tx_hash]
+      properties:
+        content_hash:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+          description: "SHA-256 del output generado"
+          example: "sha256:a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
+        pog_bundle:
+          $ref: "#/components/schemas/PoGBundleV1"
+        fee_tx_hash:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{64}$"
+          description: "Hash de la transacción de pago del fee on-chain"
+        content_type:
+          type: string
+          maxLength: 64
+          example: "image/png"
+        tags:
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 64
+        visibility:
+          type: string
+          enum: [proof_only, input_hash_only, content_optional]
+          default: proof_only
+        external_ref:
+          type: string
+          format: uri
+          description: "URL o pointer a contenido externo (IPFS, S3, etc.)"
+
+    PoGBundleV1:
+      type: object
+      required:
+        - schema_version
+        - content_hash
+        - agent_wallet
+        - timestamp
+        - nonce
+        - generation_process
+        - signature
+      properties:
+        schema_version:
+          type: string
+          const: "pog-v1"
+        content_hash:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+        agent_wallet:
+          type: string
+          pattern: "^0x[a-fA-F0-9]{40}$"
+        timestamp:
+          type: string
+          format: date-time
+        nonce:
+          type: string
+          maxLength: 64
+          description: "Único por wallet. Previene replay attacks."
+        generation_process:
+          $ref: "#/components/schemas/GenerationProcess"
+        model:
+          type: string
+          maxLength: 128
+          example: "gpt-4-turbo"
+        runtime:
+          type: string
+          maxLength: 128
+        input_hash:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+        signature:
+          type: string
+          description: "Firma EIP-712 del bundle (hex, 0x-prefixed)"
+
+    GenerationProcess:
+      type: object
+      required: [type, human_intervention]
+      properties:
+        type:
+          type: string
+          enum: [text, image, audio, video, code, multimodal, other]
+        human_intervention:
+          type: string
+          enum: [none, prompt_only, supervised, collaborative]
+        pipeline_steps:
+          type: array
+          maxItems: 20
+          items:
+            type: string
+
+    RecordResponse:
+      type: object
+      required: [record_id, content_hash, state, created_at, receipt_hash]
+      properties:
+        record_id:
+          type: string
+          format: uuid
+        content_hash:
+          type: string
+        pog_bundle:
+          $ref: "#/components/schemas/PoGBundleV1"
+        state:
+          type: string
+          enum: [pending_anchor, anchored, anchor_failed]
+        created_at:
+          type: string
+          format: date-time
+        receipt_hash:
+          type: string
+        anchor:
+          $ref: "#/components/schemas/AnchorInfo"
+        anchor_error_reason:
+          type: string
+          description: "Solo presente si state == anchor_failed"
+
+    AnchorInfo:
+      type: object
+      nullable: true
+      properties:
+        tx_hash:
+          type: string
+        block:
+          type: integer
+          format: int64
+        chain_id:
+          type: integer
+        anchored_at:
+          type: string
+          format: date-time
+
+    ReceiptExport:
+      type: object
+      required: [record_id, content_hash, pog_bundle, receipt_hash, state, created_at]
+      properties:
+        record_id:
+          type: string
+          format: uuid
+        content_hash:
+          type: string
+        pog_bundle:
+          $ref: "#/components/schemas/PoGBundleV1"
+        receipt_hash:
+          type: string
+        state:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        anchor:
+          $ref: "#/components/schemas/AnchorInfo"
+        verification_url:
+          type: string
+          format: uri
+          description: "URL para verificar este receipt"
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              example: "invalid_payload"
+            message:
+              type: string
+              example: "Request body is malformed or incomplete"
+            details:
+              type: object
+              additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: Solicitud inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Firma inválida
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    PaymentRequired:
+      description: Fee no verificado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Record no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Duplicado (content_hash o nonce)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    TooManyRequests:
+      description: Rate limit excedido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
