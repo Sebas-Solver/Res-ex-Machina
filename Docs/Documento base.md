@@ -1,6 +1,11 @@
 # DOCUMENTO DONDE AÑADO IDEAS, FRASES, COSAS QUE SE ME OCURREN PARA EL PROYECTO
 De momento son ideas que se van asentándo. Están sujetas a cambios. 
 
+> ⚠️ **Fuente de verdad**: Los documentos formales en `Docs/10-specs/` y `Docs/00-foundation/` son la fuente de verdad para la implementación. Este archivo es un borrador de ideas y notas.
+
+
+Repositorio Github: https://github.com/Sebas-Solver/Res-ex-Machina.git
+
 
 No solo es un registro o un storage de contenido. 
 
@@ -225,3 +230,103 @@ Dónde se usan
 - validaciones
 - revisiones automáticas
 - reasoning del propio agente
+
+
+# ESTRUCTURA TRABAJO AGENTE (ANTIGRAVITY) - SEBAS (YO)
+## 1) Estructura de repo recomendada (para que el agente no se pierda)
+Crea esta base:
+/docs
+  /00-foundation
+    manifesto.md
+    principles-operativos.md
+    glossary.md
+    invariants.yml
+  /10-specs
+    prd-v1.md
+    pog-v1-spec.md
+    api-spec-openapi.yaml
+    state-machine.md
+    threat-model.md
+    nfrs.md
+  /20-ops
+    runbook.md
+    monitoring.md
+    incident-playbook.md
+  /30-legal
+    disclaimers.md
+    terms.md
+    privacy.md
+
+/apps
+  /api
+  /worker
+  /web
+
+/contracts
+  RegistryAnchor.sol
+  LicenseMarket.sol (más adelante)
+  DisputeEscrow.sol (más adelante)
+
+/scripts
+/tests
+
+## 2) Documentos que yo añadiría (además de los 3 artefactos)
+A) OpenAPI (api-spec-openapi.yaml) ✅
+
+Es el documento más “agent-proof” que existe.
+- endpoints 
+- schemas
+- ejemplos
+- códigos de error
+
+Evita que el agente improvise rutas y payloads.
+
+B) State machine (state-machine.md) ✅
+
+Un diagrama/texto con:
+- estados permitidos
+- transiciones permitidas
+- quién puede ejecutar cada transición
+- qué evento se registra
+
+Esto evita lógica incoherente en disputas/archivado.
+
+C) Threat model ligero (threat-model.md) ✅
+
+Una página con:
+- amenazas (spam, replay, suplantación, DoS)
+- mitigaciones (fee, nonce, rate limit, idempotencia)
+- qué NO vais a resolver en v1
+
+Esto guía decisiones de seguridad sin inflar scope.
+
+D) Runbook + Operación (runbook.md) ✅
+
+Para que el agente construya pensando en operar:
+- cómo desplegar
+- cómo rotar keys
+- cómo reintentar anchoring
+- cómo inspeccionar colas
+- cómo recuperar fallos
+
+Esto es vital si no habrá un dev humano “apagando fuegos”.
+
+E) Spec de “Receipt” (receipt-format.md) (opcional pero muy útil)
+
+Define el “paquete verificable” que exportas:
+- campos
+- hashes
+- enlaces
+- cómo verificar offline
+
+Eso hace que el sistema sea usable por terceros.
+
+F) Test plan (tests.md) ✅
+
+Lista de pruebas mínimas, ejemplo:
+- “dado contenido X → hash Y”
+- “firma válida → verified true”
+- “anchoring falla → record queda pending y reintenta”
+- “idempotencia: misma solicitud → mismo record_id”
+
+A un agente le viene genial como guía.

@@ -151,3 +151,47 @@ invariants:
     rule: "Todas las reglas del sistema son públicas y documentadas"
     enforcement: documentation (este archivo)
     test: "invariants.yml está en el repositorio público"
+
+  # ---------------------------------------------------------------------------
+  # RESILIENCIA
+  # ---------------------------------------------------------------------------
+
+  - id: INV-019
+    name: anchor_failed_does_not_invalidate
+    rule: "Un record con state 'anchor_failed' sigue siendo un hecho válido. El PoG, timestamp y receipt son inmutables"
+    enforcement: api_design + documentation
+    test: "GET record con state=anchor_failed → devuelve todos los campos normalmente"
+
+  - id: INV-020
+    name: fee_must_be_onchain
+    rule: "El fee se verifica contra una transacción on-chain real (fee_tx_hash). No se aceptan pagos no verificables"
+    enforcement: api_validation (verificar fee_tx_hash antes de crear record)
+    test: "POST con fee_tx_hash inexistente o no confirmado → 402"
+
+  # ---------------------------------------------------------------------------
+  # PERFILADO Y PRIVACIDAD
+  # ---------------------------------------------------------------------------
+
+  - id: INV-021
+    name: no_public_wallet_listing
+    rule: "No existe listado público de records por wallet en v1. La verificación es individual (por hash o por record_id)"
+    enforcement: api_design (no existe endpoint de listado por wallet)
+    test: "No existe ruta GET /v1/records?wallet= ni GET /v1/agents/{wallet}/records"
+
+  - id: INV-022
+    name: no_scoring_no_rankings
+    rule: "La plataforma NUNCA genera scoring, rankings ni etiquetas de fiabilidad sobre agentes o records"
+    enforcement: api_design + schema_design
+    test: "No existe campo 'score', 'rank', 'reliability', 'trust_level' en ningún schema"
+
+  - id: INV-023
+    name: no_automatic_conclusions
+    rule: "La plataforma NUNCA emite conclusiones automáticas sobre los datos registrados"
+    enforcement: documentation + api_design
+    test: "Ningún endpoint devuelve campos interpretativos (solo datos factuales)"
+
+  - id: INV-024
+    name: profiling_data_without_judgment
+    rule: "Cualquier servicio futuro de perfilado expone datos agregados NUNCA juicios. El sistema proporciona datos, la interpretación es responsabilidad del usuario autorizado"
+    enforcement: documentation + architecture
+    test: "Documentación de futuros endpoints de perfilado no contiene campos interpretativos"

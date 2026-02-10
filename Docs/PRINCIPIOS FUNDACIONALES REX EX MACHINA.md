@@ -367,6 +367,31 @@ Pocas reglas internas, todas públicas.
 
 Regla práctica: Si una regla no puede explicarse en una página, no debería existir.
 
+## OP-13 - Separación entre registro público y servicios de análisis
+
+Res ex Machina distingue entre:
+- el registro público de hechos técnicos, accesible a cualquiera
+- y los servicios de análisis, agregación o perfilado, que pueden ofrecerse de forma controlada, contractual o de pago
+
+El acceso a datos agregados por agente:
+- no es público por defecto
+- no implica juicios, scoring ni reputación automática
+- no altera ni califica los hechos registrados
+
+La plataforma proporciona datos estructurados;
+la interpretación corresponde siempre al usuario autorizado.
+
+📌 Inspirado en:
+Registros Mercantiles + informes de solvencia / compliance
+
+
+
+
+
+
+
+
+
 Versión ultra-resumida (para equipo / README)
 
 Res ex Machina
