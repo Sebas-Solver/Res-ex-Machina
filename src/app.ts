@@ -1,4 +1,6 @@
 import Fastify from 'fastify';
+import helmet from '@fastify/helmet';
+import cors from '@fastify/cors';
 import healthRoutes from './routes/health.js';
 import recordRoutes from './routes/records.js';
 import { apiErrorHandler } from './utils/errors.js';
@@ -23,11 +25,35 @@ const app = Fastify({
     bodyLimit: 64 * 1024,
 });
 
+// --- Security headers (Helmet) ---
+await app.register(helmet, {
+    // CSP no es necesario para una API JSON
+    contentSecurityPolicy: false,
+});
+
+// --- CORS ---
+await app.register(cors, {
+    origin: process.env.NODE_ENV === 'production'
+        ? false // Deshabilitar en producción (API solo server-to-server)
+        : true,  // Permitir en desarrollo
+    methods: ['GET', 'POST'],
+});
+
 // --- Error handler global ---
 app.setErrorHandler(apiErrorHandler);
 
 // --- Rate limiting ---
 await registerRateLimit(app);
+
+// --- INV-001: DELETE no permitido (405 Method Not Allowed) ---
+app.delete('/v1/records/:id', async (_request, reply) => {
+    return reply.status(405).send({
+        error: {
+            code: 'method_not_allowed',
+            message: 'Records are permanent and cannot be deleted (INV-001)',
+        },
+    });
+});
 
 // --- Registrar rutas bajo /v1 ---
 app.register(healthRoutes, { prefix: '/v1' });

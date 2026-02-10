@@ -28,6 +28,8 @@
   },
   "homepage": "https://github.com/Sebas-Solver/Res-ex-Machina#readme",
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
     "bullmq": "^5.67.3",
     "dotenv": "^17.2.4",
