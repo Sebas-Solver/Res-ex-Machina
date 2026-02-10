@@ -21,7 +21,21 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      anvil:
+        condition: service_healthy
     command: npm run dev
+
+  # --- Anvil (blockchain local para desarrollo) ---
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:latest
+    entrypoint: ["anvil", "--host", "0.0.0.0", "--chain-id", "31337", "--block-time", "1"]
+    ports:
+      - "8545:8545"
+    healthcheck:
+      test: ["CMD", "cast", "block-number", "--rpc-url", "http://localhost:8545"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # --- PostgreSQL 16 ---
   postgres:

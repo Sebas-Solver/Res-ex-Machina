@@ -1,16 +1,13 @@
 import Fastify from 'fastify';
-import { healthRoutes } from './routes/health.js';
-import { recordsRoutes } from './routes/records.js';
+import healthRoutes from './routes/health.js';
+import recordRoutes from './routes/records.js';
+import { apiErrorHandler } from './utils/errors.js';
 
 /**
  * Res ex Machina — API Server
  *
  * Entry point principal de la aplicación.
  * Registra todas las rutas bajo el prefijo /v1.
- *
- * La configuración de entorno (env.ts) se carga bajo demanda
- * en los módulos que la necesitan, no aquí, para permitir
- * arrancar el servidor sin DB/Redis durante scaffolding.
  */
 
 const app = Fastify({
@@ -21,11 +18,16 @@ const app = Fastify({
                 ? { target: 'pino-pretty', options: { colorize: true } }
                 : undefined,
     },
+    // Límite de body request (64KB según error catalog)
+    bodyLimit: 64 * 1024,
 });
+
+// --- Error handler global ---
+app.setErrorHandler(apiErrorHandler);
 
 // --- Registrar rutas bajo /v1 ---
 app.register(healthRoutes, { prefix: '/v1' });
-app.register(recordsRoutes, { prefix: '/v1' });
+app.register(recordRoutes, { prefix: '/v1/records' });
 
 // --- Ruta raíz ---
 app.get('/', async () => {

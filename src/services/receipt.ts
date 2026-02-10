@@ -1,18 +1,32 @@
-/**
- * Servicio de cálculo de receipt_hash.
- *
- * El receipt_hash es un hash SHA-256 del receipt completo del registro,
- * incluyendo: record_id, content_hash, pog_bundle, created_at.
- *
- * TODO: Issue #3 — Implementar cálculo real
- */
+import { createHash } from 'node:crypto';
 
+/**
+ * Computa el receipt_hash de un record.
+ *
+ * El receipt_hash es una huella SHA-256 que vincula de forma determinista:
+ *   record_id + content_hash + agent_wallet + nonce + created_at
+ *
+ * Se usa como ancla: el receipt_hash es lo que se graba on-chain.
+ * Cualquiera puede recalcularlo para verificar integridad.
+ *
+ * @returns `sha256:{64hex}`
+ */
 export function computeReceiptHash(
-    _recordId: string,
-    _contentHash: string,
-    _pogBundle: unknown,
-    _createdAt: Date,
+    recordId: string,
+    contentHash: string,
+    agentWallet: string,
+    nonce: string,
+    createdAt: Date,
 ): string {
-    // TODO: Issue #3
-    throw new Error('computeReceiptHash no implementado (Issue #3)');
+    // Concatenar en orden canónico con separador '|'
+    const canonical = [
+        recordId,
+        contentHash,
+        agentWallet.toLowerCase(),
+        nonce,
+        createdAt.toISOString(),
+    ].join('|');
+
+    const hash = createHash('sha256').update(canonical).digest('hex');
+    return `sha256:${hash}`;
 }
