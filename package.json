@@ -13,7 +13,8 @@
     "lint": "eslint src/",
     "format": "prettier --write src/",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "worker:anchor": "tsx src/workers/anchor.worker.ts"
   },
   "repository": {
     "type": "git",
