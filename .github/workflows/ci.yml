@@ -1,0 +1,62 @@
+# ============================================
+# Res ex Machina — CI Pipeline
+# ============================================
+# Ejecuta en cada push y PR:
+# 1. TypeScript compile check
+# 2. Tests unitarios + integración (vitest)
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Verificar tipos TypeScript
+        run: npx tsc --noEmit
+        env:
+          # Variables dummy para que env.ts no falle al compilar
+          DATABASE_URL: postgres://test:test@localhost:5432/test
+          REDIS_URL: redis://localhost:6379
+          L2_RPC_URL: http://localhost:8545
+          L2_CHAIN_ID: 31337
+          FEE_RECEIVER_ADDRESS: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+          FEE_MINIMUM_AMOUNT: 0.001
+          ANCHOR_WALLET_PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+
+      - name: Ejecutar tests
+        run: npm test
+
+      - name: Build producción
+        run: npm run build
+        env:
+          DATABASE_URL: postgres://test:test@localhost:5432/test
+          REDIS_URL: redis://localhost:6379
+          L2_RPC_URL: http://localhost:8545
+          L2_CHAIN_ID: 31337
+          FEE_RECEIVER_ADDRESS: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+          FEE_MINIMUM_AMOUNT: 0.001
+          ANCHOR_WALLET_PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
