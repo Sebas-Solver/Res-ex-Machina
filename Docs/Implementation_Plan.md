@@ -1,7 +1,9 @@
 # Understanding Lock — Res ex Machina
 
-> **Este documento es el resumen consolidado de todo el brainstorming.**
-> Si lo confirmas, paso a producir los documentos de diseño (PRD v1, Spec PoG v1, Invariantes).
+> ✅ **ESTADO: MVP v1.0 COMPLETADO** (10 Feb 2026)
+> Todas las decisiones de este documento fueron implementadas. Ver [CHANGELOG.md](../CHANGELOG.md) para detalles.
+>
+> Este documento se conserva como referencia histórica del brainstorming original.
 
 ---
 
@@ -267,13 +269,16 @@ license:
 
 ---
 
-## 📄 Próximos documentos a producir (tras confirmación)
+## 📄 Documentos producidos
 
-1. **PRD v1 "agent-proof"** — schemas, endpoints, invariantes, out-of-scope
-2. **Spec técnica PoG v1** — definición formal, schema canónico, firma EIP-712
-3. **Lista de invariantes del sistema** — reglas absolutas que nunca se pueden romper
+1. ✅ **PRD v1** — [`prd-v1.md`](10-specs/prd-v1.md)
+2. ✅ **Spec técnica PoG v1** — [`pog-v1-spec.md`](10-specs/pog-v1-spec.md)
+3. ✅ **Fee flow v1** — [`fee-flow-v1.md`](10-specs/fee-flow-v1.md)
+4. ✅ **Error catalog** — [`error-catalog.md`](10-specs/error-catalog.md)
+5. ✅ **Threat model** — [`threat-model.md`](20-security/threat-model.md)
+6. ✅ **ADR-001 Tech Stack** — [`ADR-001-tech-stack.md`](30-adr/ADR-001-tech-stack.md)
 
 ---
 
-> **¿Refleja esto correctamente tu visión de Res ex Machina?**
-> Confirma o corrige lo que necesites antes de que pase a producir los documentos de diseño.
+> Todas las decisiones documentadas aquí fueron implementadas en el MVP v1.0.
+> Ver [CHANGELOG.md](../CHANGELOG.md) para la lista completa de cambios.
