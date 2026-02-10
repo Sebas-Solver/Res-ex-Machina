@@ -171,10 +171,99 @@ Ninguna alternativa existente hace **todas estas cosas a la vez**:
 ## ❓ Preguntas abiertas
 
 1. ¿Qué L2 EVM específica? (Base, Arbitrum, Polygon, Optimism...)
+Decisión v1
+Polygon PoS como implementación inicial, con abstracción obligatoria de la capa de anchoring.
+
+Por qué
+- Fees muy bajos (clave para fee always-on).
+- Tooling y estabilidad probados.
+- Indexación y exploradores maduros.
+- Suficiente seguridad para hashes + timestamps (no custodia de valor).
+```Yaml
+anchoring:
+  abstraction_required: true
+  initial_chain: polygon_pos
+  constraints:
+    - evm_compatible
+    - low_fees
+    - public_explorer
+```
+Esto permite migrar a zkEVM / Arbitrum / Base sin refactor.
+
+
 2. ¿Cuánto es el fee base mínimo? (¿$0.01? ¿$0.001?)
+Decisión v1
+$0.001 por registro (1/10 de cent), ajustable por config.
+
+Por qué
+- Suficientemente bajo para no frenar adopción.
+- Suficientemente alto para desincentivar spam.
+- Funciona bien con L2 baratas.
+- Encaja con “sello notarial simbólico”.
+
+Regla
+- Fee siempre (no existe registro a coste cero).
+- Visible en el receipt (aunque esté subvencionado).
+
+
 3. ¿Cuántos credits en el pool inicial del free tier?
+¿Cuántos credits en el pool inicial del free tier?
+✅ Decisión v1
+
+100 credits por wallet (subvencionados), no recargables automáticamente.
+
+Por qué
+- Permite probar integraciones reales.
+- Evita farming infinito de wallets.
+- Suficiente para POCs y tests.
+
+Matiz importante
+- Cada credit = cubre el fee base.
+- El usuario ve el coste, aunque esté cubierto.
+```Yaml 
+free_tier:
+  initial_credits: 100
+  refill: false
+```
+
+
 4. ¿Dominio y marca visual? (logo, colores, etc.)
+Decisión v1
+- Marca: Res ex Machina (cerrada).
+
+Dominio:
+- Principal: resexmachina.io (si está disponible)
+- Alternativa: resexmachina.xyz o rexm.io
+
+Visual v1 (muy importante: sobriedad)
+- Colores: monocromo + acento (negro/blanco/gris + azul o ámbar)
+- Logo: tipográfico simple (wordmark), sin icono complejo
+- Estilo: técnico, notarial, infra — no “AI flashy”
+
+No inviertas tiempo en branding complejo en v1.
+La credibilidad viene del registro, no del diseño.
+
+
 5. ¿Licencia del código? (MIT, Apache 2.0, propietaria...)
+Decisión recomendada
+Apache 2.0 para el core no-infra (API, schemas, SDKs).
+
+Por qué Apache 2.0
+- Permite uso comercial.
+- Incluye grant de patentes (importante para infra).
+- Bien vista por empresas e instituciones.
+- Compatible con “open protocol + managed service”.
+
+Qué NO abrir (por ahora)
+- Infra de producción (deploys, claves, config).
+- Servicios managed.
+- Runbooks internos sensibles.
+
+```Yaml
+license:
+  core: Apache-2.0
+  infra: proprietary
+```
 
 ---
 
