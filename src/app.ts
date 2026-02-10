@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import healthRoutes from './routes/health.js';
 import recordRoutes from './routes/records.js';
 import { apiErrorHandler } from './utils/errors.js';
+import { registerRateLimit } from './middleware/rateLimit.js';
 
 /**
  * Res ex Machina — API Server
@@ -24,6 +25,9 @@ const app = Fastify({
 
 // --- Error handler global ---
 app.setErrorHandler(apiErrorHandler);
+
+// --- Rate limiting ---
+await registerRateLimit(app);
 
 // --- Registrar rutas bajo /v1 ---
 app.register(healthRoutes, { prefix: '/v1' });

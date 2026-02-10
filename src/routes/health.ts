@@ -1,17 +1,81 @@
 import type { FastifyInstance } from 'fastify';
+import { db } from '../db/index.js';
+import { sql } from 'drizzle-orm';
+import { createPublicClient, http } from 'viem';
+import { env } from '../config/env.js';
 
 /**
- * Rutas de health check — GET /v1/health
+ * Health check detallado — GET /v1/health
  *
- * La implementación completa se hará en el Issue #7.
- * Por ahora devuelve un health check básico para verificar que el servidor funciona.
+ * Verifica el estado de las 3 dependencias:
+ * - PostgreSQL (query SELECT 1)
+ * - Redis (PING via BullMQ queue)
+ * - L2 blockchain (getBlockNumber)
+ *
+ * Devuelve status por componente para diagnóstico rápido.
  */
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
-    app.get('/health', async (_request, _reply) => {
-        return {
-            status: 'ok',
+    app.get('/health', async (_request, reply) => {
+        const checks = await Promise.allSettled([
+            checkDatabase(),
+            checkRedis(),
+            checkBlockchain(),
+        ]);
+
+        const dbStatus = checks[0].status === 'fulfilled' ? checks[0].value : { status: 'error', error: formatError(checks[0].reason) };
+        const redisStatus = checks[1].status === 'fulfilled' ? checks[1].value : { status: 'error', error: formatError(checks[1].reason) };
+        const l2Status = checks[2].status === 'fulfilled' ? checks[2].value : { status: 'error', error: formatError(checks[2].reason) };
+
+        const allHealthy = dbStatus.status === 'ok' && redisStatus.status === 'ok' && l2Status.status === 'ok';
+
+        const statusCode = allHealthy ? 200 : 503;
+
+        return reply.status(statusCode).send({
+            status: allHealthy ? 'ok' : 'degraded',
             version: 'v1',
             timestamp: new Date().toISOString(),
-        };
+            checks: {
+                database: dbStatus,
+                redis: redisStatus,
+                blockchain: l2Status,
+            },
+        });
     });
+}
+
+// --- Check functions ---
+
+async function checkDatabase(): Promise<{ status: string; latencyMs: number }> {
+    const start = Date.now();
+    await db.execute(sql`SELECT 1`);
+    return { status: 'ok', latencyMs: Date.now() - start };
+}
+
+async function checkRedis(): Promise<{ status: string; latencyMs: number }> {
+    const start = Date.now();
+    // Simple check — intenta parsear la URL de Redis
+    const url = new URL(env.REDIS_URL);
+    const { createClient } = await import('redis');
+    const client = createClient({ url: env.REDIS_URL });
+    await client.connect();
+    await client.ping();
+    await client.disconnect();
+    return { status: 'ok', latencyMs: Date.now() - start };
+}
+
+async function checkBlockchain(): Promise<{ status: string; latencyMs: number; blockNumber?: number }> {
+    const start = Date.now();
+    const client = createPublicClient({
+        transport: http(env.L2_RPC_URL),
+    });
+    const blockNumber = await client.getBlockNumber();
+    return {
+        status: 'ok',
+        latencyMs: Date.now() - start,
+        blockNumber: Number(blockNumber),
+    };
+}
+
+function formatError(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
 }
