@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm';
 import { createPublicClient, http } from 'viem';
+import { Redis } from 'ioredis';
 import { env } from '../config/env.js';
 
 /**
@@ -9,7 +10,7 @@ import { env } from '../config/env.js';
  *
  * Verifica el estado de las 3 dependencias:
  * - PostgreSQL (query SELECT 1)
- * - Redis (PING via BullMQ queue)
+ * - Redis (PING via ioredis)
  * - L2 blockchain (getBlockNumber)
  *
  * Devuelve status por componente para diagnóstico rápido.
@@ -53,10 +54,14 @@ async function checkDatabase(): Promise<{ status: string; latencyMs: number }> {
 
 async function checkRedis(): Promise<{ status: string; latencyMs: number }> {
     const start = Date.now();
-    // Simple check — intenta parsear la URL de Redis
-    const url = new URL(env.REDIS_URL);
-    const { createClient } = await import('redis');
-    const client = createClient({ url: env.REDIS_URL });
+    const redisUrl = new URL(env.REDIS_URL);
+    const client = new Redis({
+        host: redisUrl.hostname,
+        port: parseInt(redisUrl.port || '6379', 10),
+        maxRetriesPerRequest: 1,
+        connectTimeout: 3000,
+        lazyConnect: true,
+    });
     await client.connect();
     await client.ping();
     await client.disconnect();
