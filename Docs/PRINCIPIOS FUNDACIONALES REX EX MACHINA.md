@@ -385,33 +385,47 @@ la interpretación corresponde siempre al usuario autorizado.
 📌 Inspirado en:
 Registros Mercantiles + informes de solvencia / compliance
 
-## OP-14 — Complementariedad con estándares de procedencia (C2PA)
+## OP-14 — Interoperabilidad con estándares de procedencia
 
-Res ex Machina y los estándares de Content Credentials (C2PA) son **capas complementarias**, no alternativas:
+Res ex Machina es **agnóstico al formato del asset** y complementario a los estándares de procedencia embebida:
 
-- **C2PA** = credencial embebida en el contenido (viaja con el archivo)
-- **RxM** = registro externo e inmutable del evento (independiente del archivo)
+- **Estándares embebidos** (C2PA, IPTC, XMP, Schema.org) → viajan CON el archivo
+- **RxM** → registro externo e inmutable, vive FUERA del archivo
 
-RxM **no es** un sistema de Content Credentials:
-- No hace watermarking ni fingerprinting (soft bindings)
-- No embebe manifiestos en archivos (hard bindings)
-- No firma con certificados X.509
+RxM **no implementa**:
+- Watermarking ni fingerprinting (soft bindings)
+- Embebido de manifiestos en archivos (hard bindings)
+- Firma con certificados X.509
 
-RxM **sí puede**:
-- Registrar el hash del manifiesto C2PA como metadato opcional
-- Vincular un record con su certificado/issuer C2PA
-- Propagar señales como "Do Not Train" como metadato registrado
+RxM **sí ofrece**:
+- Campo genérico `provenance_metadata` con discriminador `standard`
+- Registro del hash del manifiesto de cualquier estándar
+- Propagación de señales como "Do Not Train" como dato factual
+- **Doble atestación temporal**: PKI timestamp (estándar) + blockchain anchor (RxM)
 
-Ventaja clave: si el archivo pierde sus Content Credentials (metadatos eliminados por plataformas, captura de pantalla, conversión), **el registro RxM permanece íntegro** como prueba independiente.
+### Identidad dual
 
-Sobre señales como "Do Not Train":
+Dos niveles de identidad que no compiten, se complementan:
+- **Organizacional** (C2PA/X.509): "Adobe firmó este manifiesto"
+- **Técnica** (RxM/EIP-712): "Esta wallet generó este contenido"
+
+Refuerza OP-4: identidad técnica ≠ personalidad jurídica. Ahora con dos capas.
+
+### Sobre "Do Not Train"
+
 - RxM registra la señal como dato factual
 - No promete ni garantiza su cumplimiento
-- Es coherente con OP-10: registrar la señal, no prometer el efecto
+- Coherente con OP-10: registrar la señal, no prometer el efecto
+- Si los metadatos del archivo se pierden, el registro RxM lo preserva
 
-📌 Inspirado en: C2PA spec 2.3, coalición Content Authenticity Initiative
+### Visión
 
-Regla práctica: RxM ancla el hecho; C2PA acompaña al archivo. Juntos cubren todo el ciclo de vida.
+RxM + estándares embebidos = **infraestructura de confianza para economía creativa**.
+El archivo prueba integridad. El registro prueba evento. Juntos: trazabilidad fuerte, licenciamiento automatizable, verificación independiente.
+
+📌 Inspirado en: C2PA spec 2.3, IPTC, coalición Content Authenticity Initiative
+
+Regla práctica: RxM ancla el hecho; los estándares embebidos acompañan al archivo. Juntos cubren todo el ciclo de vida.
 
 ---
 
@@ -422,5 +436,5 @@ registra automáticamente hechos de generación por IA,
 acumula evidencia técnica sin decidir derechos,
 mantiene historia inmutable con estados dinámicos,
 ejecuta contratos pero no juicios,
-complementa los estándares de procedencia embebida (C2PA),
+complementa los estándares de procedencia embebida (C2PA, IPTC, XMP),
 y deja al Derecho decidir cuando llegue.

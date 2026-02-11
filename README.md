@@ -255,9 +255,17 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | Versión | Estado | Alcance |
 |---|---|---|
 | **v1.0 (MVP)** | ✅ Completado | Registro, PoG v1, anchoring L2, API REST, fee on-chain, 63 tests, CI/CD |
-| **v1.1** | 🔲 Planificado | Batch endpoint, webhooks de estado |
-| **v2** | 🔲 Planificado | Content pointers, record versioning, fee fiat + créditos |
-| **v3** | 🔲 Planificado | Smart contracts, reputación (datos, no juicios), marketplace |
+| **v1.0.0-rc1** | ✅ Taggeado | Alpha testing framework, scripts adversariales, plan de piloto |
+| **v1.1** | 🔲 Planificado | `provenance_metadata` genérico (C2PA, IPTC, XMP), batch endpoint, webhooks |
+| **v2** | 🔲 Planificado | Content pointers, identidad dual (org + wallet), record versioning, fee fiat |
+| **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace con doble procedencia |
+
+### Detalle v1.1 — Interoperabilidad
+
+- Campo genérico `provenance_metadata` con discriminador `standard: "c2pa" | "iptc" | "xmp" | "schema_org" | "custom"`
+- Registro de hash de manifiesto, issuer, assertions (ej. "do_not_train")
+- Doble atestación temporal (PKI timestamp + blockchain anchor)
+- 100% backward compatible (todo el campo es opcional)
 
 ---
 
