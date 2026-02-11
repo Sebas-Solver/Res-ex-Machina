@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
+import { randomUUID } from 'node:crypto';
 import healthRoutes from './routes/health.js';
 import recordRoutes from './routes/records.js';
 import { apiErrorHandler } from './utils/errors.js';
@@ -23,19 +24,55 @@ const app = Fastify({
     },
     // Límite de body request (64KB según error catalog)
     bodyLimit: 64 * 1024,
+    // Generar request_id único para trazabilidad
+    genReqId: () => randomUUID(),
+    // Desactivar header X-Powered-By
+    disableRequestLogging: false,
+});
+
+// --- Logs estructurados: añadir wallet y record_id a los logs ---
+app.addHook('onRequest', async (request) => {
+    // Añadir request_id al header de respuesta para debugging del cliente
+    request.raw.headers['x-request-id'] = request.id;
+});
+
+app.addHook('onResponse', async (request, reply) => {
+    const logData: Record<string, unknown> = {
+        request_id: request.id,
+        method: request.method,
+        url: request.url,
+        status_code: reply.statusCode,
+        response_time_ms: reply.elapsedTime,
+    };
+
+    // Extraer wallet del body si es POST /records
+    if (request.method === 'POST' && request.url.includes('/records')) {
+        const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
+        if (body?.pog_bundle?.agent_wallet) {
+            logData.wallet = body.pog_bundle.agent_wallet.toLowerCase();
+        }
+    }
+
+    // Log con nivel apropiado según status code
+    if (reply.statusCode >= 500) {
+        request.log.error(logData, 'request completed with error');
+    } else if (reply.statusCode >= 400) {
+        request.log.warn(logData, 'request completed with client error');
+    } else {
+        request.log.info(logData, 'request completed');
+    }
 });
 
 // --- Security headers (Helmet) ---
 await app.register(helmet, {
-    // CSP no es necesario para una API JSON
     contentSecurityPolicy: false,
 });
 
 // --- CORS ---
 await app.register(cors, {
     origin: process.env.NODE_ENV === 'production'
-        ? false // Deshabilitar en producción (API solo server-to-server)
-        : true,  // Permitir en desarrollo
+        ? false
+        : true,
     methods: ['GET', 'POST'],
 });
 
@@ -75,7 +112,7 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 const start = async () => {
     try {
         await app.listen({ port: PORT, host: '0.0.0.0' });
-        console.log(`\n⚖️  Res ex Machina API listening on port ${PORT}\n`);
+        app.log.info(`⚖️  Res ex Machina API listening on port ${PORT}`);
     } catch (err) {
         app.log.error(err);
         process.exit(1);
