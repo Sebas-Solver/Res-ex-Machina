@@ -65,7 +65,10 @@ function genNonce(): string {
 }
 
 async function signPoG(contentHash: string, nonce: string, wallet = account) {
-    const message = {
+    const ts = new Date().toISOString();
+
+    // Campos planos para la firma EIP-712
+    const sigMessage = {
         schema: 'pog.v1' as const,
         content_hash: contentHash,
         agent_wallet: wallet.address,
@@ -74,16 +77,32 @@ async function signPoG(contentHash: string, nonce: string, wallet = account) {
         process_type: 'direct' as const,
         human_intervention_level: 0,
         pipeline_steps: 1,
-        timestamp: new Date().toISOString(),
+        timestamp: ts,
         nonce,
     };
     const signature = await wallet.signTypedData({
         domain: EIP712_DOMAIN,
         types: EIP712_TYPES,
         primaryType: 'PoGBundle',
-        message,
+        message: sigMessage,
     });
-    return { ...message, signature };
+
+    // Body para la API: generation_process como objeto anidado
+    return {
+        schema: 'pog.v1' as const,
+        content_hash: contentHash,
+        agent_wallet: wallet.address,
+        model_id: 'adversarial-agent',
+        runtime_id: 'attack-v1',
+        generation_process: {
+            process_type: 'direct' as const,
+            human_intervention_level: 0,
+            pipeline_steps: 1,
+        },
+        timestamp: ts,
+        nonce,
+        signature,
+    };
 }
 
 async function sendFee(signer = feeAccount): Promise<string> {

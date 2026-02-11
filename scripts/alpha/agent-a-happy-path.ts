@@ -66,7 +66,10 @@ function generateNonce(): string {
 }
 
 async function signPoG(contentHash: string, nonce: string) {
-    const message = {
+    const ts = new Date().toISOString();
+
+    // Campos planos para la firma EIP-712
+    const sigMessage = {
         schema: 'pog.v1',
         content_hash: contentHash,
         agent_wallet: account.address,
@@ -75,7 +78,7 @@ async function signPoG(contentHash: string, nonce: string) {
         process_type: 'direct',
         human_intervention_level: 0,
         pipeline_steps: 1,
-        timestamp: new Date().toISOString(),
+        timestamp: ts,
         nonce,
     };
 
@@ -83,10 +86,25 @@ async function signPoG(contentHash: string, nonce: string) {
         domain: EIP712_DOMAIN,
         types: EIP712_TYPES,
         primaryType: 'PoGBundle',
-        message,
+        message: sigMessage,
     });
 
-    return { ...message, signature };
+    // Body para la API: generation_process como objeto anidado
+    return {
+        schema: 'pog.v1',
+        content_hash: contentHash,
+        agent_wallet: account.address,
+        model_id: 'alpha-test-gpt4o',
+        runtime_id: 'alpha-agent-a-v1',
+        generation_process: {
+            process_type: 'direct',
+            human_intervention_level: 0,
+            pipeline_steps: 1,
+        },
+        timestamp: ts,
+        nonce,
+        signature,
+    };
 }
 
 async function sendFeeTx(): Promise<string> {
