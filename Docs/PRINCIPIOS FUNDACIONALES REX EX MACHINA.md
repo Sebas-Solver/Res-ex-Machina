@@ -351,9 +351,10 @@ Regla práctica: Mejor una verdad modesta que una promesa falsa.
 
 Res ex Machina no es un jardín cerrado.
 - APIs abiertas
-- Estándares compatibles
+- Estándares compatibles (incluyendo C2PA / Content Credentials)
 - Exportabilidad de pruebas
 - Legibilidad por terceros (humanos y máquinas)
+- Capacidad de adjuntar/consumir metadatos de estándares de procedencia existentes
 
 Regla práctica: Un registro útil es uno que otros pueden usar sin pedir permiso.
 
@@ -384,13 +385,35 @@ la interpretación corresponde siempre al usuario autorizado.
 📌 Inspirado en:
 Registros Mercantiles + informes de solvencia / compliance
 
+## OP-14 — Complementariedad con estándares de procedencia (C2PA)
 
+Res ex Machina y los estándares de Content Credentials (C2PA) son **capas complementarias**, no alternativas:
 
+- **C2PA** = credencial embebida en el contenido (viaja con el archivo)
+- **RxM** = registro externo e inmutable del evento (independiente del archivo)
 
+RxM **no es** un sistema de Content Credentials:
+- No hace watermarking ni fingerprinting (soft bindings)
+- No embebe manifiestos en archivos (hard bindings)
+- No firma con certificados X.509
 
+RxM **sí puede**:
+- Registrar el hash del manifiesto C2PA como metadato opcional
+- Vincular un record con su certificado/issuer C2PA
+- Propagar señales como "Do Not Train" como metadato registrado
 
+Ventaja clave: si el archivo pierde sus Content Credentials (metadatos eliminados por plataformas, captura de pantalla, conversión), **el registro RxM permanece íntegro** como prueba independiente.
 
+Sobre señales como "Do Not Train":
+- RxM registra la señal como dato factual
+- No promete ni garantiza su cumplimiento
+- Es coherente con OP-10: registrar la señal, no prometer el efecto
 
+📌 Inspirado en: C2PA spec 2.3, coalición Content Authenticity Initiative
+
+Regla práctica: RxM ancla el hecho; C2PA acompaña al archivo. Juntos cubren todo el ciclo de vida.
+
+---
 
 Versión ultra-resumida (para equipo / README)
 
@@ -399,4 +422,5 @@ registra automáticamente hechos de generación por IA,
 acumula evidencia técnica sin decidir derechos,
 mantiene historia inmutable con estados dinámicos,
 ejecuta contratos pero no juicios,
+complementa los estándares de procedencia embebida (C2PA),
 y deja al Derecho decidir cuando llegue.
