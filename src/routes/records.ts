@@ -44,7 +44,20 @@ export default async function recordRoutes(fastify: FastifyInstance) {
      * 10. Encolar anchor job
      * 11. Responder 201
      */
-    fastify.post('/', async (request, reply) => {
+    fastify.post('/', {
+        config: {
+            rateLimit: {
+                max: 10,
+                timeWindow: '1 minute',
+                keyGenerator: (request: { ip: string; body?: unknown }) => {
+                    // Rate limit por wallet si disponible, si no por IP
+                    const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
+                    const wallet = body?.pog_bundle?.agent_wallet;
+                    return wallet ? `wallet:${wallet.toLowerCase()}` : request.ip;
+                },
+            },
+        },
+    }, async (request, reply) => {
         // 1. Validar body
         const parsed = createRecordSchema.safeParse(request.body);
         if (!parsed.success) {

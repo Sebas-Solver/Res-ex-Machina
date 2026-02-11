@@ -3,7 +3,6 @@ import {
     http,
     formatEther,
     type Hex,
-    type Address,
 } from 'viem';
 import { env } from '../config/env.js';
 import {

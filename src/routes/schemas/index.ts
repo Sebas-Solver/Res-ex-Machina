@@ -22,12 +22,12 @@ export const pogBundleSchema = z.object({
     schema: z.literal('pog.v1'),
     content_hash: z.string().regex(CONTENT_HASH_REGEX, 'Must match sha256:{64hex}'),
     agent_wallet: z.string().regex(ETH_ADDRESS_REGEX, 'Must be valid EVM address'),
-    model_id: z.string().min(1),
-    runtime_id: z.string().min(1),
+    model_id: z.string().min(1).max(128),
+    runtime_id: z.string().min(1).max(128),
     generation_process: generationProcessSchema,
     timestamp: z.string().datetime({ message: 'Must be ISO-8601 with timezone' }),
-    nonce: z.string().min(16, 'Nonce must be at least 16 characters'),
-    signature: z.string().startsWith('0x').min(132, 'Must be valid EIP-712 signature'),
+    nonce: z.string().min(16, 'Nonce must be at least 16 characters').max(128, 'Nonce must be at most 128 characters'),
+    signature: z.string().startsWith('0x').length(132, 'Must be exactly 132 chars (0x + 130 hex)'),
 });
 
 export type PogBundle = z.infer<typeof pogBundleSchema>;
@@ -37,15 +37,15 @@ export type PogBundle = z.infer<typeof pogBundleSchema>;
  */
 export const createRecordSchema = z.object({
     pog_bundle: pogBundleSchema,
-    content_type: z.string().max(64).optional(),
+    content_type: z.string().min(1).max(127).optional(),
     visibility: z
         .enum(['proof_only', 'input_hash_only', 'content_optional'])
         .default('proof_only'),
     tags: z
-        .array(z.string().min(1).max(100))
+        .array(z.string().min(1).max(64))
         .max(10)
         .default([]),
-    external_ref: z.string().url().optional(),
+    external_ref: z.string().url().max(512).optional(),
     fee_amount: z.number().positive(),
     fee_currency: z.string().min(1).max(8),
     fee_tx_hash: z.string().regex(TX_HASH_REGEX, 'Must be valid transaction hash'),

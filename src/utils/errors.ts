@@ -106,8 +106,9 @@ export function apiErrorHandler(
     }
 
     // Errores de Fastify (validación, content-type, etc.)
-    if ('statusCode' in error && typeof (error as any).statusCode === 'number') {
-        const statusCode = (error as any).statusCode as number;
+    const fastifyError = error as Error & { statusCode?: number };
+    if (typeof fastifyError.statusCode === 'number') {
+        const statusCode = fastifyError.statusCode;
         return reply.status(statusCode).send({
             error: {
                 code: statusCode === 415 ? 'unsupported_media_type' : 'invalid_payload',
