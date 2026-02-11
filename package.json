@@ -11,10 +11,16 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src/",
+    "lint:strict": "eslint src/ --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run lint:strict && npm run test",
     "format": "prettier --write src/",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "worker:anchor": "tsx src/workers/anchor.worker.ts"
+    "worker:anchor": "tsx src/workers/anchor.worker.ts",
+    "alpha:happy": "tsx scripts/alpha/agent-a-happy-path.ts",
+    "alpha:adversarial": "tsx scripts/alpha/agent-d-adversarial.ts",
+    "alpha:all": "npm run alpha:happy && npm run alpha:adversarial"
   },
   "repository": {
     "type": "git",
