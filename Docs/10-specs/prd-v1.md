@@ -55,10 +55,12 @@ scope_out:
   - agent_reputation                # v3+. Scoring acumulativo
   - smart_contracts_execution       # v3+. Licencias y pagos
   - batch_endpoint                  # v1.1. Útil pero no mínimo
+  - provenance_metadata             # v1.1. C2PA/IPTC/XMP bridge (ver c2pa-interoperability.md)
   - search_advanced                 # v2+. Búsqueda avanzada
   - list_records_by_wallet          # v2+. Perfilado controlado (ver sección K)
   - fee_fiat_gateway                # v2. Fee en fiat
   - fee_credits_prepaid             # v2. Créditos prepagados
+  - dual_identity                   # v2. Identidad org (X.509) + técnica (wallet)
 ```
 
 ---

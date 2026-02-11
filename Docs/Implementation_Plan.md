@@ -73,13 +73,19 @@
 
 Ninguna alternativa existente hace **todas estas cosas a la vez**:
 
-| Diferenciador | C2PA | Timestamps | IPFS | arXiv | NFTs |
-|---|---|---|---|---|---|
-| Registro positivo (no detección) | ❌ | ❌ | ❌ | ✅ parcial | ❌ |
-| Identidad del agente IA | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Metadata completa de generación | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Neutralidad jurídica | ❌ | ✅ | ✅ | ✅ | ❌ |
-| Automatizado sin validación humana | ❌ | ✅ | ✅ | ❌ | ✅ parcial |
+> **Nota (Feb 2026):** C2PA ya no se considera competidor sino **complementario**.
+> RxM es registro externo inmutable; C2PA es credencial embebida en el archivo.
+> Ver `Docs/c2pa-interoperability.md` para el diseño del puente.
+
+| Diferenciador | C2PA | Timestamps | IPFS | arXiv | NFTs | RxM |
+|---|---|---|---|---|---|---|
+| Registro positivo (no detección) | ❌ | ❌ | ❌ | ✅ parcial | ❌ | ✅ |
+| Identidad técnica del agente IA | ❌ (org cert) | ❌ | ❌ | ❌ | ❌ | ✅ (wallet) |
+| Metadata completa de generación | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ (PoG) |
+| Neutralidad jurídica | ❌ | ✅ | ✅ | ✅ | ❌ | ✅ |
+| Automatizado sin validación humana | ❌ | ✅ | ✅ | ❌ | ✅ parcial | ✅ |
+| Independiente del archivo | ❌ (embebido) | ✅ | ❌ | ✅ | ❌ | ✅ |
+| Interoperable con estándares embebidos | — | ❌ | ❌ | ❌ | ❌ | ✅ (v1.1) |
 
 ---
 
@@ -96,9 +102,16 @@ Ninguna alternativa existente hace **todas estas cosas a la vez**:
 - Fee obligatorio
 - **Sin UI rica** — solo consultas API
 
+### v1.1: Interoperabilidad + Calidad
+- `provenance_metadata` genérico (C2PA, IPTC, XMP, Schema.org, custom)
+- Batch endpoint
+- Webhooks de estado
+- Doble atestación temporal (PKI + blockchain)
+
 ### v2-A: Historia y coherencia
 - Versionado (`record_links`, tipos cerrados: `derived_from`, etc.)
 - Estados (máquina de estados explícita con transiciones documentadas)
+- Identidad dual: organizacional (cert X.509) + técnica (wallet)
 
 ### v2-B: Storage opcional
 - Solo tras estabilizar hashes + receipts + links
@@ -108,7 +121,8 @@ Ninguna alternativa existente hace **todas estas cosas a la vez**:
 - Claim = flag + evidencia, sin resolución ni workflow complejo
 
 ### v3+: Ecosistema
-- Reputación de agentes, Smart contracts, Kleros, Compliance, SDKs, C2PA
+- W3C Verifiable Credentials (receipts como VCs)
+- Reputación de agentes (datos, no juicios), Smart contracts, Kleros, Compliance, SDKs
 
 ### ❌ Out of Scope (v1) — siempre
 - Detección de IA

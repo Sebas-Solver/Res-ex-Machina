@@ -5,6 +5,42 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ---
 
+## [1.0.0-rc1] — 2026-02-11
+
+### Release Candidate 1
+
+Preparación para alpha privada: hardening de seguridad, observabilidad, documentación completa, scripts de test, y diseño de interoperabilidad con estándares de procedencia.
+
+### Añadido
+
+#### Seguridad y hardening
+- Rate limiting por wallet: 10 req/min POST /v1/records
+- Validaciones estrictas: nonce max 128, signature exacta 132, tags max 64, external_ref max 512
+- Error sanitization: eliminados `any` casts en error handler
+
+#### Observabilidad
+- Logs estructurados en `app.ts`: request_id UUID, wallet extraction, response_time_ms
+- Log level por status code: 5xx=error, 4xx=warn, 2xx=info
+- Runbook de operaciones con 6 escenarios (`Docs/runbook.md`)
+
+#### Documentación
+- Verificación offline de PoG (`Docs/verify-pog-offline.md`)
+- Ejemplos curl de todos los endpoints (`Docs/api-examples.md`)
+- Plan de piloto alpha (`Docs/alpha-pilot-plan.md`)
+- Interoperabilidad con estándares de procedencia (`Docs/c2pa-interoperability.md`)
+
+#### Alpha Testing
+- Script Agente A: happy path, burst 20 records, idempotencia, verify/export
+- Script Agente D: 8 tests adversariales (firma, nonce, hash, fee, delete, rate limit)
+- Scripts npm: `check`, `alpha:happy`, `alpha:adversarial`, `alpha:all`
+
+#### Diseño v1.1
+- Campo genérico `provenance_metadata` con discriminador `standard`
+- Soporte para C2PA, IPTC, XMP, Schema.org, custom
+- OP-14 en Principios Fundacionales: interoperabilidad con estándares de procedencia
+
+---
+
 ## [1.0.0] — 2026-02-10
 
 ### MVP Completado 🎉
