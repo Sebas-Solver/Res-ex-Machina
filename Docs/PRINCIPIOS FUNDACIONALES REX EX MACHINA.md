@@ -420,7 +420,7 @@ Refuerza OP-4: identidad técnica ≠ personalidad jurídica. Ahora con dos capa
 
 ### Visión
 
-RxM + estándares embebidos = **infraestructura de confianza para economía creativa**.
+RxM + estándares embebidos = **infraestructura técnica de trazabilidad independiente**, diseñada para reforzar la confianza en mercados creativos digitales.
 El archivo prueba integridad. El registro prueba evento. Juntos: trazabilidad fuerte, licenciamiento automatizable, verificación independiente.
 
 📌 Inspirado en: C2PA spec 2.3, IPTC, coalición Content Authenticity Initiative

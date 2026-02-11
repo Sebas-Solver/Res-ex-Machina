@@ -242,7 +242,7 @@ Archivo (C2PA)              Registro (RxM)
 
 ### Esto ya no es solo "registro"
 
-Es **infraestructura de confianza para economía creativa**.
+Es una **infraestructura técnica de trazabilidad independiente**, diseñada para reforzar la confianza en mercados creativos digitales.
 
 ---
 
