@@ -13,8 +13,9 @@
 | **Seguridad API** | ✅ Excelente | Helmet, CORS, rate limiting, error sanitization, body limits |
 | **Blockchain** | ✅ Bueno | Fee verification con 5 checks, RPCs paralelas, tx recency check |
 | **Calidad de código** | ✅ Bueno | TypeScript estricto, Zod validation, factory errors, schemas bien tipados |
-| **Testing** | ✅ Bueno | 63 unit tests + 2 agentes alpha (happy + adversarial) + regression test |
+| **Testing** | ✅ Bueno | 63 unit tests + cobertura v8 + 2 agentes alpha (happy + adversarial) + regression test |
 | **Documentación** | ✅ Al día | Actualizada con rc2 — error catalog, runbook, alpha report, changelog |
+| **CI/CD** | ✅ Mejorado | GitHub Actions: Node 20+22, timeout, concurrency, cobertura, env consolidado |
 | **Base de datos** | ✅ Sólido | CHECK constraints, UNIQUE constraints, índices correctos |
 
 > **Veredicto global:** El proyecto está en muy buen estado para una v1.0 alpha privada. No se encontraron vulnerabilidades críticas.
@@ -91,9 +92,10 @@
 | Documento | Estado | Acción tomada |
 |-----------|--------|---------------|
 | `alpha-test-report.md` | ✅ Al día | Actualizado con resultados rc2 (429 fix, 10/10 tests) |
-| `CHANGELOG.md` | ✅ Al día | Añadida sección rc2 con fixes y cambios |
+| `CHANGELOG.md` | ✅ Al día | Añadida sección rc2 sesión 2: CI improvements + fix tests |
 | `error-catalog.md` | ✅ Al día | Ya incluía 429 `rate_limit_exceeded` |
 | `runbook.md` | ✅ Al día | 6 escenarios cubiertos, métricas correctas |
+| `README.md` | ✅ Al día | Badges CI Node 20+22, coverage v8, script `test:coverage` |
 | `Implementation_Plan.md` | ✅ Al día | Marcado como referencia histórica |
 | `tools-and-skills.md` | ✅ Al día | Skills y MCPs documentados |
 

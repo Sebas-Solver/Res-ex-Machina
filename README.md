@@ -7,7 +7,8 @@
   <img src="https://img.shields.io/badge/estado-Alpha%20RC2-brightgreen" alt="Estado: Alpha RC2"/>
   <img src="https://img.shields.io/badge/versión-v1.0.0--rc2-blue" alt="Versión: v1.0.0-rc2"/>
   <img src="https://img.shields.io/badge/tests-63%20passing-brightgreen" alt="Tests: 63 passing"/>
-  <img src="https://img.shields.io/badge/CI-GitHub%20Actions-success" alt="CI: GitHub Actions"/>
+  <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
+  <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/licencia-Apache%202.0-lightgrey" alt="Licencia: Apache 2.0"/>
 </p>
 
@@ -92,8 +93,8 @@ Agente IA ──────────── API REST ────────
 | Cola de trabajos | Redis + BullMQ |
 | Blockchain | viem + L2 EVM (Polygon PoS) |
 | Firma | EIP-712 (verifyTypedData) |
-| Tests | Vitest (63 tests) |
-| CI/CD | GitHub Actions |
+| Tests | Vitest (63 tests) + cobertura v8 |
+| CI/CD | GitHub Actions (Node 20+22, coverage) |
 | Seguridad | Helmet, CORS, Rate Limit |
 
 ### Endpoints
@@ -161,6 +162,7 @@ npm run worker:anchor    # Worker de anchoring
 |---|---|
 | `npm run dev` | Servidor de desarrollo (tsx watch) |
 | `npm test` | Ejecutar 63 tests |
+| `npm run test:coverage` | Tests con reporte de cobertura (v8) |
 | `npm run build` | Build de producción |
 | `npm run db:push` | Aplicar migraciones |
 | `npm run db:generate` | Generar migraciones |

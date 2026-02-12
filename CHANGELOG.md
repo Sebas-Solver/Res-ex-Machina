@@ -7,6 +7,34 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [1.0.0-rc2] — 2026-02-12
 
+### CI / Tests — Sesión 2
+
+#### Corregido
+
+- **Tests de fee** — Añadido mock `getTransactionReceipt` que faltaba tras la optimización `Promise.all` de rc2
+- **Tests de invariantes** — Añadido `mockVerifyFee` en tests de nonce/content_hash duplicado (verifyFee corre en paralelo en `Promise.all` con checks DB)
+- **Tests de invariantes** — Corregido mock de GET record (`mockLimit` desincronizado)
+
+#### Mejorado
+
+- **CI workflow** — Reescrito `.github/workflows/ci.yml`:
+  - Variables de entorno consolidadas (de 3 bloques repetidos a 1)
+  - `FEE_MINIMUM_AMOUNT` corregido: 0.001 → 0.01 (sincronizado con rc2)
+  - Añadido **Node 22 LTS** a la matrix de versiones
+  - Añadido `timeout-minutes: 10` contra runs colgados
+  - Añadido `concurrency` para cancelar runs duplicados
+  - Añadido step de **cobertura** con `@vitest/coverage-v8` + artefacto descargable
+- **Nuevo script** `test:coverage` en `package.json`
+
+#### Archivos modificados
+
+- `.github/workflows/ci.yml` — Reescrito completo
+- `package.json` — Añadido `test:coverage`
+- `tests/fee.test.ts` — Mock `getTransactionReceipt` + fixture `VALID_RECEIPT`
+- `tests/invariants.test.ts` — `mockVerifyFee` en 3 tests + fix mock GET
+
+---
+
 ### Cambios importantes
 
 - **Fee mínimo subido** — de $0.001 a **$0.01** (~1 centavo de dólar) en `.env.example`, 4 tests, 1 script y 7 documentos
@@ -114,7 +142,7 @@ Primera versión funcional del MVP con API REST, verificación EIP-712, fee on-c
 - Anchor Worker con BullMQ (reintentos exponenciales)
 - Docker Compose (PostgreSQL + Redis + Anvil)
 - Dockerfile para producción
-- CI/CD con GitHub Actions (tsc + vitest + build)
+- CI/CD con GitHub Actions (tsc + vitest + coverage v8 + build, Node 20+22)
 
 #### Tests (63 passing)
 - `errors.test.ts` (9) — ApiError + factory functions
