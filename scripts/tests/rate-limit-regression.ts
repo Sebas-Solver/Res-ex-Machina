@@ -62,7 +62,7 @@ async function sendRequest(): Promise<Response> {
             },
             content_type: 'text/plain',
             visibility: 'proof_only',
-            fee_amount: 0.001,
+            fee_amount: 0.01,
             fee_currency: 'ETH',
             fee_tx_hash: '0x' + '00'.repeat(32),
         }),

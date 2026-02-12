@@ -42,7 +42,7 @@ const MOCK_RECORD = {
     receiptHash: 'sha256:' + 'cd'.repeat(32),
     tags: ['test', 'demo'],
     externalRef: null,
-    feeAmount: '0.00100000',
+    feeAmount: '0.01000000',
     feeCurrency: 'MATIC',
     feeTxHash: '0x' + 'ee'.repeat(32),
     anchorTxHash: '0x' + 'dd'.repeat(32),
@@ -107,7 +107,7 @@ describe('GET /v1/records/:id', () => {
         expect(body.record_id).toBe('01936d8a-1234-7000-8000-000000000001');
         expect(body.content_hash).toBe(MOCK_RECORD.contentHash);
         expect(body.state).toBe('anchored');
-        expect(body.fee.amount).toBe('0.00100000');
+        expect(body.fee.amount).toBe('0.01000000');
         expect(body.fee.currency).toBe('MATIC');
         expect(body.anchor).not.toBeNull();
         expect(body.anchor.tx_hash).toBe(MOCK_RECORD.anchorTxHash);
@@ -240,7 +240,7 @@ describe('GET /v1/records/:id/export', () => {
         expect(body.record_id).toBe(MOCK_RECORD.recordId);
         expect(body.pog_bundle).toBeDefined();
         expect(body.pog_bundle.schema).toBe('pog.v1');
-        expect(body.fee.amount).toBe('0.00100000');
+        expect(body.fee.amount).toBe('0.01000000');
         expect(body.fee.tx_hash).toBe(MOCK_RECORD.feeTxHash);
         expect(body.anchor).not.toBeNull();
         expect(body.anchor.chain_id).toBe(31337);

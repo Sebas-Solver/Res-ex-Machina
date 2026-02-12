@@ -104,7 +104,7 @@ const VALID_POG_BUNDLE = {
 const VALID_POST_BODY = {
     pog_bundle: VALID_POG_BUNDLE,
     visibility: 'proof_only',
-    fee_amount: 0.001,
+    fee_amount: 0.01,
     fee_currency: 'MATIC',
     fee_tx_hash: '0x' + 'ee'.repeat(32),
     content_type: 'text/plain',
@@ -334,7 +334,7 @@ describe('INV-016: Content hash unique', () => {
 describe('POST /v1/records — flujo exitoso', () => {
     it('POST válido → 201 con record_id y receipt_hash', async () => {
         mockVerifyPoGSignature.mockResolvedValue(undefined);
-        mockVerifyFee.mockResolvedValue({ verified: true, amount: '0.001', recipient: '0x...', blockNumber: 1n });
+        mockVerifyFee.mockResolvedValue({ verified: true, amount: '0.01', recipient: '0x...', blockNumber: 1n });
         mockEnqueueAnchorJob.mockResolvedValue(undefined);
         mockSelectResults = [];
 
@@ -372,7 +372,7 @@ describe('Invariantes GET', () => {
             receiptHash: 'sha256:' + 'cd'.repeat(32),
             tags: [],
             externalRef: null,
-            feeAmount: '0.00100000',
+            feeAmount: '0.01000000',
             feeCurrency: 'MATIC',
             feeTxHash: '0x' + 'ee'.repeat(32),
             anchorTxHash: '0x' + 'dd'.repeat(32),

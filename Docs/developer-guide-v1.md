@@ -102,7 +102,7 @@ const walletClient = createWalletClient({
 
 const feeTxHash = await walletClient.sendTransaction({
   to: '0xFEE_RECEIVER_ADDRESS',    // provided by RxM
-  value: parseEther('0.001'),       // >= minimum fee
+  value: parseEther('0.01'),       // >= minimum fee
 });
 
 // Wait for confirmation
@@ -275,7 +275,7 @@ const exportData = await receipt.json();
   "created_at": "2026-02-12T14:30:01.234Z",
   "receipt_hash": "sha256:...",
   "fee": {
-    "amount": "0.00100000",
+    "amount": "0.01000000",
     "currency": "ETH",
     "tx_hash": "0xabc123..."
   },
@@ -435,7 +435,7 @@ Additionally, `fee_tx_hash` uniqueness is enforced by a UNIQUE DB constraint —
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `FEE_RECEIVER_ADDRESS` | Ethereum address receiving fees | `0xf39F...2266` |
-| `FEE_MINIMUM_AMOUNT` | Minimum fee in ETH | `0.001` |
+| `FEE_MINIMUM_AMOUNT` | Minimum fee in ETH | `0.01` |
 | `L2_RPC_URL` | L2 JSON-RPC endpoint | `http://localhost:8545` |
 | `L2_CHAIN_ID` | Chain ID of the L2 | `31337` (Anvil) |
 
@@ -551,7 +551,7 @@ REDIS_URL=redis://localhost:6379
 L2_RPC_URL=http://localhost:8545
 L2_CHAIN_ID=31337
 FEE_RECEIVER_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-FEE_MINIMUM_AMOUNT=0.001
+FEE_MINIMUM_AMOUNT=0.01
 
 # Anchoring (Anvil default account #0)
 ANCHOR_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80

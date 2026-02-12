@@ -186,7 +186,7 @@ endpoints:
   "tags": ["code", "agent-output"],
   "external_ref": null,
   "fee": {
-    "amount": "0.001",
+    "amount": "0.01",
     "currency": "ETH",
     "tx_hash": "0x..."
   }

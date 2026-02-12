@@ -49,7 +49,7 @@ Seguir los pasos de `Docs/api-examples.md`:
 1. Generar wallet (viem, ethers, eth_account en Python)
 2. Calcular SHA-256 de tu contenido
 3. Firmar PoG con EIP-712
-4. Enviar fee tx a Anvil (0.001 ETH mínimo)
+4. Enviar fee tx a Anvil (0.01 ETH mínimo)
 5. POST /v1/records
 6. Esperar anchoring
 7. GET /verify + /export

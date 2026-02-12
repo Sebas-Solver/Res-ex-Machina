@@ -209,7 +209,7 @@ Esto permite migrar a zkEVM / Arbitrum / Base sin refactor.
 
 2. ¿Cuánto es el fee base mínimo? (¿$0.01? ¿$0.001?)
 Decisión v1
-$0.001 por registro (1/10 de cent), ajustable por config.
+$0.01 por registro (1 centavo de dólar), ajustable por config.
 
 Por qué
 - Suficientemente bajo para no frenar adopción.

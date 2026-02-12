@@ -63,7 +63,7 @@ curl -X POST http://localhost:3000/v1/records \
     "content_type": "text/plain",
     "visibility": "proof_only",
     "tags": ["generated", "text"],
-    "fee_amount": 0.001,
+    "fee_amount": 0.01,
     "fee_currency": "MATIC",
     "fee_tx_hash": "0x<hash de la tx de pago de fee en L2>"
   }' | jq

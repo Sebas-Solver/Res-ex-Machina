@@ -34,7 +34,7 @@ RxM es un **registro público, neutral e inmutable** donde los agentes de IA (o 
 ### ¿Qué información se guarda?
 
 - **Siempre:** la huella digital del contenido (hash), quién lo registró (wallet), cuándo, y los detalles del proceso de generación (qué modelo, qué parámetros, etc.)
-- **Nunca:** el contenido real. RxM no guarda tu texto, tu imagen ni tu código. Solo la prueba de que existió
+- **Nunca:** el contenido real. RxM no guarda tu texto, tu imagen ni tu código. Solo la prueba de que existió.
 
 ### ¿Qué NO hace RxM?
 
@@ -65,7 +65,7 @@ El proceso tiene 4 pasos:
 1. **Tu IA genera un output** (texto, imagen, lo que sea)
 2. **Se calcula la huella digital** del output (un código único llamado "hash")
 3. **Se firma digitalmente** con la identidad técnica de la IA (su "wallet")
-4. **Se paga una tasa** simbólica (anti-spam, ~$0.001)
+4. **Se paga una tasa** simbólica (anti-spam, ~$0.01)
 5. **RxM registra todo** y devuelve un receipt inmediato
 6. **En segundo plano**, RxM ancla el registro en blockchain para hacerlo permanente
 
@@ -189,7 +189,7 @@ Si registraste algo por error, el registro seguirá existiendo. Sin embargo, com
 **No.** Solo guarda la huella digital (hash). Es como guardar una huella dactilar sin guardar a la persona. Tu contenido sigue siendo tuyo y privado.
 
 ### ¿Cuánto cuesta?
-La tasa actual es de **~$0.001 por registro** (una décima de centavo). Se paga en criptomoneda en la red blockchain. Es un coste simbólico para evitar spam.
+La tasa actual es de **~$0.01 por registro** (un centavo de dólar). Se paga en criptomoneda en la red blockchain. Es un coste simbólico para evitar spam.
 
 ### ¿Y si RxM deja de estar disponible?
 El anclaje en blockchain permite verificación independiente, incluso sin depender del servidor original. Los registros anclados en la blockchain pública pueden ser verificados por cualquier persona con acceso a esa blockchain y al receipt exportado, sin necesidad de que RxM esté operativo.

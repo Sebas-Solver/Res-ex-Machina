@@ -245,8 +245,8 @@ ROOT: Llenar la DB con registros basura sin coste significativo
 │
 ├── [OR] Fee muy barato → enviar miles
 │   └── El fee mínimo DEBE calibrarse para que el coste de spam
-│       supere el beneficio. Si fee = $0.001 y envío 1M registros:
-│       → Coste: $1.000 + gas fees
+│       supere el beneficio. Si fee = $0.01 y envío 1M registros:
+│       → Coste: $10.000 + gas fees
 │       → ¿Beneficio del atacante? Ninguno directo.
 │       → ⚠️ Riesgo: contaminación de la DB con datos basura.
 │       → Mitigación: rate limit por wallet + fee calibrado

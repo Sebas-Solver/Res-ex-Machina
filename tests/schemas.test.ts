@@ -79,7 +79,7 @@ describe('createRecordSchema', () => {
             nonce: 'nonce-abcdefghijklmnop',
             signature: '0x' + 'cd'.repeat(65),
         },
-        fee_amount: 0.001,
+        fee_amount: 0.01,
         fee_currency: 'MATIC',
         fee_tx_hash: '0x' + 'ee'.repeat(32),
     };

@@ -24,7 +24,7 @@ vi.mock('viem', () => ({
 vi.mock('../src/config/env.js', () => ({
     env: {
         L2_RPC_URL: 'http://localhost:8545',
-        FEE_MINIMUM_AMOUNT: 0.001,
+        FEE_MINIMUM_AMOUNT: 0.01,
         FEE_RECEIVER_ADDRESS: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
     },
 }));
@@ -36,7 +36,7 @@ const { verifyFee } = await import('../src/services/fee.js');
 const VALID_TX = {
     hash: '0x' + 'aa'.repeat(32),
     blockNumber: 100n,
-    value: BigInt(1e15), // 0.001 ETH
+    value: BigInt(1e16), // 0.01 ETH
     to: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
 };
 
@@ -141,8 +141,8 @@ describe('verifyFee', () => {
         }
     });
 
-    it('acepta un fee justo en el límite mínimo (0.001 ETH)', async () => {
-        mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e15) });
+    it('acepta un fee justo en el límite mínimo (0.01 ETH)', async () => {
+        mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e16) });
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);
 
         const result = await verifyFee('0x' + '22'.repeat(32));
