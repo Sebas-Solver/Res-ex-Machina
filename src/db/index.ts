@@ -8,7 +8,7 @@ import * as schema from './schema.js';
  * En producción: pool de conexiones.
  * En test: conexión única.
  */
-const client = postgres(env.DATABASE_URL, {
+export const client = postgres(env.DATABASE_URL, {
     max: env.NODE_ENV === 'test' ? 1 : 10,
 });
 

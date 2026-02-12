@@ -13,9 +13,10 @@ import {
 } from '../utils/errors.js';
 
 /**
- * Máxima antigüedad permitida para la tx de fee (24 horas).
+ * Máxima antigüedad permitida para la tx de fee.
+ * Configurable via FEE_TX_MAX_AGE_HOURS (default: 24h).
  */
-const FEE_TX_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const FEE_TX_MAX_AGE_MS = env.FEE_TX_MAX_AGE_HOURS * 60 * 60 * 1000;
 
 /**
  * Cliente público de viem para consultar la L2.

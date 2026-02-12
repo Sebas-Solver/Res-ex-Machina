@@ -6,6 +6,7 @@ import healthRoutes from './routes/health.js';
 import recordRoutes from './routes/records.js';
 import { apiErrorHandler } from './utils/errors.js';
 import { registerRateLimit } from './middleware/rateLimit.js';
+import { client } from './db/index.js';
 
 /**
  * Res ex Machina — API Server
@@ -118,6 +119,39 @@ const start = async () => {
         process.exit(1);
     }
 };
+
+// --- Graceful shutdown (Q-2) ---
+// Al recibir SIGTERM (deploy) o SIGINT (Ctrl+C):
+// 1. Fastify deja de aceptar requests nuevas y espera a las activas
+// 2. Cierra la cola BullMQ (no acepta nuevos jobs)
+// 3. Cierra el pool de conexiones PostgreSQL
+async function shutdown(signal: string) {
+    app.log.info(`🛑 ${signal} recibido — iniciando shutdown graceful...`);
+
+    try {
+        // 1. Cerrar Fastify (drena requests activas)
+        await app.close();
+        app.log.info('✅ Fastify cerrado (requests drenadas)');
+
+        // 2. Cerrar cola BullMQ (import dinámico para evitar conexión Redis al cargar el módulo)
+        const { anchorQueue } = await import('./services/queue.js');
+        await anchorQueue.close();
+        app.log.info('✅ Cola de anchoring cerrada');
+
+        // 3. Cerrar pool de PostgreSQL
+        await client.end();
+        app.log.info('✅ Conexión PostgreSQL cerrada');
+
+        app.log.info('👋 Shutdown completo — saliendo');
+        process.exit(0);
+    } catch (err) {
+        app.log.error(err, '❌ Error durante shutdown');
+        process.exit(1);
+    }
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 start();
 

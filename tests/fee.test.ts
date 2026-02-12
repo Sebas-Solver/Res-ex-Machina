@@ -28,6 +28,7 @@ vi.mock('../src/config/env.js', () => ({
         L2_RPC_URL: 'http://localhost:8545',
         FEE_MINIMUM_AMOUNT: 0.01,
         FEE_RECEIVER_ADDRESS: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+        FEE_TX_MAX_AGE_HOURS: 24,
     },
 }));
 

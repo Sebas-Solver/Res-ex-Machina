@@ -1,22 +1,18 @@
 import type { FastifyInstance } from 'fastify';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
-import { createRecordSchema } from './schemas/index.js';
 import { verifyPoGSignature } from '../services/signature.js';
-import { computeReceiptHash } from '../services/receipt.js';
 import { verifyFee } from '../services/fee.js';
-import { enqueueAnchorJob } from '../services/queue.js';
-import { generateRecordId } from '../utils/uuid.js';
 import {
-    invalidPayload,
-    invalidPogSchema,
+    validateAndParseInput,
+    checkDuplicates,
+    createRecord,
+} from '../services/recordsService.js';
+import {
     invalidContentHash,
     invalidRecordId,
     recordNotFound,
-    duplicateContentHash,
-    duplicateNonce,
-    feeTxReused,
 } from '../utils/errors.js';
 
 /**
@@ -31,18 +27,8 @@ export default async function recordRoutes(fastify: FastifyInstance) {
     /**
      * POST /v1/records
      *
-     * Flujo completo:
-     * 1. Validar body con Zod
-     * 2. Verificar firma EIP-712
-     * 3. Check idempotencia (content_hash duplicado) → 409
-     * 4. Check nonce duplicado (wallet+nonce) → 409
-     * 5. Verificar fee on-chain → 402
-     * 6. Check fee_tx_hash no reusado → 409
-     * 7. Generar UUID v7
-     * 8. Calcular receipt_hash
-     * 9. INSERT en DB
-     * 10. Encolar anchor job
-     * 11. Responder 201
+     * Flujo: validate → verify signature → check duplicates → verify fee → create record
+     * Lógica de negocio en recordsService.ts (Q-1 refactor).
      */
     fastify.post('/', {
         config: {
@@ -50,7 +36,6 @@ export default async function recordRoutes(fastify: FastifyInstance) {
                 max: 10,
                 timeWindow: '1 minute',
                 keyGenerator: (request: { ip: string; body?: unknown }) => {
-                    // Rate limit por wallet si disponible, si no por IP
                     const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
                     const wallet = body?.pog_bundle?.agent_wallet;
                     return wallet ? `wallet:${wallet.toLowerCase()}` : request.ip;
@@ -58,141 +43,29 @@ export default async function recordRoutes(fastify: FastifyInstance) {
             },
         },
     }, async (request, reply) => {
-        // 1. Validar body
-        const parsed = createRecordSchema.safeParse(request.body);
-        if (!parsed.success) {
-            const firstError = parsed.error.issues[0];
-            const path = firstError?.path?.join('.') ?? 'unknown';
-
-            // Diferenciar errores del pog_bundle vs otros campos
-            if (path.startsWith('pog_bundle')) {
-                throw invalidPogSchema({
-                    field: path,
-                    issue: firstError?.message,
-                });
-            }
-
-            throw invalidPayload({
-                field: path,
-                issue: firstError?.message,
-            });
-        }
-
-        const input = parsed.data;
+        // 1. Validar body (Zod)
+        const input = validateAndParseInput(request.body);
         const { pog_bundle } = input;
 
         // 2. Verificar firma EIP-712
         await verifyPoGSignature(pog_bundle);
 
-        // 3-5. Paralelizar checks independientes:
-        //   - content_hash duplicado (DB)
-        //   - wallet+nonce duplicado (DB)
-        //   - fee verified on-chain (RPC)
-        // Son independientes entre sí → Promise.all ahorra ~4s de latencia.
-        // Race conditions protegidas por UNIQUE constraints en DB (INSERT falla si hay conflicto).
-        const [existingByHash, existingByNonce] = await Promise.all([
-            // Check content_hash único
-            db.select({ recordId: records.recordId })
-                .from(records)
-                .where(eq(records.contentHash, pog_bundle.content_hash))
-                .limit(1),
-            // Check nonce único por wallet
-            db.select({ recordId: records.recordId })
-                .from(records)
-                .where(
-                    and(
-                        eq(records.agentWallet, pog_bundle.agent_wallet),
-                        eq(records.nonce, pog_bundle.nonce),
-                    ),
-                )
-                .limit(1),
-            // Verificar fee on-chain (tx confirmada, monto, destinatario, reciente)
+        // 3. Checks de duplicados (content_hash, nonce, fee_tx_hash) en paralelo
+        //    + verificar fee on-chain — independientes entre sí
+        await Promise.all([
+            checkDuplicates(
+                pog_bundle.content_hash,
+                pog_bundle.agent_wallet,
+                pog_bundle.nonce,
+                input.fee_tx_hash,
+            ),
             verifyFee(input.fee_tx_hash),
         ]);
 
-        if (existingByHash.length > 0) {
-            throw duplicateContentHash();
-        }
+        // 4. Crear record (INSERT DB + enqueue anchor)
+        const result = await createRecord(input);
 
-        if (existingByNonce.length > 0) {
-            throw duplicateNonce();
-        }
-
-        // 6. Check fee_tx_hash no reusado (depende de que verifyFee haya pasado)
-        const existingByFee = await db
-            .select({ recordId: records.recordId })
-            .from(records)
-            .where(eq(records.feeTxHash, input.fee_tx_hash))
-            .limit(1);
-
-        if (existingByFee.length > 0) {
-            throw feeTxReused();
-        }
-
-        // 7. Generar UUID v7
-        const recordId = generateRecordId();
-        const createdAt = new Date();
-
-        // 8. Calcular receipt_hash
-        const receiptHash = computeReceiptHash(
-            recordId,
-            pog_bundle.content_hash,
-            pog_bundle.agent_wallet,
-            pog_bundle.nonce,
-            createdAt,
-        );
-
-        // 9. INSERT en DB
-        // Protegido por UNIQUE constraints: si una race condition pasó los checks
-        // simultáneamente, el INSERT falla con error 23505 → capturamos y devolvemos 409.
-        try {
-            await db.insert(records).values({
-                recordId,
-                contentHash: pog_bundle.content_hash,
-                contentType: input.content_type ?? null,
-                visibility: input.visibility,
-                pogBundle: pog_bundle,
-                nonce: pog_bundle.nonce,
-                agentWallet: pog_bundle.agent_wallet,
-                state: 'pending_anchor',
-                createdAt,
-                receiptHash,
-                tags: input.tags,
-                externalRef: input.external_ref ?? null,
-                feeAmount: input.fee_amount.toFixed(8),
-                feeCurrency: input.fee_currency,
-                feeTxHash: input.fee_tx_hash,
-            });
-        } catch (dbError: unknown) {
-            // PostgreSQL UNIQUE violation → error 23505
-            const pgError = dbError as { code?: string; constraint_name?: string; detail?: string };
-            if (pgError.code === '23505') {
-                const detail = (pgError.detail ?? pgError.constraint_name ?? '').toLowerCase();
-                if (detail.includes('content_hash')) {
-                    throw duplicateContentHash();
-                }
-                if (detail.includes('wallet_nonce') || detail.includes('uq_wallet_nonce')) {
-                    throw duplicateNonce();
-                }
-                if (detail.includes('fee_tx_hash')) {
-                    throw feeTxReused();
-                }
-                // UNIQUE desconocido — devolver conflicto genérico
-                throw duplicateContentHash();
-            }
-            throw dbError; // Re-lanzar errores no esperados
-        }
-
-        // 10. Encolar anchor job
-        await enqueueAnchorJob(recordId, receiptHash);
-
-        // 11. Responder 201
-        return reply.status(201).send({
-            record_id: recordId,
-            state: 'pending_anchor',
-            receipt_hash: receiptHash,
-            created_at: createdAt.toISOString(),
-        });
+        return reply.status(201).send(result);
     });
 
     // --- Endpoints de consulta (Issue #5) ---

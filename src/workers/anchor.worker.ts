@@ -72,4 +72,29 @@ worker.on('error', (error) => {
 
 console.log('⚓ Anchor worker started, waiting for jobs...');
 
+// --- Graceful shutdown (Q-3) ---
+// Al recibir SIGTERM/SIGINT:
+// 1. worker.close() deja de coger jobs nuevos
+// 2. Espera a que el job actual termine (o timeout de BullMQ)
+// 3. Si el proceso muere a medio job, BullMQ lo marca como "stalled"
+//    y lo re-encola automáticamente. anchorRecord es idempotente:
+//    si el record ya está anchored, no duplica el anchor.
+async function shutdown(signal: string) {
+    console.log(`🛑 Worker: ${signal} recibido — cerrando...`);
+
+    try {
+        // Cierra el worker: no coge más jobs, espera al actual
+        await worker.close();
+        console.log('✅ Worker cerrado (job actual completado o devuelto a cola)');
+
+        process.exit(0);
+    } catch (err) {
+        console.error('❌ Error durante shutdown del worker:', err);
+        process.exit(1);
+    }
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
 export default worker;

@@ -22,6 +22,7 @@ const envSchema = z.object({
     L2_CHAIN_ID: z.coerce.number().int().positive(),
     FEE_RECEIVER_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/),
     FEE_MINIMUM_AMOUNT: z.coerce.number().positive(),
+    FEE_TX_MAX_AGE_HOURS: z.coerce.number().positive().default(24),
 
     // Anchoring
     ANCHOR_WALLET_PRIVATE_KEY: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
