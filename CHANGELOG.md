@@ -5,6 +5,27 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ---
 
+## [1.0.0-rc2] — 2026-02-12
+
+### Corregido
+
+- **Rate limit 429 bug** — `@fastify/rate-limit` con `config.rateLimit` por ruta pasa un objeto plano (no un `Error`) al handler. El `apiErrorHandler` ahora detecta estos objetos y devuelve 429 con formato correcto
+- **POST /v1/records latencia** — Paralelización de `verifyFee()` (2 RPCs via `Promise.all`) y paralelización de checks DB (hash + nonce + fee)
+- **Race condition INSERT** — Protección con `try/catch` de UNIQUE constraint (código 23505) para duplicados concurrentes
+
+### Añadido
+
+- Test de regresión rate limit: `scripts/tests/rate-limit-regression.ts` (7 checks)
+- Alpha test re-ejecutado: Agente A 15/20 + 5×429 ✅, Agente D 10/10 ✅
+
+### Archivos modificados
+
+- `src/utils/errors.ts` — Handler 429/413 + detección objetos planos rate-limit
+- `src/services/fee.ts` — RPCs paralelas + receipt status check
+- `src/routes/records.ts` — Promise.all parallelization + UNIQUE constraint safety
+
+---
+
 ## [1.0.0-rc1] — 2026-02-11
 
 ### Release Candidate 1
