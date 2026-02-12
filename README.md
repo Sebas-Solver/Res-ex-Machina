@@ -4,8 +4,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/estado-Alpha%20RC2-brightgreen" alt="Estado: Alpha RC2"/>
-  <img src="https://img.shields.io/badge/versión-v1.0.0--rc2-blue" alt="Versión: v1.0.0-rc2"/>
+  <img src="https://img.shields.io/badge/estado-Alpha%20Privada-brightgreen" alt="Estado: Alpha Privada"/>
+  <img src="https://img.shields.io/badge/versión-v1.0.0--alpha.1-blue" alt="Versión: v1.0.0-alpha.1"/>
   <img src="https://img.shields.io/badge/tests-63%20passing-brightgreen" alt="Tests: 63 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
@@ -91,7 +91,7 @@ Agente IA ──────────── API REST ────────
 | API | Fastify + TypeScript (ESM) |
 | Base de datos | PostgreSQL + Drizzle ORM |
 | Cola de trabajos | Redis + BullMQ |
-| Blockchain | viem + L2 EVM (Polygon PoS) |
+| Blockchain | viem + L2 EVM (Base Sepolia testnet / multi-chain) |
 | Firma | EIP-712 (verifyTypedData) |
 | Tests | Vitest (63 tests) + cobertura v8 |
 | CI/CD | GitHub Actions (Node 20+22, coverage) |
@@ -270,7 +270,8 @@ El sistema tiene **24 invariantes** que nunca se violan:
 |---|---|---|
 | **v1.0 (MVP)** | ✅ Completado | Registro, PoG v1, anchoring L2, API REST, fee on-chain, 63 tests, CI/CD |
 | **v1.0.0-rc1** | ✅ Taggeado | Alpha testing framework, scripts adversariales, plan de piloto |
-| **v1.0.0-rc2** | ✅ Actual | Fix rate limit 429, fee $0.01, trust model docs, guías usuario + dev |
+| **v1.0.0-rc2** | ✅ Taggeado | Fix rate limit 429, fee $0.01, trust model docs, guías usuario + dev |
+| **v1.0.0-alpha.1** | ✅ Desplegado | Deploy en Render + Neon + Upstash + Base Sepolia. Multi-chain, Redis TLS, worker inline |
 | **v1.1** | 🔲 Planificado | `provenance_metadata` (C2PA/IPTC/XMP), batch endpoint, webhooks, doble atestación |
 | **v2** | 🔲 Planificado | Verificación model_id (#15), content pointers, identidad dual, fee fiat |
 | **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace doble procedencia |
@@ -299,7 +300,7 @@ Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubi
 
 ## 📜 Estado actual
 
-🟢 **v1.0.0-rc2** — API funcional con 63 tests, CI/CD en GitHub Actions, 10 issues cerradas, 5 abiertas (v1.1/v2). Documentación completa para usuarios y desarrolladores.
+🟢 **v1.0.0-alpha.1** — API desplegada en `https://res-ex-machina-api.onrender.com`. 63 tests, CI/CD GitHub Actions. Blockchain: Base Sepolia testnet. DB: Neon. Redis: Upstash. 10 issues cerradas, 5 abiertas (v1.1/v2).
 
 ---
 

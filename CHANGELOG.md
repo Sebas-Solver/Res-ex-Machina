@@ -5,6 +5,42 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ---
 
+## [1.0.0-alpha.1] — 2026-02-12
+
+### Primer Deploy Público (Alpha) 🚀
+
+Deploy en Render + Neon + Upstash + Base Sepolia testnet. Coste: $0/mes.
+
+#### Añadido
+
+- **Multi-chain** — `anchor.ts` ya no depende de `foundry` (Anvil local). Usa `defineChain` con `L2_CHAIN_ID` dinámico, soporta cualquier EVM L2 (Base Sepolia, Polygon, etc.)
+- **Redis TLS + password** — `queue.ts` y `anchor.worker.ts` soportan `rediss://` (TLS obligatorio) y extraen password de la URL. Necesario para Upstash
+- **Worker inline** — `app.ts` arranca el anchor worker en el mismo proceso en producción (`NODE_ENV=production`). Elimina necesidad de Background Worker separado (plan de pago en Render)
+- **`.env.example`** — Documentadas opciones de cloud (Neon, Upstash, Base Sepolia)
+
+#### Infraestructura cloud
+
+| Servicio | Proveedor | Plan |
+|---|---|---|
+| API + Worker | Render.com | Free (Docker) |
+| PostgreSQL | Neon | Free (0.5GB) |
+| Redis | Upstash | Free (10K cmd/día) |
+| Blockchain | Base Sepolia | Testnet (gratis) |
+
+#### URL pública
+
+`https://res-ex-machina-api.onrender.com`
+
+#### Archivos modificados
+
+- `src/services/anchor.ts` — `defineChain` dinámico
+- `src/services/queue.ts` — TLS + password
+- `src/workers/anchor.worker.ts` — TLS + password
+- `src/app.ts` — Worker inline en producción
+- `.env.example` — Opciones cloud documentadas
+
+---
+
 ## [1.0.0-rc3] — 2026-02-12
 
 ### Hardening Pre-Alpha
