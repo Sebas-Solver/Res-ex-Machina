@@ -4,8 +4,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/estado-MVP%20completado-brightgreen" alt="Estado: MVP completado"/>
-  <img src="https://img.shields.io/badge/versión-v1.0.0-blue" alt="Versión: v1.0.0"/>
+  <img src="https://img.shields.io/badge/estado-Alpha%20RC2-brightgreen" alt="Estado: Alpha RC2"/>
+  <img src="https://img.shields.io/badge/versión-v1.0.0--rc2-blue" alt="Versión: v1.0.0-rc2"/>
   <img src="https://img.shields.io/badge/tests-63%20passing-brightgreen" alt="Tests: 63 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions-success" alt="CI: GitHub Actions"/>
   <img src="https://img.shields.io/badge/licencia-Apache%202.0-lightgrey" alt="Licencia: Apache 2.0"/>
@@ -165,6 +165,10 @@ npm run worker:anchor    # Worker de anchoring
 | `npm run db:push` | Aplicar migraciones |
 | `npm run db:generate` | Generar migraciones |
 | `npm run worker:anchor` | Worker de anchoring BullMQ |
+| `npm run check` | Type checking con tsc |
+| `npm run alpha:happy` | Test happy path (Agente A) |
+| `npm run alpha:adversarial` | Test adversarial (Agente D) |
+| `npm run alpha:all` | Ambos tests alpha |
 
 ---
 
@@ -215,11 +219,19 @@ Docs/
 
 | Documento | Descripción |
 |---|---|
-| [`prd-v1.md`](Docs/10-specs/prd-v1.md) | Product Requirements Document (v1.1) |
+| [`guia-rxm-v1.md`](Docs/guia-rxm-v1.md) | Guía para usuarios no técnicos |
+| [`developer-guide-v1.md`](Docs/developer-guide-v1.md) | Guía completa para desarrolladores |
+| [`prd-v1.md`](Docs/10-specs/prd-v1.md) | Product Requirements Document |
 | [`pog-v1-spec.md`](Docs/10-specs/pog-v1-spec.md) | Especificación Proof of Generation v1 |
 | [`fee-flow-v1.md`](Docs/10-specs/fee-flow-v1.md) | Flujo de verificación de fee on-chain |
+| [`openapi-v1.yaml`](Docs/10-specs/openapi-v1.yaml) | Especificación OpenAPI (Swagger) |
 | [`error-catalog.md`](Docs/10-specs/error-catalog.md) | Catálogo de errores de la API |
 | [`threat-model.md`](Docs/20-security/threat-model.md) | Threat Model STRIDE + Attack Trees |
+| [`audit-report-v1.md`](Docs/audit-report-v1.md) | Informe de auditoría de código |
+| [`runbook.md`](Docs/runbook.md) | Runbook de operaciones |
+| [`api-examples.md`](Docs/api-examples.md) | Ejemplos curl de todos los endpoints |
+| [`alpha-pilot-plan.md`](Docs/alpha-pilot-plan.md) | Plan de piloto alpha |
+| [`c2pa-interoperability.md`](Docs/c2pa-interoperability.md) | Interoperabilidad con estándares C2PA |
 | [`ADR-001-tech-stack.md`](Docs/30-adr/ADR-001-tech-stack.md) | Architecture Decision Record |
 
 ---
@@ -256,16 +268,20 @@ El sistema tiene **24 invariantes** que nunca se violan:
 |---|---|---|
 | **v1.0 (MVP)** | ✅ Completado | Registro, PoG v1, anchoring L2, API REST, fee on-chain, 63 tests, CI/CD |
 | **v1.0.0-rc1** | ✅ Taggeado | Alpha testing framework, scripts adversariales, plan de piloto |
-| **v1.1** | 🔲 Planificado | `provenance_metadata` genérico (C2PA, IPTC, XMP), batch endpoint, webhooks |
-| **v2** | 🔲 Planificado | Content pointers, identidad dual (org + wallet), record versioning, fee fiat |
-| **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace con doble procedencia |
+| **v1.0.0-rc2** | ✅ Actual | Fix rate limit 429, fee $0.01, trust model docs, guías usuario + dev |
+| **v1.1** | 🔲 Planificado | `provenance_metadata` (C2PA/IPTC/XMP), batch endpoint, webhooks, doble atestación |
+| **v2** | 🔲 Planificado | Verificación model_id (#15), content pointers, identidad dual, fee fiat |
+| **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace doble procedencia |
 
-### Detalle v1.1 — Interoperabilidad
+### Issues abiertas
 
-- Campo genérico `provenance_metadata` con discriminador `standard: "c2pa" | "iptc" | "xmp" | "schema_org" | "custom"`
-- Registro de hash de manifiesto, issuer, assertions (ej. "do_not_train")
-- Doble atestación temporal (PKI timestamp + blockchain anchor)
-- 100% backward compatible (todo el campo es opcional)
+| Issue | Versión | Descripción |
+|---|---|---|
+| [#11](https://github.com/Sebas-Solver/Res-ex-Machina/issues/11) | v1.1 | `provenance_metadata` — Campo genérico de interoperabilidad |
+| [#12](https://github.com/Sebas-Solver/Res-ex-Machina/issues/12) | v1.1 | Batch endpoint — `POST /v1/records/batch` |
+| [#13](https://github.com/Sebas-Solver/Res-ex-Machina/issues/13) | v1.1 | Webhooks de estado |
+| [#14](https://github.com/Sebas-Solver/Res-ex-Machina/issues/14) | v1.1 | Doble atestación temporal |
+| [#15](https://github.com/Sebas-Solver/Res-ex-Machina/issues/15) | v2+ | Investigar verificación del `model_id` declarado |
 
 ---
 
@@ -273,7 +289,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 
 > *"El sistema proporciona datos; la interpretación es responsabilidad del usuario."*
 
-Res ex Machina **no emite juicios**. No dice si algo es original, bueno, legal o valioso. Es un **notario técnico**: registra declaraciones firmadas y las ancla en el tiempo.
+Res ex Machina **no emite juicios**. No dice si algo es original, bueno, legal o valioso. Es un **registro técnico**: registra declaraciones firmadas y las ancla en el tiempo.
 
 Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubicua, lo que falta no es un juez, sino un **registro neutral de hechos**.
 
@@ -281,7 +297,7 @@ Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubi
 
 ## 📜 Estado actual
 
-🟢 **MVP v1.0 completado** — API funcional con 63 tests, CI/CD en GitHub Actions, 9 issues cerradas.
+🟢 **v1.0.0-rc2** — API funcional con 63 tests, CI/CD en GitHub Actions, 10 issues cerradas, 5 abiertas (v1.1/v2). Documentación completa para usuarios y desarrolladores.
 
 ---
 

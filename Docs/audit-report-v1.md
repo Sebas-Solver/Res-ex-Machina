@@ -103,11 +103,12 @@
 
 | Issue | Título | Estado | Nota |
 |-------|--------|--------|------|
-| #1–#9 | Fases v1.0 | ✅ Cerradas | Todo el MVP implementado |
-| #10 | Provenance metadata field | 🟢 Open (v1.1) | Diseño listo en `c2pa-interoperability.md` |
-| #11 | Batch endpoint | 🟢 Open (v1.1) | — |
-| #12 | Webhooks de estado | 🟢 Open (v1.1) | — |
-| #13 | Doble atestación temporal | 🟢 Open (v1.1) | — |
+| #1–#10 | Fases v1.0 + decisiones técnicas | ✅ Cerradas | Todo el MVP implementado + stack aprobado |
+| #11 | Provenance metadata field | 🟢 Open (v1.1) | Diseño listo en `c2pa-interoperability.md` |
+| #12 | Batch endpoint | 🟢 Open (v1.1) | — |
+| #13 | Webhooks de estado | 🟢 Open (v1.1) | — |
+| #14 | Doble atestación temporal | 🟢 Open (v1.1) | — |
+| #15 | Verificación model_id | 🟢 Open (v2+) | Investigación exploratoria |
 
 ---
 

@@ -7,6 +7,25 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [1.0.0-rc2] — 2026-02-12
 
+### Cambios importantes
+
+- **Fee mínimo subido** — de $0.001 a **$0.01** (~1 centavo de dólar) en `.env.example`, 4 tests, 1 script y 7 documentos
+- **Coste de spam actualizado** en threat model: 1M registros ahora cuesta $10.000 (antes $1.000)
+
+### Añadido
+
+- **Guía humana** — Sección "Cosas importantes que debes saber" con 4 aclaraciones:
+  - Wallet = identidad técnica (persona, organización o agente)
+  - `model_id` es declarativo (RxM no verifica qué modelo se ejecutó)
+  - Contenido duplicado → primer registro gana
+  - Fallos de blockchain → registro inmediato en DB, anclaje con reintentos
+- **Guía técnica** — Sección "Trust Model & Declarative Fields":
+  - Identity model (1 wallet por agente recomendado)
+  - Tabla de campos verificados vs declarativos con nivel de confianza
+  - Recomendaciones para integradores
+- **Guía humana** — Posibilidad futura de almacenamiento descentralizado (IPFS) mencionada en FAQ
+- **GitHub Issue #15** — Investigar verificación/corroboración del `model_id` (v2+)
+
 ### Corregido
 
 - **Rate limit 429 bug** — `@fastify/rate-limit` con `config.rateLimit` por ruta pasa un objeto plano (no un `Error`) al handler. El `apiErrorHandler` ahora detecta estos objetos y devuelve 429 con formato correcto
