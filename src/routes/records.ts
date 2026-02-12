@@ -84,37 +84,41 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         // 2. Verificar firma EIP-712
         await verifyPoGSignature(pog_bundle);
 
-        // 3. Check idempotencia — content_hash ya existe?
-        const existingByHash = await db
-            .select({ recordId: records.recordId })
-            .from(records)
-            .where(eq(records.contentHash, pog_bundle.content_hash))
-            .limit(1);
+        // 3-5. Paralelizar checks independientes:
+        //   - content_hash duplicado (DB)
+        //   - wallet+nonce duplicado (DB)
+        //   - fee verified on-chain (RPC)
+        // Son independientes entre sí → Promise.all ahorra ~4s de latencia.
+        // Race conditions protegidas por UNIQUE constraints en DB (INSERT falla si hay conflicto).
+        const [existingByHash, existingByNonce] = await Promise.all([
+            // Check content_hash único
+            db.select({ recordId: records.recordId })
+                .from(records)
+                .where(eq(records.contentHash, pog_bundle.content_hash))
+                .limit(1),
+            // Check nonce único por wallet
+            db.select({ recordId: records.recordId })
+                .from(records)
+                .where(
+                    and(
+                        eq(records.agentWallet, pog_bundle.agent_wallet),
+                        eq(records.nonce, pog_bundle.nonce),
+                    ),
+                )
+                .limit(1),
+            // Verificar fee on-chain (tx confirmada, monto, destinatario, reciente)
+            verifyFee(input.fee_tx_hash),
+        ]);
 
         if (existingByHash.length > 0) {
             throw duplicateContentHash();
         }
 
-        // 4. Check nonce duplicado — misma wallet + mismo nonce?
-        const existingByNonce = await db
-            .select({ recordId: records.recordId })
-            .from(records)
-            .where(
-                and(
-                    eq(records.agentWallet, pog_bundle.agent_wallet),
-                    eq(records.nonce, pog_bundle.nonce),
-                ),
-            )
-            .limit(1);
-
         if (existingByNonce.length > 0) {
             throw duplicateNonce();
         }
 
-        // 5. Verificar fee on-chain
-        await verifyFee(input.fee_tx_hash);
-
-        // 6. Check fee_tx_hash no reusado
+        // 6. Check fee_tx_hash no reusado (depende de que verifyFee haya pasado)
         const existingByFee = await db
             .select({ recordId: records.recordId })
             .from(records)
@@ -139,23 +143,45 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         );
 
         // 9. INSERT en DB
-        await db.insert(records).values({
-            recordId,
-            contentHash: pog_bundle.content_hash,
-            contentType: input.content_type ?? null,
-            visibility: input.visibility,
-            pogBundle: pog_bundle,
-            nonce: pog_bundle.nonce,
-            agentWallet: pog_bundle.agent_wallet,
-            state: 'pending_anchor',
-            createdAt,
-            receiptHash,
-            tags: input.tags,
-            externalRef: input.external_ref ?? null,
-            feeAmount: input.fee_amount.toFixed(8),
-            feeCurrency: input.fee_currency,
-            feeTxHash: input.fee_tx_hash,
-        });
+        // Protegido por UNIQUE constraints: si una race condition pasó los checks
+        // simultáneamente, el INSERT falla con error 23505 → capturamos y devolvemos 409.
+        try {
+            await db.insert(records).values({
+                recordId,
+                contentHash: pog_bundle.content_hash,
+                contentType: input.content_type ?? null,
+                visibility: input.visibility,
+                pogBundle: pog_bundle,
+                nonce: pog_bundle.nonce,
+                agentWallet: pog_bundle.agent_wallet,
+                state: 'pending_anchor',
+                createdAt,
+                receiptHash,
+                tags: input.tags,
+                externalRef: input.external_ref ?? null,
+                feeAmount: input.fee_amount.toFixed(8),
+                feeCurrency: input.fee_currency,
+                feeTxHash: input.fee_tx_hash,
+            });
+        } catch (dbError: unknown) {
+            // PostgreSQL UNIQUE violation → error 23505
+            const pgError = dbError as { code?: string; constraint_name?: string; detail?: string };
+            if (pgError.code === '23505') {
+                const detail = (pgError.detail ?? pgError.constraint_name ?? '').toLowerCase();
+                if (detail.includes('content_hash')) {
+                    throw duplicateContentHash();
+                }
+                if (detail.includes('wallet_nonce') || detail.includes('uq_wallet_nonce')) {
+                    throw duplicateNonce();
+                }
+                if (detail.includes('fee_tx_hash')) {
+                    throw feeTxReused();
+                }
+                // UNIQUE desconocido — devolver conflicto genérico
+                throw duplicateContentHash();
+            }
+            throw dbError; // Re-lanzar errores no esperados
+        }
 
         // 10. Encolar anchor job
         await enqueueAnchorJob(recordId, receiptHash);

@@ -50,38 +50,48 @@ export interface FeeVerificationResult {
  * @throws ApiError 402 con error específico según el check que falle
  */
 export async function verifyFee(feeTxHash: string): Promise<FeeVerificationResult> {
-    // 1. Obtener la transacción
+    // Política v1: exigimos tx confirmada (mined) para considerar fee verificado.
+    // Usamos Promise.all para paralelizar las 2 RPC calls necesarias:
+    //   - getTransaction: para obtener value y recipient
+    //   - getTransactionReceipt: para confirmar que está minada (+ blockNumber)
+
     let tx;
+    let receipt;
+
     try {
-        tx = await l2Client.getTransaction({ hash: feeTxHash as Hex });
+        [tx, receipt] = await Promise.all([
+            l2Client.getTransaction({ hash: feeTxHash as Hex }),
+            l2Client.getTransactionReceipt({ hash: feeTxHash as Hex }),
+        ]);
     } catch {
-        throw feeNotVerified('Transaction not found on L2');
+        // Si receipt no existe → tx pendiente o inexistente
+        throw feeNotVerified('Transaction not found or not yet confirmed on L2');
     }
 
-    if (!tx) {
-        throw feeNotVerified('Transaction not found on L2');
+    if (!tx || !receipt) {
+        throw feeNotVerified('Transaction not found or not yet confirmed on L2');
     }
 
-    // 2. Verificar que está confirmada (tiene blockNumber)
-    if (!tx.blockNumber) {
-        throw feeNotVerified('Transaction is not yet confirmed');
+    // 1. Verificar que la tx fue exitosa (status 'success')
+    if (receipt.status !== 'success') {
+        throw feeNotVerified('Transaction failed on-chain');
     }
 
-    // 3. Verificar monto >= fee mínimo
+    // 2. Verificar monto >= fee mínimo
     const txValueEth = parseFloat(formatEther(tx.value));
     if (txValueEth < env.FEE_MINIMUM_AMOUNT) {
         throw feeInsufficient();
     }
 
-    // 4. Verificar destinatario
+    // 3. Verificar destinatario
     if (tx.to?.toLowerCase() !== env.FEE_RECEIVER_ADDRESS.toLowerCase()) {
         throw feeWrongRecipient();
     }
 
-    // 5. Verificar que la tx es reciente (<=24h)
-    // Obtener el bloque para saber el timestamp
-    const block = await l2Client.getBlock({ blockNumber: tx.blockNumber });
-    const txTimestamp = Number(block.timestamp) * 1000; // block.timestamp es en segundos
+    // 4. Verificar que la tx es reciente (<=24h)
+    // receipt.blockNumber nos da el bloque; necesitamos el timestamp
+    const block = await l2Client.getBlock({ blockNumber: receipt.blockNumber });
+    const txTimestamp = Number(block.timestamp) * 1000;
     const now = Date.now();
 
     if (now - txTimestamp > FEE_TX_MAX_AGE_MS) {
@@ -92,6 +102,6 @@ export async function verifyFee(feeTxHash: string): Promise<FeeVerificationResul
         verified: true,
         amount: formatEther(tx.value),
         recipient: tx.to as string,
-        blockNumber: tx.blockNumber,
+        blockNumber: receipt.blockNumber,
     };
 }

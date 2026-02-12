@@ -105,20 +105,62 @@ export function apiErrorHandler(
         return reply.status(error.statusCode).send(error.toJSON());
     }
 
-    // Errores de Fastify (validación, content-type, etc.)
+    // Errores de Fastify (validación, content-type, rate-limit, body-limit, etc.)
     const fastifyError = error as Error & { statusCode?: number };
     if (typeof fastifyError.statusCode === 'number') {
         const statusCode = fastifyError.statusCode;
+
+        // Rate limit: devolver 429 con formato consistente
+        if (statusCode === 429) {
+            return reply.status(429).send({
+                error: {
+                    code: 'rate_limit_exceeded',
+                    message: fastifyError.message,
+                },
+            });
+        }
+
+        // Body too large: 413
+        if (statusCode === 413) {
+            return reply.status(413).send({
+                error: {
+                    code: 'payload_too_large',
+                    message: fastifyError.message,
+                },
+            });
+        }
+
         return reply.status(statusCode).send({
             error: {
                 code: statusCode === 415 ? 'unsupported_media_type' : 'invalid_payload',
-                message: error.message,
+                message: fastifyError.message,
             },
         });
     }
 
+    // Rate limit response objects from @fastify/rate-limit route-level config.
+    // When using config.rateLimit on a route, the plugin passes the errorResponseBuilder
+    // result as a plain object { error: { code, message } } — NOT an Error instance.
+    // It has no name, statusCode, or message on the top level, only an 'error' key.
+    const plainObj = error as unknown as Record<string, unknown>;
+    if (
+        plainObj.constructor === Object &&
+        typeof plainObj.error === 'object' &&
+        plainObj.error !== null &&
+        (plainObj.error as Record<string, unknown>).code === 'rate_limit_exceeded'
+    ) {
+        return reply.status(429).send(plainObj);
+    }
+
     // Error no esperado — nunca exponer detalles técnicos
-    console.error('Unhandled error:', error);
+    console.error('Unhandled error:', {
+        name: error.name,
+        message: error.message,
+        statusCode: (error as unknown as { statusCode?: number }).statusCode,
+        code: (error as unknown as { code?: string }).code,
+        constructor: error.constructor?.name,
+        keys: Object.keys(error),
+    });
     return reply.status(500).send({
         error: {
             code: 'internal_error',
