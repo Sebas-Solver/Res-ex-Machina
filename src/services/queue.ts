@@ -3,12 +3,15 @@ import { env } from '../config/env.js';
 
 /**
  * Conexión Redis para BullMQ.
- * Parseamos la URL de Redis para extraer host y puerto.
+ * Parseamos la URL de Redis para extraer host, puerto, password y TLS.
+ * Upstash usa rediss:// (TLS) + password en la URL.
  */
 const redisUrl = new URL(env.REDIS_URL);
 const redisConnection = {
     host: redisUrl.hostname,
     port: parseInt(redisUrl.port || '6379', 10),
+    password: redisUrl.password || undefined,
+    tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
     maxRetriesPerRequest: null as null, // Requerido por BullMQ
 };
 

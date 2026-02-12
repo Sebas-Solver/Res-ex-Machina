@@ -39,6 +39,8 @@ const worker = new Worker<AnchorJobData>(
         connection: {
             host: redisUrl.hostname,
             port: parseInt(redisUrl.port || '6379', 10),
+            password: redisUrl.password || undefined,
+            tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
             maxRetriesPerRequest: null,
         },
         concurrency: 3, // Procesar hasta 3 anchors en paralelo
