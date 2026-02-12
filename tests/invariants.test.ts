@@ -274,6 +274,7 @@ describe('INV-012: Fee verification', () => {
 describe('INV-014: Nonce unique', () => {
     it('POST con nonce duplicado por wallet → 409', async () => {
         mockVerifyPoGSignature.mockResolvedValue(undefined);
+        mockVerifyFee.mockResolvedValue({ verified: true, amount: '0.01', recipient: '0x...', blockNumber: 1n });
         // Primera query (content_hash) → no existe
         // Segunda query (nonce) → ya existe
         let queryCount = 0;
@@ -305,6 +306,7 @@ describe('INV-014: Nonce unique', () => {
 describe('INV-016: Content hash unique', () => {
     it('POST con content_hash duplicado → 409', async () => {
         mockVerifyPoGSignature.mockResolvedValue(undefined);
+        mockVerifyFee.mockResolvedValue({ verified: true, amount: '0.01', recipient: '0x...', blockNumber: 1n });
         // Primera query (content_hash) → ya existe
         let queryCount = 0;
         mockLimit.mockImplementation(() => {
@@ -382,6 +384,8 @@ describe('Invariantes GET', () => {
             anchorRetries: 0,
             anchoredAt: new Date(),
         };
+        // Ensure mockLimit returns the record for GET queries
+        mockLimit.mockImplementation(() => [mockRecord]);
         mockSelectResults = [mockRecord];
 
         const res = await app.inject({
@@ -391,6 +395,10 @@ describe('Invariantes GET', () => {
 
         expect(res.statusCode).toBe(200);
         expect(res.json().record_id).toBeDefined();
+
+        // Reset
+        mockLimit.mockImplementation(() => mockSelectResults);
+        mockSelectResults = [];
     });
 
     it('GET record inexistente → 404', async () => {

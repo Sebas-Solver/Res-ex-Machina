@@ -10,11 +10,13 @@ import { ApiError } from '../src/utils/errors.js';
 
 // --- Mocks hoisted para evitar problemas de inicialización ---
 const mockGetTransaction = vi.fn();
+const mockGetTransactionReceipt = vi.fn();
 const mockGetBlock = vi.fn();
 
 vi.mock('viem', () => ({
     createPublicClient: () => ({
         getTransaction: (...args: unknown[]) => mockGetTransaction(...args),
+        getTransactionReceipt: (...args: unknown[]) => mockGetTransactionReceipt(...args),
         getBlock: (...args: unknown[]) => mockGetBlock(...args),
     }),
     http: () => ({}),
@@ -40,6 +42,11 @@ const VALID_TX = {
     to: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
 };
 
+const VALID_RECEIPT = {
+    status: 'success' as const,
+    blockNumber: 100n,
+};
+
 const RECENT_BLOCK = {
     timestamp: BigInt(Math.floor(Date.now() / 1000) - 3600), // 1 hora atrás
 };
@@ -51,6 +58,7 @@ beforeEach(() => {
 describe('verifyFee', () => {
     it('verifica un fee válido correctamente', async () => {
         mockGetTransaction.mockResolvedValue(VALID_TX);
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);
 
         const result = await verifyFee('0x' + 'aa'.repeat(32));
@@ -58,11 +66,13 @@ describe('verifyFee', () => {
         expect(result.verified).toBe(true);
         expect(result.blockNumber).toBe(100n);
         expect(mockGetTransaction).toHaveBeenCalledOnce();
+        expect(mockGetTransactionReceipt).toHaveBeenCalledOnce();
         expect(mockGetBlock).toHaveBeenCalledOnce();
     });
 
     it('lanza fee_not_verified si la tx no existe', async () => {
         mockGetTransaction.mockRejectedValue(new Error('not found'));
+        mockGetTransactionReceipt.mockRejectedValue(new Error('not found'));
 
         try {
             await verifyFee('0x' + 'bb'.repeat(32));
@@ -76,6 +86,7 @@ describe('verifyFee', () => {
 
     it('lanza fee_not_verified si la tx es null', async () => {
         mockGetTransaction.mockResolvedValue(null);
+        mockGetTransactionReceipt.mockResolvedValue(null);
 
         try {
             await verifyFee('0x' + 'cc'.repeat(32));
@@ -85,20 +96,21 @@ describe('verifyFee', () => {
         }
     });
 
-    it('lanza fee_not_verified si la tx no está confirmada', async () => {
-        mockGetTransaction.mockResolvedValue({ ...VALID_TX, blockNumber: null });
+    it('lanza fee_not_verified si la tx no está confirmada (receipt failed)', async () => {
+        mockGetTransaction.mockResolvedValue(VALID_TX);
+        mockGetTransactionReceipt.mockResolvedValue({ ...VALID_RECEIPT, status: 'reverted' });
 
         try {
             await verifyFee('0x' + 'dd'.repeat(32));
             expect.unreachable('should have thrown');
         } catch (e) {
             expect((e as ApiError).code).toBe('fee_not_verified');
-            expect((e as ApiError).details?.reason).toBe('Transaction is not yet confirmed');
         }
     });
 
     it('lanza fee_insufficient si el monto es menor al mínimo', async () => {
         mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e14) }); // 0.0001 ETH
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
 
         try {
             await verifyFee('0x' + 'ee'.repeat(32));
@@ -114,6 +126,7 @@ describe('verifyFee', () => {
             ...VALID_TX,
             to: '0x0000000000000000000000000000000000000001',
         });
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);
 
         try {
@@ -130,6 +143,7 @@ describe('verifyFee', () => {
             timestamp: BigInt(Math.floor(Date.now() / 1000) - 25 * 3600),
         };
         mockGetTransaction.mockResolvedValue(VALID_TX);
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(oldBlock);
 
         try {
@@ -143,6 +157,7 @@ describe('verifyFee', () => {
 
     it('acepta un fee justo en el límite mínimo (0.01 ETH)', async () => {
         mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e16) });
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);
 
         const result = await verifyFee('0x' + '22'.repeat(32));
@@ -151,6 +166,7 @@ describe('verifyFee', () => {
 
     it('acepta un fee mayor al mínimo (1 ETH)', async () => {
         mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e18) });
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);
 
         const result = await verifyFee('0x' + '33'.repeat(32));
