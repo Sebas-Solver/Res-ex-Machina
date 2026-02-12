@@ -1,26 +1,26 @@
 # Res ex Machina — Guía para Humanos
 
-> *"Cosa hecha por la máquina"* — Un registro donde las IAs dejan constancia de lo que crean.
+> * Significa en latin "Cosa hecha por la máquina"* — Un registro donde las IAs dejan constancia de lo que crean.
 
 ---
 
 ## ¿Qué es Res ex Machina?
 
-Imagina un **notario digital para la inteligencia artificial**. 
+Imagina un **registro de obras digitales para la inteligencia artificial**. 
 
 Cuando una IA genera algo — un texto, una imagen, un código, una canción — no queda constancia verificable de quién lo creó, cuándo, ni bajo qué condiciones. Res ex Machina (RxM) resuelve exactamente eso.
 
-RxM es un **registro público, neutral e inmutable** donde los agentes de IA (o las personas que los usan) pueden dejar un sello oficial de que "esta IA generó esto, en este momento, de esta manera". Como un acta notarial, pero automática y para máquinas.
+RxM es un **registro público, neutral e inmutable** donde los agentes de IA (o las personas que los usan) pueden dejar un sello técnico verificable de que "esta IA generó esto, en este momento, de esta manera". Como un certificado registral, pero automática y para máquinas.
 
-### La analogía del sello notarial
+### La analogía del certificado registral
 
-| Notaría tradicional | Res ex Machina |
+| Notaría/registro tradicional | Res ex Machina |
 |---------------------|----------------|
-| Vas al notario con un documento | Tu IA envía los datos del output a RxM |
-| El notario pone un sello con fecha | RxM genera un receipt con timestamp inmutable |
-| El sello queda en los libros del notario | El registro queda anclado en blockchain |
+| Vas al notario/registro con un documento | Tu IA envía los datos del output a RxM |
+| El notario/registrador pone un sello con fecha | RxM genera un receipt con timestamp inmutable |
+| El sello queda en los libros del notario/registro | El registro queda anclado en blockchain |
 | Puedes pedir una copia certificada | Puedes exportar el receipt verificable |
-| No puedes borrar un acta notarial | No se puede borrar un registro de RxM |
+| No puedes borrar un acta notarial o certificado registral | No se puede borrar un registro de RxM |
 
 ---
 
@@ -79,11 +79,11 @@ El proceso tiene 4 pasos:
 |----------|--------|----------|
 | **Hash** | Huella digital de un archivo. Un código único que identifica el contenido sin revelar el contenido | Como una huella dactilar: identifica sin mostrar a la persona |
 | **Wallet** | Identidad técnica digital. Un par de claves criptográficas | Como un DNI electrónico para máquinas |
-| **Firma EIP-712** | Firma digital estandarizada que demuestra quién envió el registro | Como una firma notarizada |
-| **Fee** | Tasa simbólica que se paga por cada registro (anti-spam) | Como una tasa notarial |
-| **Receipt** | El comprobante que recibes después de registrar | Como el acta notarial sellada |
-| **Anchoring** | El proceso de grabar el registro en blockchain | Como depositar el acta en un archivo público permanente |
-| **PoG (Proof of Generation)** | El "paquete de prueba" con todos los datos de la generación | Como el expediente completo del acta |
+| **Firma EIP-712** | Firma digital estandarizada que demuestra quién envió el registro | Como la firma electrónica de un documento |
+| **Fee** | Tasa simbólica que se paga por cada registro (anti-spam) | Como una tasa administrativa mínima |
+| **Receipt** | El comprobante que recibes después de registrar | Como un justificante de registro sellado |
+| **Anchoring** | El proceso de grabar el registro en blockchain | Como archivar el justificante en un registro público permanente |
+| **PoG (Proof of Generation)** | El "paquete de prueba" con todos los datos de la generación | Como el expediente técnico completo del registro |
 | **Blockchain** | Base de datos pública e inmutable compartida por miles de ordenadores | Como un libro contable que nadie puede alterar |
 
 ---
@@ -127,7 +127,7 @@ Imagina que tienes un agente de IA que genera informes. Quieres que cada informe
 
 **Qué significa:** El registro se guardó correctamente, pero todavía no se grabó en blockchain.
 
-**¿Es grave?** No. Tu registro ya existe y es válido. El anclaje en blockchain se hace en segundo plano y puede tardar de 1 a 5 minutos. Es como si el notario ya te dio el acta pero aún no la archivó en el registro central.
+**¿Es grave?** No. Tu registro ya existe y es válido. El anclaje en blockchain se hace en segundo plano y puede tardar de 1 a 5 minutos. El registro ya se creó, simplemente falta archivarlo en blockchain para hacerlo permanente.
 
 **Qué hacer:** Espera unos minutos y vuelve a consultar. Si tras 30 minutos sigue en `pending_anchor`, podría haber un problema con la conexión a blockchain. El sistema intentará hasta 5 veces automáticamente.
 
@@ -177,7 +177,7 @@ Imagina que tienes un agente de IA que genera informes. Quieres que cada informe
 
 ### 6. "El registro no se puede borrar"
 
-**Es así por diseño.** Los registros en RxM son permanentes (inmutables). No se pueden editar ni borrar. Es como un acta notarial: una vez firmada, existe para siempre.
+**Es así por diseño.** Los registros en RxM son permanentes (inmutables). No se pueden editar ni borrar. Una vez creado y anclado en blockchain, el registro existe de forma independiente.
 
 Si registraste algo por error, el registro seguirá existiendo. Sin embargo, como RxM solo guarda la huella digital (no el contenido), no hay datos sensibles expuestos.
 
@@ -191,8 +191,8 @@ Si registraste algo por error, el registro seguirá existiendo. Sin embargo, com
 ### ¿Cuánto cuesta?
 La tasa actual es de **~$0.001 por registro** (una décima de centavo). Se paga en criptomoneda en la red blockchain. Es un coste simbólico para evitar spam.
 
-### ¿Y si RxM desaparece?
-Tus registros están anclados en **blockchain pública**. Incluso si RxM deja de existir, las pruebas siguen ahí, verificables por cualquiera con acceso a la blockchain.
+### ¿Y si RxM deja de estar disponible?
+El anclaje en blockchain permite verificación independiente, incluso sin depender del servidor original. Los registros anclados en la blockchain pública pueden ser verificados por cualquier persona con acceso a esa blockchain y al receipt exportado, sin necesidad de que RxM esté operativo.
 
 ### ¿Puede alguien alterar un registro?
 **No.** Una vez registrado y anclado en blockchain, la información es inmutable. Ni siquiera los administradores de RxM pueden modificar un registro existente.
@@ -205,6 +205,13 @@ En principio sí, está diseñado para registrar outputs de agentes de IA. Pero 
 
 ### ¿Necesito saber programar para usar RxM?
 Para la **v1.0, sí** — necesitas interactuar con la API mediante código. En futuras versiones habrá una interfaz visual (dashboard) más accesible. Sin embargo, la idea es que los **agentes de IA** usen RxM automáticamente, sin que el usuario humano tenga que hacer nada manualmente.
+
+### ¿RxM es una notaría? ¿Sustituye funciones notariales?
+**No.** RxM no es una notaría, ni un registro público oficial, ni sustituye ninguna función notarial o registral. No tiene la condición de fedatario público, no otorga fe pública, y no produce documentos con valor legal equivalente a un acta notarial.
+
+RxM es un **servicio técnico privado** que genera evidencia verificable: registra hechos técnicos (quién firmó qué, cuándo, con qué proceso) y los ancla en blockchain para hacerlos independientes del propio servicio. Esa evidencia técnica puede ser útil como **medio probatorio** complementario en determinados contextos, pero su valoración legal dependerá siempre de la jurisdicción, el contexto y la calificación que le dé un tribunal o autoridad competente.
+
+En resumen: RxM genera **pruebas técnicas**, no **actos jurídicos**.
 
 ---
 
@@ -238,4 +245,4 @@ Un registro pasa por estos estados:
 
 ## Resumen en una frase
 
-> **Res ex Machina es un notario digital para la IA:** registra, sella y certifica qué generó cada IA, cuándo y cómo, de forma permanente y verificable.
+> **Res ex Machina es un registro técnico para la IA:** registra, sella y certifica qué generó cada IA, cuándo y cómo, de forma permanente y verificable.

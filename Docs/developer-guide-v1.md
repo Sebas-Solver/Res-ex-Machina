@@ -1,0 +1,658 @@
+# Res ex Machina — Developer Guide (v1.0)
+
+> Technical integration guide for software developers and AI agent builders.
+
+---
+
+## Overview
+
+**Res ex Machina (RxM)** is a REST API for registering verifiable Proof of Generation (PoG) records for AI-generated content. Each record is signed with EIP-712, verified on-chain via fee payment, and anchored to an EVM-compatible L2 blockchain.
+
+### Tech Stack
+
+| Component | Technology | Version |
+|-----------|-----------|---------|
+| API Framework | Fastify | ^5.2.2 |
+| Language | TypeScript | ^5.8.3 |
+| Database | PostgreSQL | 16 |
+| ORM | Drizzle ORM | ^0.39.3 |
+| Queue | BullMQ + Redis 7 | ^5.52.1 |
+| Blockchain | viem (EVM L2) | ^2.25.3 |
+| Validation | Zod | ^3.25.3 |
+| Security | @fastify/helmet, @fastify/rate-limit, @fastify/cors | latest |
+
+### Architecture
+
+```
+Client (AI Agent)
+  │
+  │  1. Pay fee on L2 → get tx_hash
+  │  2. Build PoG bundle → sign EIP-712
+  │  3. POST /v1/records
+  │
+  ▼
+┌─────────────────────────────┐
+│         Fastify API         │
+│  • Zod validation           │
+│  • EIP-712 verify (viem)    │
+│  • Fee verification (L2)    │
+│  • PostgreSQL INSERT        │
+│  • Enqueue anchor job       │
+└──────────┬──────────────────┘
+           │
+     ┌─────┴─────┐
+     ▼           ▼
+┌─────────┐ ┌──────────────┐
+│ Postgres│ │ BullMQ/Redis │
+│ records │ │ anchor queue │
+└─────────┘ └──────┬───────┘
+                   │
+                   ▼
+            ┌────────────┐
+            │ Anchor     │
+            │ Worker     │
+            │ (viem L2)  │
+            └────────────┘
+```
+
+---
+
+## API Reference
+
+**Base URL:** `http://localhost:3000/v1` (dev) | `https://api.resexmachina.xyz/v1` (prod, TBD)
+
+### Endpoints
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/records` | EIP-712 signature | Create a new PoG record |
+| `GET` | `/records/:id` | None | Get record by UUID |
+| `GET` | `/records/verify?content_hash=` | None | Verify record exists by hash |
+| `GET` | `/records/:id/export` | None | Export verifiable receipt (JSON) |
+| `GET` | `/health` | None | System health check |
+| `DELETE` | `/records/:id` | — | Always returns 405 (immutable) |
+
+### Rate Limits
+
+| Scope | Limit | Window |
+|-------|-------|--------|
+| Global (all endpoints) | 100 req | 1 min |
+| POST /records (per wallet) | 10 req | 1 min |
+
+---
+
+## Integration Flow
+
+### Step 1: Pay the fee on L2
+
+Send a native token transfer to the `fee_receiver_address` on the configured L2 chain.
+
+```typescript
+import { createWalletClient, http, parseEther } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+import { polygonAmoy } from 'viem/chains'; // or your L2 chain
+
+const account = privateKeyToAccount('0xYOUR_PRIVATE_KEY');
+
+const walletClient = createWalletClient({
+  account,
+  chain: polygonAmoy, // L2 chain
+  transport: http('https://rpc-url'),
+});
+
+const feeTxHash = await walletClient.sendTransaction({
+  to: '0xFEE_RECEIVER_ADDRESS',    // provided by RxM
+  value: parseEther('0.001'),       // >= minimum fee
+});
+
+// Wait for confirmation
+const publicClient = createPublicClient({ chain: polygonAmoy, transport: http() });
+await publicClient.waitForTransactionReceipt({ hash: feeTxHash });
+```
+
+> **Important:** Each `fee_tx_hash` can only be used once. One fee = one record. The fee transaction must be confirmed and less than 24 hours old.
+
+### Step 2: Build the PoG bundle and sign with EIP-712
+
+```typescript
+import { createHash } from 'node:crypto';
+
+// 1. Hash your content
+const content = Buffer.from('Your AI-generated output here');
+const contentHash = 'sha256:' + createHash('sha256').update(content).digest('hex');
+
+// 2. Build the PoG bundle
+const nonce = crypto.randomUUID(); // unique per request
+
+const pogBundle = {
+  schema_version: 'pog-v1',
+  content_hash: contentHash,
+  agent_wallet: account.address,
+  timestamp: new Date().toISOString(),
+  nonce,
+  generation_process: {
+    type: 'text',
+    human_intervention: 'none',
+    pipeline_steps: ['gpt-4o'],
+  },
+  model: 'gpt-4o-2024-08-06',
+  runtime: 'node-22.x',
+  signature: '', // filled below
+};
+
+// 3. Sign with EIP-712
+const domain = {
+  name: 'ResExMachina',
+  version: '1',
+  chainId: 0n,
+  verifyingContract: '0x0000000000000000000000000000000000000000' as const,
+};
+
+const types = {
+  PoGBundle: [
+    { name: 'schema', type: 'string' },
+    { name: 'content_hash', type: 'string' },
+    { name: 'agent_wallet', type: 'address' },
+    { name: 'model_id', type: 'string' },
+    { name: 'runtime_id', type: 'string' },
+    { name: 'process_type', type: 'string' },
+    { name: 'human_intervention_level', type: 'uint8' },
+    { name: 'pipeline_steps', type: 'uint16' },
+    { name: 'timestamp', type: 'string' },
+    { name: 'nonce', type: 'string' },
+  ],
+};
+
+const message = {
+  schema: 'pog.v1',
+  content_hash: contentHash,
+  agent_wallet: account.address,
+  model_id: 'openai:gpt-4o:2024-08-06',
+  runtime_id: 'sha256:0',
+  process_type: 'direct',
+  human_intervention_level: 0,
+  pipeline_steps: 1,
+  timestamp: pogBundle.timestamp,
+  nonce,
+};
+
+const signature = await walletClient.signTypedData({
+  domain,
+  types,
+  primaryType: 'PoGBundle',
+  message,
+});
+
+pogBundle.signature = signature;
+```
+
+### Step 3: POST to the API
+
+```typescript
+const response = await fetch('http://localhost:3000/v1/records', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    content_hash: contentHash,
+    pog_bundle: pogBundle,
+    fee_tx_hash: feeTxHash,
+    content_type: 'text/plain',       // optional
+    visibility: 'proof_only',         // default
+    tags: ['gpt-4o', 'report'],       // optional, max 10
+  }),
+});
+
+const record = await response.json();
+// record.record_id → UUID v7
+// record.state → 'pending_anchor' (will become 'anchored')
+// record.receipt_hash → SHA-256 of the receipt
+```
+
+### Step 4: Verify and export
+
+```typescript
+// Verify by content hash
+const verify = await fetch(
+  `http://localhost:3000/v1/records/verify?content_hash=${contentHash}`
+);
+const found = await verify.json(); // 200 if exists, 404 if not
+
+// Get by ID
+const get = await fetch(`http://localhost:3000/v1/records/${record.record_id}`);
+const detail = await get.json();
+
+// Export receipt (verifiable offline)
+const receipt = await fetch(
+  `http://localhost:3000/v1/records/${record.record_id}/export`
+);
+const exportData = await receipt.json();
+// exportData.schema → 'rex.receipt.v1'
+// exportData.receipt_hash → deterministic SHA-256
+```
+
+---
+
+## Request/Response Schemas
+
+### POST /v1/records — Request body
+
+```json
+{
+  "content_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb924...",
+  "pog_bundle": {
+    "schema_version": "pog-v1",
+    "content_hash": "sha256:e3b0c44...",
+    "agent_wallet": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "timestamp": "2026-02-12T14:30:00.000Z",
+    "nonce": "unique-random-string",
+    "generation_process": {
+      "type": "text",
+      "human_intervention": "none",
+      "pipeline_steps": ["gpt-4o"]
+    },
+    "model": "gpt-4o-2024-08-06",
+    "runtime": "node-22.x",
+    "signature": "0x1234abcd...65bytes"
+  },
+  "fee_tx_hash": "0xabc123...64hex",
+  "content_type": "text/plain",
+  "visibility": "proof_only",
+  "tags": ["tag1", "tag2"],
+  "external_ref": "ipfs://Qm..."
+}
+```
+
+### 201 Created — Response
+
+```json
+{
+  "record_id": "01952abc-def0-7890-abcd-ef0123456789",
+  "content_hash": "sha256:e3b0c44...",
+  "content_type": "text/plain",
+  "visibility": "proof_only",
+  "pog_bundle": { ... },
+  "state": "pending_anchor",
+  "created_at": "2026-02-12T14:30:01.234Z",
+  "receipt_hash": "sha256:...",
+  "fee": {
+    "amount": "0.00100000",
+    "currency": "ETH",
+    "tx_hash": "0xabc123..."
+  },
+  "anchor": null,
+  "tags": ["tag1", "tag2"]
+}
+```
+
+### GET /v1/records/:id/export — Response
+
+```json
+{
+  "schema": "rex.receipt.v1",
+  "record_id": "01952abc-def0-7890-abcd-ef0123456789",
+  "content_hash": "sha256:e3b0c44...",
+  "pog_bundle": { ... },
+  "receipt_hash": "sha256:...",
+  "state": "anchored",
+  "created_at": "2026-02-12T14:30:01.234Z",
+  "anchor": {
+    "tx_hash": "0xdef456...",
+    "block": 12345678,
+    "chain_id": 31337,
+    "anchored_at": "2026-02-12T14:32:15.000Z"
+  },
+  "verification_url": "http://localhost:3000/v1/records/01952abc-def0-7890-abcd-ef0123456789"
+}
+```
+
+---
+
+## Error Handling
+
+All errors follow this format:
+
+```json
+{
+  "error": {
+    "code": "error_code",
+    "message": "Human-readable description",
+    "details": {}
+  }
+}
+```
+
+### Error Codes Reference
+
+| HTTP | Code | When |
+|------|------|------|
+| 400 | `invalid_payload` | Malformed or incomplete request body |
+| 400 | `invalid_content_hash` | Hash not matching `sha256:{64hex}` |
+| 400 | `invalid_pog_schema` | PoG bundle doesn't match v1 schema |
+| 400 | `invalid_pog_version` | `schema_version` is not `pog-v1` |
+| 400 | `invalid_tags` | Tags array > 10 items, empty strings, or wrong type |
+| 400 | `invalid_visibility` | Not one of: `proof_only`, `input_hash_only`, `content_optional` |
+| 401 | `invalid_signature` | EIP-712 signature is malformed or unverifiable |
+| 401 | `signer_mismatch` | Recovered signer ≠ declared `agent_wallet` |
+| 402 | `fee_not_verified` | Fee tx not found, unconfirmed, or failed on-chain |
+| 402 | `fee_insufficient` | Fee amount < minimum required |
+| 402 | `fee_wrong_recipient` | Fee tx `to` address doesn't match `fee_receiver_address` |
+| 402 | `fee_tx_expired` | Fee tx is older than 24 hours |
+| 402 | `fee_tx_reused` | Fee tx hash already used for another record |
+| 405 | `method_not_allowed` | DELETE on records (records are immutable) |
+| 409 | `duplicate_content_hash` | Record with this content_hash already exists |
+| 409 | `duplicate_nonce` | This nonce was already used by this wallet |
+| 413 | `payload_too_large` | Request body exceeds 64KB |
+| 429 | `rate_limit_exceeded` | Rate limit hit (see headers for reset time) |
+| 500 | `internal_error` | Unexpected error (no details exposed) |
+
+### Rate Limit Response Headers
+
+When rate-limited, the response includes:
+
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Rate limit exceeded, retry in 4 seconds",
+    "details": {
+      "max": 10,
+      "remaining": 0,
+      "reset": "4 seconds"
+    }
+  }
+}
+```
+
+---
+
+## EIP-712 Signature Specification
+
+### Domain
+
+```json
+{
+  "name": "ResExMachina",
+  "version": "1",
+  "chainId": 0,
+  "verifyingContract": "0x0000000000000000000000000000000000000000"
+}
+```
+
+> `chainId: 0` and zero-address because signatures are off-chain. This will change when on-chain contracts are deployed.
+
+### Types
+
+```json
+{
+  "PoGBundle": [
+    { "name": "schema",         "type": "string" },
+    { "name": "content_hash",   "type": "string" },
+    { "name": "agent_wallet",   "type": "address" },
+    { "name": "model_id",       "type": "string" },
+    { "name": "runtime_id",     "type": "string" },
+    { "name": "process_type",   "type": "string" },
+    { "name": "human_intervention_level", "type": "uint8" },
+    { "name": "pipeline_steps", "type": "uint16" },
+    { "name": "timestamp",      "type": "string" },
+    { "name": "nonce",          "type": "string" }
+  ]
+}
+```
+
+### Message Mapping
+
+| EIP-712 field | Source in PoG bundle |
+|---------------|---------------------|
+| `schema` | `"pog.v1"` (literal) |
+| `content_hash` | `pog_bundle.content_hash` |
+| `agent_wallet` | `pog_bundle.agent_wallet` |
+| `model_id` | `"provider:model:version"` format |
+| `runtime_id` | SHA-256 of runtime env, or `"sha256:0"` |
+| `process_type` | `generation_process.type` mapped to: `direct`, `pipeline`, `iterative`, `autonomous` |
+| `human_intervention_level` | `0-5` integer (see PoG spec) |
+| `pipeline_steps` | Count of pipeline steps |
+| `timestamp` | ISO-8601 UTC with ms |
+| `nonce` | Unique string per request |
+
+---
+
+## Fee Verification Flow
+
+The API verifies the `fee_tx_hash` against the L2 blockchain with 5 checks:
+
+```
+1. tx_exists      → getTransaction(hash) succeeds
+2. tx_confirmed   → getTransactionReceipt(hash).status === 'success'
+3. tx_amount      → tx.value >= FEE_MINIMUM_AMOUNT
+4. tx_recipient   → tx.to === FEE_RECEIVER_ADDRESS (case-insensitive)
+5. tx_recent      → block.timestamp within 24h of now
+```
+
+Additionally, `fee_tx_hash` uniqueness is enforced by a UNIQUE DB constraint — one fee tx = one record.
+
+### Fee Configuration (Environment)
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `FEE_RECEIVER_ADDRESS` | Ethereum address receiving fees | `0xf39F...2266` |
+| `FEE_MINIMUM_AMOUNT` | Minimum fee in ETH | `0.001` |
+| `L2_RPC_URL` | L2 JSON-RPC endpoint | `http://localhost:8545` |
+| `L2_CHAIN_ID` | Chain ID of the L2 | `31337` (Anvil) |
+
+---
+
+## Record States
+
+```
+pending_anchor  →  anchored       (success: tx mined on L2)
+pending_anchor  →  anchor_failed  (after 5 retries with exponential backoff)
+```
+
+| State | Meaning | Anchor data |
+|-------|---------|-------------|
+| `pending_anchor` | Record created, awaiting blockchain write | `anchor: null` |
+| `anchored` | Record permanently stored on-chain | `anchor: { tx_hash, block, chain_id, anchored_at }` |
+| `anchor_failed` | All retry attempts exhausted | `anchor_error_reason` populated |
+
+The anchor worker uses BullMQ with exponential backoff: 5s → 10s → 20s → 40s → 80s (5 attempts max, concurrency 3).
+
+---
+
+## Database Schema
+
+Main table: `records`
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `record_id` | UUID (v7) | PK | Application-generated |
+| `content_hash` | VARCHAR(128) | UNIQUE, NOT NULL, CHECK regex | `sha256:{64hex}` |
+| `content_type` | VARCHAR(64) | nullable | MIME type |
+| `visibility` | VARCHAR(32) | NOT NULL, DEFAULT 'proof_only', CHECK | Enum: proof_only, input_hash_only, content_optional |
+| `pog_bundle` | JSONB | NOT NULL | Complete PoG v1 bundle |
+| `nonce` | VARCHAR(64) | NOT NULL | Anti-replay |
+| `agent_wallet` | VARCHAR(42) | NOT NULL | EVM address |
+| `state` | VARCHAR(32) | NOT NULL, DEFAULT 'pending_anchor', CHECK | Enum: pending_anchor, anchored, anchor_failed |
+| `created_at` | TIMESTAMPTZ | NOT NULL, DEFAULT NOW() | Creation time |
+| `receipt_hash` | VARCHAR(128) | NOT NULL | SHA-256 of receipt |
+| `tags` | TEXT[] | DEFAULT '{}' | Max 10 |
+| `external_ref` | TEXT | nullable | URL/pointer |
+| `fee_amount` | NUMERIC(18,8) | NOT NULL | Fee paid |
+| `fee_currency` | VARCHAR(8) | NOT NULL | e.g. "ETH" |
+| `fee_tx_hash` | VARCHAR(66) | UNIQUE, NOT NULL | Fee payment tx |
+| `anchor_tx_hash` | VARCHAR(66) | nullable | Anchor tx |
+| `anchor_block` | BIGINT | nullable | Block number |
+| `anchor_chain_id` | INTEGER | nullable | Chain ID |
+| `anchor_error_reason` | TEXT | nullable | Error detail |
+| `anchor_retries` | INTEGER | NOT NULL, DEFAULT 0 | Retry count |
+| `anchored_at` | TIMESTAMPTZ | nullable | When anchored |
+
+### Indexes & Constraints
+
+- `UNIQUE(agent_wallet, nonce)` — anti-replay
+- `UNIQUE(content_hash)` — idempotency
+- `UNIQUE(fee_tx_hash)` — fee reuse prevention
+- `INDEX(agent_wallet)` — query by wallet
+- `INDEX(state)` — worker queries pending_anchor
+- `INDEX(created_at)` — time ordering
+- `INDEX(fee_tx_hash)` — fee lookup
+
+---
+
+## Local Development Setup
+
+### Prerequisites
+
+- Node.js 22+
+- Docker & Docker Compose
+- An Ethereum private key (for signing)
+
+### Quick Start
+
+```bash
+# 1. Clone and install
+git clone https://github.com/Sebas-Solver/Res-ex-Machina.git
+cd Res-ex-Machina
+npm install
+
+# 2. Start infrastructure (Postgres, Redis, Anvil)
+docker compose up -d
+
+# 3. Wait for healthchecks (~30s)
+docker compose ps  # all should be "healthy"
+
+# 4. Apply database schema
+npm run db:push
+
+# 5. Start API server
+npm run dev
+
+# 6. Start anchor worker (separate terminal)
+npm run worker:anchor
+
+# 7. Verify
+curl http://localhost:3000/v1/health
+```
+
+### Environment Variables (.env)
+
+```env
+# Server
+PORT=3000
+NODE_ENV=development
+LOG_LEVEL=info
+
+# Database
+DATABASE_URL=postgres://rexm:rexm_dev_password@localhost:5432/rexm
+
+# Redis
+REDIS_URL=redis://localhost:6379
+
+# Blockchain L2
+L2_RPC_URL=http://localhost:8545
+L2_CHAIN_ID=31337
+FEE_RECEIVER_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+FEE_MINIMUM_AMOUNT=0.001
+
+# Anchoring (Anvil default account #0)
+ANCHOR_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+```
+
+### Available npm Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start API (dev mode with pino-pretty) |
+| `npm run worker:anchor` | Start anchor worker |
+| `npm run check` | Run tsc type checking |
+| `npm test` | Run vitest (63 tests) |
+| `npm run db:push` | Apply schema to database |
+| `npm run alpha:happy` | Run Agent A happy path test |
+| `npm run alpha:adversarial` | Run Agent D adversarial test |
+| `npm run alpha:all` | Run both alpha tests |
+
+---
+
+## Offline Receipt Verification
+
+Receipts exported via `/records/:id/export` are self-contained and can be verified without the API:
+
+```typescript
+import { createHash } from 'node:crypto';
+import { verifyTypedData } from 'viem';
+
+// 1. Recalculate receipt_hash
+const receipt = exportedData; // from /export endpoint
+const hashPayload = JSON.stringify({
+  record_id: receipt.record_id,
+  content_hash: receipt.content_hash,
+  pog_bundle: receipt.pog_bundle,
+  created_at: receipt.created_at,
+});
+const calculatedHash = 'sha256:' + createHash('sha256')
+  .update(hashPayload)
+  .digest('hex');
+
+console.assert(calculatedHash === receipt.receipt_hash, 'Receipt hash mismatch!');
+
+// 2. Verify EIP-712 signature
+const isValid = await verifyTypedData({
+  domain: { name: 'ResExMachina', version: '1', chainId: 0n, verifyingContract: '0x0...' },
+  types: { PoGBundle: [...] }, // see EIP-712 section above
+  primaryType: 'PoGBundle',
+  message: { /* mapped fields */ },
+  signature: receipt.pog_bundle.signature,
+  address: receipt.pog_bundle.agent_wallet,
+});
+
+console.assert(isValid, 'Signature invalid!');
+
+// 3. Verify anchor on-chain (if anchored)
+if (receipt.anchor?.tx_hash) {
+  const tx = await publicClient.getTransaction({ hash: receipt.anchor.tx_hash });
+  // verify tx contains receipt_hash
+}
+```
+
+---
+
+## Security Model
+
+| Layer | Mechanism |
+|-------|-----------|
+| Identity | EVM wallets (non-custodial, agent manages own keys) |
+| Authentication | EIP-712 typed data signatures |
+| Anti-spam | Fee per record + rate limiting |
+| Anti-replay | Unique nonce per wallet (DB constraint) |
+| Idempotency | Unique content_hash (DB constraint) |
+| Fee reuse | Unique fee_tx_hash (DB constraint) |
+| Immutability | No DELETE, no UPDATE on core fields (INV-001, INV-002) |
+| Transport | HTTPS (in production) |
+| Headers | @fastify/helmet (CSP, XSS, clickjacking protection) |
+| Error safety | Never exposes stack traces, SQL, or internal paths |
+
+### Invariants
+
+| ID | Rule |
+|----|------|
+| INV-001 | Records are permanent — no DELETE |
+| INV-002 | No UPDATE on post-creation fields |
+| INV-012 | No record exists without a paid fee |
+| INV-014 | Nonce uniqueness per wallet |
+| INV-020 | Fee is verified against real on-chain tx |
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](../CHANGELOG.md) for the full release history.
+
+Current version: **v1.0.0-rc2** (2026-02-12)
+
+## Further Reading
+
+- [PoG v1 Specification](10-specs/pog-v1-spec.md) — Full schema, EIP-712 types, verification algorithm
+- [Fee Flow v1](10-specs/fee-flow-v1.md) — Fee payment and verification details
+- [Error Catalog](10-specs/error-catalog.md) — Complete error code reference
+- [OpenAPI v1](10-specs/openapi-v1.yaml) — Machine-readable API spec
+- [Runbook](runbook.md) — Operations guide for troubleshooting
+- [Alpha Test Report](alpha-test-report.md) — Test results and regression data
