@@ -114,6 +114,14 @@ const start = async () => {
     try {
         await app.listen({ port: PORT, host: '0.0.0.0' });
         app.log.info(`⚖️  Res ex Machina API listening on port ${PORT}`);
+
+        // En producción, arrancar el worker de anchoring en el mismo proceso.
+        // En desarrollo se ejecuta aparte con `npm run worker:anchor`.
+        // Import dinámico para evitar conexión Redis al cargar el módulo en tests.
+        if (process.env.NODE_ENV === 'production') {
+            await import('./workers/anchor.worker.js');
+            app.log.info('⚓ Anchor worker iniciado (inline, mismo proceso)');
+        }
     } catch (err) {
         app.log.error(err);
         process.exit(1);
