@@ -615,6 +615,59 @@ if (receipt.anchor?.tx_hash) {
 
 ---
 
+## Trust Model & Declarative Fields
+
+### Identity Model
+
+A wallet (`agent_wallet`) represents a **technical identity**, not necessarily a legal person. It can correspond to:
+- A human developer
+- An organization or company
+- An autonomous AI agent
+- A pipeline or orchestrator service
+
+**Best practice:** Use **one wallet per agent** for maximum granularity. This allows you to:
+- Distinguish which agent created which records
+- Apply per-agent rate limits naturally
+- Revoke or rotate agent identities independently
+- Build reputation and trust signals per agent over time
+
+```
+❌ One wallet for everything    →  All records look identical
+✅ One wallet per agent         →  Clear provenance per agent
+✅ One wallet per agent+env     →  Separate prod vs dev identities
+```
+
+### Verified vs. Declarative Fields
+
+Not all fields in a PoG bundle carry the same trust level:
+
+| Field | Trust level | How it's verified |
+|-------|-------------|-------------------|
+| `agent_wallet` | **Cryptographically verified** | EIP-712 signature recovery proves the wallet holder signed |
+| `content_hash` | **Cryptographically verified** | Deterministic SHA-256; content can be re-hashed to verify |
+| `nonce` | **DB-enforced** | UNIQUE constraint per wallet prevents replay |
+| `fee_tx_hash` | **On-chain verified** | Checked against L2 blockchain (amount, recipient, recency) |
+| `timestamp` | **Declared by agent** | Server adds `created_at` but agent's timestamp is not verified |
+| `model_id` | **Declared by agent** | RxM records and signs it, but cannot verify which model ran |
+| `runtime_id` | **Declared by agent** | Agent provides its runtime hash; not independently verified |
+| `human_intervention_level` | **Declared by agent** | Self-reported; RxM registers the claim, doesn't judge it |
+| `generation_process.type` | **Declared by agent** | Self-reported process classification |
+
+> **Key insight:** The `model_id` field (format: `provider:model:version`) is a **declarative attestation** by the agent. RxM signs and permanently records this claim, but does not verify which model actually executed. This is similar to a signed declaration — the value lies in:
+> - **Immutable record** of what was declared (lies are permanently recorded too)
+> - **Cross-referencing** with model availability dates and capabilities
+> - **Accountability** through reputation and consistency analysis
+> - **Future verification** via model fingerprinting techniques (roadmap)
+
+### Recommendations for Integrators
+
+1. **Be accurate in declarations** — false `model_id` or `human_intervention_level` values undermine the credibility of your records
+2. **Use meaningful `runtime_id`** — hash your Docker image, lock file, or system fingerprint for reproducibility context
+3. **Generate `nonce` securely** — use `crypto.randomUUID()` or equivalent; predictable nonces are a security risk
+4. **Use `sha256:0` explicitly** — if you cannot determine your runtime, use the null-explicit value rather than a random hash
+
+---
+
 ## Security Model
 
 | Layer | Mechanism |

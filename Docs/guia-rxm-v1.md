@@ -88,6 +88,34 @@ El proceso tiene 4 pasos:
 
 ---
 
+## Cosas importantes que debes saber
+
+### ¿Qué es una wallet exactamente?
+
+Una wallet representa una **identidad técnica**. No es necesariamente una persona: puede corresponder a una persona, una empresa, una organización, o un agente de IA autónomo.
+
+Para obtener la mayor granularidad y trazabilidad, se recomienda **usar una wallet diferente por cada agente de IA**. Así cada agente tiene su propia identidad en el registro, y puedes distinguir fácilmente qué agente generó qué contenido. Si usas una sola wallet para todo, todos los registros parecerán del mismo "autor".
+
+### ¿Puede mentir la IA sobre qué modelo usó?
+
+Sí, técnicamente puede. El campo del modelo (`model_id`) es una **afirmación declarativa** del agente. RxM la registra y la firma criptográficamente, pero **no puede verificar universalmente qué modelo se ejecutó realmente**. Funciona de forma similar a una declaración jurada: el agente afirma "yo usé GPT-4o", RxM sella esa afirmación, pero no la comprueba por ti.
+
+¿Qué valor tiene entonces? Mucho:
+- **Trazabilidad**: queda constancia de lo que el agente declaró
+- **Responsabilidad**: si un agente miente, la mentira queda registrada de forma inmutable
+- **Consistencia**: se puede cruzar con otros datos (fechas, modelos disponibles en esa fecha, etc.)
+- **Base para mejoras futuras**: estamos investigando formas de verificar o corroborar el modelo utilizado de forma más directa
+
+### ¿Y si dos IAs generan el mismo contenido?
+
+El primer registro gana. RxM registra el **hecho de que alguien envió ese hash en ese momento**, no quién fue el "primero en tener la idea". Si dos agentes generan exactamente el mismo output, solo el primero podrá registrarlo — el segundo recibirá un error de `duplicate_content_hash`. Recuerda que RxM no es un sistema de propiedad intelectual, es un registro de hechos técnicos.
+
+### ¿Y si la blockchain tiene un problema técnico?
+
+El registro se crea **inmediatamente** en la base de datos de RxM (estado `pending_anchor`). El anclaje en blockchain es un paso adicional de permanencia que ocurre en segundo plano. Si la blockchain tiene problemas temporales, tu registro seguirá existiendo en RxM; el sistema reintentará el anclaje automáticamente hasta 5 veces.
+
+---
+
 ## ¿Cómo se usa la v1.0?
 
 ### Importante: v1.0 es solo API
@@ -186,7 +214,7 @@ Si registraste algo por error, el registro seguirá existiendo. Sin embargo, com
 ## Preguntas frecuentes
 
 ### ¿RxM guarda mis archivos?
-**No.** Solo guarda la huella digital (hash). Es como guardar una huella dactilar sin guardar a la persona. Tu contenido sigue siendo tuyo y privado.
+**No.** Solo guarda la huella digital (hash). Es como guardar una huella dactilar sin guardar a la persona. Tu contenido sigue siendo tuyo y privado. Puede que en un futuro ofrezcamos la opción de guardar los archivos en un almacenamiento descentralizado como IPFS, pero no será obligatorio.
 
 ### ¿Cuánto cuesta?
 La tasa actual es de **~$0.01 por registro** (un centavo de dólar). Se paga en criptomoneda en la red blockchain. Es un coste simbólico para evitar spam.
