@@ -1,4 +1,4 @@
-# Informe de Auditoría — Res ex Machina v1.0.0-rc2
+# Informe de Auditoría — Res ex Machina v1.0.0-rc3
 
 **Fecha:** 2026-02-12  
 **Auditor:** Antigravity (skills: `production-code-audit`, `api-security-best-practices`, `blockchain-developer`)  
@@ -50,7 +50,7 @@
 
 ### ✅ Lo que está bien hecho
 
-1. **Fee verification** — 5 checks completos: tx exists, confirmed (status=success), amount ≥ minimum, recipient correcto, recency ≤24h
+1. **Fee verification** — 5 checks completos: tx exists, confirmed (status=success), amount ≥ minimum, recipient correcto, recency configurable (`FEE_TX_MAX_AGE_HOURS`, default 24h)
 2. **RPCs paralelas** — `getTransaction` + `getTransactionReceipt` en `Promise.all` (optimización rc2)
 3. **Receipt status check** — Verifica `receipt.status === 'success'` (no solo existencia)
 4. **Anchoring con reintentos** — BullMQ con backoff exponencial (5 intentos) + estado `anchor_failed`
@@ -62,7 +62,7 @@
 |---|-------------|--------|---------------|-----------|
 | B-1 | `anchorRecord` recibe `''` como 2º argumento (contenthash vacío) | Bajo | Refactorizar firma de `anchorRecord` para no requerir este argumento no usado | v1.1 |
 | B-2 | Sin gas estimation antes de anchor | Bajo | Añadir estimación de gas + alerta si > umbral para evitar tx fallidas en red congestionada | v1.1 |
-| B-3 | `FEE_TX_MAX_AGE_MS` hardcodeado (24h) | Bajo | Mover a env variable para poder ajustar sin redeploy | v1.1 |
+| B-3 | ~~`FEE_TX_MAX_AGE_MS` hardcodeado (24h)~~ | ✅ Resuelto | `FEE_TX_MAX_AGE_HOURS` configurable via env (rc3) | — |
 
 ---
 
@@ -76,14 +76,15 @@
 4. **DB schema robusto** — CHECK constraints para `state`, `visibility`, `content_hash`. Compound UNIQUE para anti-replay
 5. **Idempotencia** — UNIQUE constraints + HTTP 409 para duplicados
 6. **Estructura modular** — Separación clara: `routes/`, `services/`, `config/`, `utils/`, `workers/`, `db/`
+7. **Graceful shutdown** — App y worker cierran ordenadamente en SIGTERM/SIGINT (rc3)
 
 ### ⚠️ Observaciones
 
 | # | Observación | Riesgo | Recomendación | Prioridad |
 |---|-------------|--------|---------------|-----------|
-| Q-1 | `records.ts` tiene 349 líneas — mucha lógica en un solo handler | Bajo | Extraer validación a un middleware o service en v1.1 | v1.1 |
-| Q-2 | No hay graceful shutdown en `app.ts` | Medio | Añadir handler SIGTERM/SIGINT con `app.close()` para cerrar conexiones limpiamente | v1.1 |
-| Q-3 | Worker no tiene graceful shutdown tampoco | Medio | `worker.close()` en SIGTERM para terminar jobs en curso antes de salir | v1.1 |
+| Q-1 | ~~`records.ts` tiene 349 líneas~~ | ✅ Resuelto | Extraído `recordsService.ts` — handler de ~140 a ~30 líneas (rc3) | — |
+| Q-2 | ~~No hay graceful shutdown en `app.ts`~~ | ✅ Resuelto | SIGTERM/SIGINT drena requests, cierra BullMQ y PostgreSQL (rc3) | — |
+| Q-3 | ~~Worker no tiene graceful shutdown~~ | ✅ Resuelto | `worker.close()` en SIGTERM, termina jobs en curso (rc3) | — |
 
 ---
 
@@ -92,7 +93,7 @@
 | Documento | Estado | Acción tomada |
 |-----------|--------|---------------|
 | `alpha-test-report.md` | ✅ Al día | Actualizado con resultados rc2 (429 fix, 10/10 tests) |
-| `CHANGELOG.md` | ✅ Al día | Añadida sección rc2 sesión 2: CI improvements + fix tests |
+| `CHANGELOG.md` | ✅ Al día | Sección rc3: hardening (graceful shutdown, env, refactor) |
 | `error-catalog.md` | ✅ Al día | Ya incluía 429 `rate_limit_exceeded` |
 | `runbook.md` | ✅ Al día | 6 escenarios cubiertos, métricas correctas |
 | `README.md` | ✅ Al día | Badges CI Node 20+22, coverage v8, script `test:coverage` |
@@ -126,10 +127,11 @@
 
 ## 8. Recomendaciones para v1.1
 
-Las observaciones S-1, B-1, B-2, B-3, Q-1, Q-2, Q-3 son todas **no críticas para alpha** pero deberían priorizarse para v1.1. Las más importantes son:
+Tras el hardening rc3, las observaciones Q-1, Q-2, Q-3 y B-3 están **resueltas**. Quedan pendientes para v1.1:
 
-1. **Q-2/Q-3: Graceful shutdown** — Evita pérdida de datos si el proceso se mata durante un anchoring
-2. **S-1: KMS para private key** — Fundamental antes de producción real
-3. **Q-1: Refactor records.ts** — Crecerá con batch endpoint (#11)
+1. **S-1: KMS para private key** — Fundamental antes de producción real
+2. **S-3: Pino logger en worker** — Logs uniformes con Fastify
+3. **B-1: Refactor firma `anchorRecord`** — Eliminar 2º argumento vacío
+4. **B-2: Gas estimation** — Antes de anchor para evitar tx fallidas
 
-> **Conclusión:** El proyecto está listo para alpha privada. La calidad del código es alta, las invariantes están protegidas, y la documentación está actualizada.
+> **Conclusión:** El proyecto está en excelente estado para alpha privada. Los 4 items de calidad/robustez del audit original están resueltos (rc3). La calidad del código es alta, las invariantes están protegidas, y la documentación está actualizada.

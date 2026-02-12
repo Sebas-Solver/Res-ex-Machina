@@ -5,6 +5,40 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ---
 
+## [1.0.0-rc3] — 2026-02-12
+
+### Hardening Pre-Alpha
+
+#### Añadido
+
+- **Graceful shutdown** — `app.ts`: SIGTERM/SIGINT drena requests activas, cierra cola BullMQ y pool PostgreSQL ordenadamente
+- **Graceful shutdown worker** — `anchor.worker.ts`: SIGTERM/SIGINT deja de aceptar jobs nuevos, termina el actual, cierra limpio
+- **`FEE_TX_MAX_AGE_HOURS`** — Nueva variable de entorno configurable (default 24h), antes hardcodeada en `fee.ts`
+- **`recordsService.ts`** — Nuevo módulo con lógica de negocio extraída de `records.ts`:
+  - `validateAndParseInput()` — validación Zod con errores diferenciados
+  - `checkDuplicates()` — 3 checks DB en paralelo (content_hash, nonce, fee_tx_hash)
+  - `createRecord()` — INSERT DB + enqueue anchor + manejo UNIQUE violations
+- **Export `client`** — `db/index.ts` ahora exporta el client PostgreSQL para shutdown
+
+#### Mejorado
+
+- **POST handler simplificado** — `records.ts` reducido de 349 a 222 líneas. El handler pasa de ~140 a ~30 líneas
+- **Duplicados de fee_tx_hash** — Check movido al `Promise.all` junto con hash+nonce (antes era secuencial)
+
+#### Archivos modificados
+
+- `src/app.ts` — Shutdown function + dynamic import de `anchorQueue`
+- `src/workers/anchor.worker.ts` — Shutdown function
+- `src/db/index.ts` — Export `client`
+- `src/config/env.ts` — `FEE_TX_MAX_AGE_HOURS` (Zod, default 24)
+- `src/services/fee.ts` — Usa `env.FEE_TX_MAX_AGE_HOURS` en vez de constante
+- `src/services/recordsService.ts` — **Nuevo archivo**
+- `src/routes/records.ts` — Simplificado, usa recordsService
+- `.env.example` — Documentada nueva variable
+- `tests/fee.test.ts` — Mock actualizado con `FEE_TX_MAX_AGE_HOURS`
+
+---
+
 ## [1.0.0-rc2] — 2026-02-12
 
 ### CI / Tests — Sesión 2
