@@ -58,6 +58,8 @@ async function checkRedis(): Promise<{ status: string; latencyMs: number }> {
     const client = new Redis({
         host: redisUrl.hostname,
         port: parseInt(redisUrl.port || '6379', 10),
+        password: redisUrl.password || undefined,
+        tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
         maxRetriesPerRequest: 1,
         connectTimeout: 3000,
         lazyConnect: true,
