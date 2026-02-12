@@ -29,3 +29,6 @@ redisdata/
 
 # Logs
 *.log
+
+# TestSprite
+testsprite_tests/
