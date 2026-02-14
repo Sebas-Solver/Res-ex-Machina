@@ -1,0 +1,207 @@
+{
+    "info": {
+        "name": "Res ex Machina — API Alpha",
+        "description": "Colección completa de la API de Res ex Machina.\nBase URL: https://res-ex-machina-api.onrender.com\n\nPara endpoints GET: funcionan directamente.\nPara POST /records: necesitas firmar con EIP-712 (usa el script test-alpha.ts para el flujo completo).",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://res-ex-machina-api.onrender.com",
+            "type": "string"
+        },
+        {
+            "key": "record_id",
+            "value": "REEMPLAZA_CON_UN_RECORD_ID_REAL",
+            "type": "string"
+        },
+        {
+            "key": "content_hash",
+            "value": "sha256:REEMPLAZA_CON_UN_HASH_REAL",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "🏥 Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/v1/health",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v1",
+                        "health"
+                    ]
+                },
+                "description": "Verifica que la API, base de datos, Redis y blockchain están operativos."
+            }
+        },
+        {
+            "name": "📝 Crear registro (POST /records)",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"pog_bundle\": {\n        \"schema\": \"pog.v1\",\n        \"content_hash\": \"sha256:TU_HASH_SHA256_AQUI\",\n        \"agent_wallet\": \"0xTU_WALLET_AQUI\",\n        \"model_id\": \"gpt-4o\",\n        \"runtime_id\": \"postman-test\",\n        \"generation_process\": {\n            \"process_type\": \"direct\",\n            \"human_intervention_level\": 0,\n            \"pipeline_steps\": 1\n        },\n        \"timestamp\": \"2026-02-14T12:00:00.000Z\",\n        \"nonce\": \"tu_nonce_unico_aqui\",\n        \"signature\": \"0xTU_FIRMA_EIP712_AQUI\"\n    },\n    \"content_type\": \"text/plain\",\n    \"visibility\": \"proof_only\",\n    \"tags\": [\"test\"],\n    \"fee_amount\": 0.0002,\n    \"fee_currency\": \"ETH\",\n    \"fee_tx_hash\": \"0xTU_TX_HASH_AQUI\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/v1/records",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v1",
+                        "records"
+                    ]
+                },
+                "description": "Crea un nuevo registro de Proof of Generation.\n\n⚠️ IMPORTANTE: Este endpoint requiere:\n1. Un fee pagado previamente en Base Sepolia\n2. Una firma EIP-712 válida del pog_bundle\n\nPara el flujo completo, usa el script test-alpha.ts del repositorio."
+            }
+        },
+        {
+            "name": "📝 Crear registro + esperar anchoring",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"pog_bundle\": {\n        \"schema\": \"pog.v1\",\n        \"content_hash\": \"sha256:TU_HASH_SHA256_AQUI\",\n        \"agent_wallet\": \"0xTU_WALLET_AQUI\",\n        \"model_id\": \"gpt-4o\",\n        \"runtime_id\": \"postman-test\",\n        \"generation_process\": {\n            \"process_type\": \"direct\",\n            \"human_intervention_level\": 0,\n            \"pipeline_steps\": 1\n        },\n        \"timestamp\": \"2026-02-14T12:00:00.000Z\",\n        \"nonce\": \"tu_nonce_unico_aqui\",\n        \"signature\": \"0xTU_FIRMA_EIP712_AQUI\"\n    },\n    \"content_type\": \"text/plain\",\n    \"visibility\": \"proof_only\",\n    \"tags\": [\"test\"],\n    \"fee_amount\": 0.0002,\n    \"fee_currency\": \"ETH\",\n    \"fee_tx_hash\": \"0xTU_TX_HASH_AQUI\"\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/v1/records?wait_for_anchor=true",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v1",
+                        "records"
+                    ],
+                    "query": [
+                        {
+                            "key": "wait_for_anchor",
+                            "value": "true",
+                            "description": "Espera hasta 25s a que se complete el anchoring"
+                        }
+                    ]
+                },
+                "description": "Igual que POST /records, pero espera hasta 25 segundos a que el anchoring en blockchain se complete antes de responder.\n\nSi el anchoring no se completa a tiempo, devuelve igualmente el record con state=pending_anchor y un header Retry-After: 5."
+            }
+        },
+        {
+            "name": "🔍 Consultar registro por ID",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/v1/records/{{record_id}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v1",
+                        "records",
+                        "{{record_id}}"
+                    ]
+                },
+                "description": "Consulta los detalles de un registro por su UUID.\n\nLa respuesta incluye:\n- state_info: metadata estructurada del estado (terminal, retryable, description)\n- anchor: con explorer_url y network_name\n- fee: con explorer_url y network_name"
+            }
+        },
+        {
+            "name": "✅ Verificar por content_hash",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/v1/records/verify?content_hash={{content_hash}}",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v1",
+                        "records",
+                        "verify"
+                    ],
+                    "query": [
+                        {
+                            "key": "content_hash",
+                            "value": "{{content_hash}}",
+                            "description": "Hash SHA-256 del contenido, formato: sha256:64hex"
+                        }
+                    ]
+                },
+                "description": "Verifica si existe un registro para un contenido dado su hash.\n\nDevuelve 200 con los datos del registro si existe,\no 404 si no se encontró ningún registro con ese hash."
+            }
+        },
+        {
+            "name": "📋 Exportar receipt (completo)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/v1/records/{{record_id}}/export",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v1",
+                        "records",
+                        "{{record_id}}",
+                        "export"
+                    ]
+                },
+                "description": "Exporta el receipt verificable completo de un registro.\n\nIncluye todos los datos necesarios para verificación independiente:\n- pog_bundle con eip712_domain\n- verification metadata\n- anchor con explorer_url\n- fee con explorer_url\n- state_info"
+            }
+        },
+        {
+            "name": "📋 Exportar receipt (compacto)",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{base_url}}/v1/records/{{record_id}}/export?mode=compact",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "v1",
+                        "records",
+                        "{{record_id}}",
+                        "export"
+                    ],
+                    "query": [
+                        {
+                            "key": "mode",
+                            "value": "compact",
+                            "description": "Devuelve solo campos de verificación criptográfica"
+                        }
+                    ]
+                },
+                "description": "Export reducido con solo los campos esenciales para verificación criptográfica.\n\nOmite: fee, visibility, content_type, runtime_id, model_id.\nIdeal para agentes IA (ahorra tokens) y para compartir pruebas sin datos operacionales."
+            }
+        }
+    ]
+}

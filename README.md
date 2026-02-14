@@ -135,6 +135,15 @@ Agente IA ──────────── API REST ────────
 
 ---
 
+## 🧪 Probar la API (testers)
+
+¿Quieres probar la API sin montar el entorno de desarrollo? → **[Testing Quickstart](Docs/testing-quickstart.md)** (5 minutos)
+
+- 📋 **[Colección Postman](Docs/postman-collection.json)** — Importa en Postman y prueba todos los endpoints
+- 🔧 **[Script E2E](scripts/test-alpha.ts)** — Test automatizado (registra, ancla, verifica, exporta)
+
+---
+
 ## 🚀 Quickstart
 
 ```bash
