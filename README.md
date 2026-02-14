@@ -172,7 +172,7 @@ npm run worker:anchor    # Worker de anchoring
 | Script | Descripción |
 |---|---|
 | `npm run dev` | Servidor de desarrollo (tsx watch) |
-| `npm test` | Ejecutar 63 tests |
+| `npm test` | Ejecutar 81 tests |
 | `npm run test:coverage` | Tests con reporte de cobertura (v8) |
 | `npm run build` | Build de producción |
 | `npm run db:push` | Aplicar migraciones |
@@ -208,13 +208,18 @@ src/
 │   ├── fee.ts                # Verificación fee (5 checks)
 │   ├── queue.ts              # BullMQ job queue
 │   ├── receipt.ts            # SHA-256 receipt hash
-│   └── signature.ts          # EIP-712 verification
+│   ├── recordsService.ts     # Lógica de negocio (validar, duplicados, crear)
+│   ├── signature.ts          # EIP-712 verification
+│   └── waitForAnchor.ts      # Polling DB para esperar anchoring
 ├── utils/
 │   ├── errors.ts             # ApiError + factories
+│   ├── explorer.ts           # URLs de blockchain explorer por chain
+│   ├── stateInfo.ts          # Metadata estructurada de estados
 │   └── uuid.ts               # UUID v7
 └── workers/
     └── anchor.worker.ts      # Worker BullMQ
 tests/
+├── dx-features.test.ts
 ├── errors.test.ts
 ├── fee.test.ts
 ├── invariants.test.ts
@@ -323,7 +328,7 @@ Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubi
 
 ## 📜 Estado actual
 
-🟢 **v1.0.0-alpha.1** — API desplegada en `https://res-ex-machina-api.onrender.com`. 63 tests, CI/CD. Especificación de verificación v1.2 con vector de prueba oficial, verificador CLI, y modelo de confianza formal. 15 issues abiertas, 10 cerradas.
+🟢 **v1.0.0-alpha.2-dev** — API desplegada en `https://res-ex-machina-api.onrender.com`. 81 tests en 7 suites, CI/CD. DX improvements (wait_for_anchor, state_info, explorer_url, compact mode). Code review refactoring aplicado. 15 issues abiertas, 10 cerradas.
 
 ---
 

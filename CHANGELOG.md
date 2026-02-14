@@ -31,6 +31,22 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 - **Modo compact** — `GET /v1/records/:id/export?mode=compact` devuelve solo campos de verificación criptográfica, omitiendo fee, visibility, metadata de generación (ideal para LLMs)
 - **18 tests nuevos** — Tests unitarios para `stateInfo`, `explorer` y tests de integración para state_info, compact mode
 
+### Code Review Refactoring
+
+#### Corregido
+
+- **`anchor_failed` state metadata** — Cambiado a `terminal: true`, `retryable: false` (el worker BullMQ ya agotó sus reintentos)
+- **`feeTxReused` status code** — De 402 → 409 (semánticamente es un conflicto, no un problema de pago)
+- **Fee comparison precision** — Sustituido `parseFloat(formatEther())` por `parseEther()` con BigInt nativo (evita pérdida de precisión IEEE-754)
+- **Error handler logging** — `console.error` reemplazado por `_request.log.error()` (logs estructurados Pino)
+- **Worker import error handling** — try/catch específico para import dinámico del anchor worker (la API puede funcionar sin worker)
+
+#### Mejorado
+
+- **Health check performance** — Clientes singleton para Redis y blockchain (antes se creaban en cada llamada)
+- **Wallet privacy** — Wallet truncada en logs (`0x13bB...8a0` en vez de dirección completa)
+- **Rate limit safety** — try/catch en `keyGenerator` del rate limit por wallet + documentación del body parsing order
+
 ---
 
 ## [1.0.0-alpha.1] — 2026-02-12

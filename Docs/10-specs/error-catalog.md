@@ -44,7 +44,7 @@ Todos los errores siguen este formato JSON:
 | 402 | `fee_insufficient` | Monto del fee insuficiente | value < fee mínimo |
 | 402 | `fee_wrong_recipient` | Destinatario del fee incorrecto | to ≠ fee_receiver_address |
 | 402 | `fee_tx_expired` | Transacción de fee demasiado antigua | Tx > 24h |
-| 402 | `fee_tx_reused` | fee_tx_hash ya usado en otro record | Reutilización de pago |
+| 409 | `fee_tx_reused` | fee_tx_hash ya usado en otro record | Reutilización de pago |
 | 409 | `duplicate_content_hash` | Ya existe un record con este content_hash | Idempotencia |
 | 409 | `duplicate_nonce` | Este nonce ya fue usado por esta wallet | Anti-replay |
 | 429 | `rate_limit_exceeded` | Demasiadas solicitudes por esta wallet | Superado el límite por ventana |
