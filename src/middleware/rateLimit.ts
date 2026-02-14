@@ -43,7 +43,12 @@ export async function registerRateLimit(app: FastifyInstance): Promise<void> {
  * Rate limit específico para POST /v1/records.
  * 10 req/min por IP + wallet (si disponible en body).
  *
- * Uso: aplicar como onRequest hook en el POST route.
+ * Uso: aplicar como config en la declaración de la ruta POST.
+ *
+ * NOTA: El keyGenerator intenta leer wallet del body. Fastify garantiza
+ * que el body está parseado antes de ejecutar el rate limit cuando se usa
+ * como route-level config (no como onRequest hook). Si el body no se ha
+ * parseado aún (ej. req malformada), el fallback a IP asegura protección.
  */
 export const postRecordsRateConfig = {
     config: {
@@ -51,11 +56,16 @@ export const postRecordsRateConfig = {
             max: 10,
             timeWindow: '1 minute',
             keyGenerator: (request: { ip: string; body?: Record<string, unknown> }) => {
-                // Intentar extraer wallet del body para rate limit por wallet
-                const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
-                const wallet = body?.pog_bundle?.agent_wallet;
-                if (wallet) {
-                    return `wallet:${wallet.toLowerCase()}`;
+                // Intentar extraer wallet para rate limit más granular.
+                // Fallback a IP si el body no está disponible o no tiene wallet.
+                try {
+                    const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
+                    const wallet = body?.pog_bundle?.agent_wallet;
+                    if (wallet) {
+                        return `wallet:${wallet.toLowerCase()}`;
+                    }
+                } catch {
+                    // Body no parseado — fallback a IP
                 }
                 return request.ip;
             },

@@ -2,6 +2,7 @@ import {
     createPublicClient,
     http,
     formatEther,
+    parseEther,
     type Hex,
 } from 'viem';
 import { env } from '../config/env.js';
@@ -79,8 +80,8 @@ export async function verifyFee(feeTxHash: string): Promise<FeeVerificationResul
     }
 
     // 2. Verificar monto >= fee mínimo
-    const txValueEth = parseFloat(formatEther(tx.value));
-    if (txValueEth < env.FEE_MINIMUM_AMOUNT) {
+    const minFeeWei = parseEther(env.FEE_MINIMUM_AMOUNT.toString());
+    if (tx.value < minFeeWei) {
         throw feeInsufficient();
     }
 

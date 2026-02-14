@@ -46,11 +46,12 @@ app.addHook('onResponse', async (request, reply) => {
         response_time_ms: reply.elapsedTime,
     };
 
-    // Extraer wallet del body si es POST /records
+    // Extraer wallet del body si es POST /records (truncada por privacidad)
     if (request.method === 'POST' && request.url.includes('/records')) {
         const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
-        if (body?.pog_bundle?.agent_wallet) {
-            logData.wallet = body.pog_bundle.agent_wallet.toLowerCase();
+        const wallet = body?.pog_bundle?.agent_wallet?.toLowerCase();
+        if (wallet && wallet.length >= 10) {
+            logData.wallet = `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
         }
     }
 
@@ -119,8 +120,14 @@ const start = async () => {
         // En desarrollo se ejecuta aparte con `npm run worker:anchor`.
         // Import dinámico para evitar conexión Redis al cargar el módulo en tests.
         if (process.env.NODE_ENV === 'production') {
-            await import('./workers/anchor.worker.js');
-            app.log.info('⚓ Anchor worker iniciado (inline, mismo proceso)');
+            try {
+                await import('./workers/anchor.worker.js');
+                app.log.info('⚓ Anchor worker iniciado (inline, mismo proceso)');
+            } catch (workerErr) {
+                app.log.error(workerErr, '❌ Anchor worker falló al iniciar (¿Redis disponible?)');
+                // No hacer process.exit — la API puede funcionar sin worker,
+                // los jobs se procesarán cuando el worker esté disponible.
+            }
         }
     } catch (err) {
         app.log.error(err);

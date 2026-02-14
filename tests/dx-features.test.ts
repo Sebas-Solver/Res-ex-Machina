@@ -20,11 +20,11 @@ describe('getStateInfo', () => {
         expect(info.description).toContain('anchored on-chain');
     });
 
-    it('anchor_failed es no-terminal y retryable', () => {
+    it('anchor_failed es terminal y no-retryable (requiere intervención manual)', () => {
         const info = getStateInfo('anchor_failed');
-        expect(info.terminal).toBe(false);
-        expect(info.retryable).toBe(true);
-        expect(info.description).toContain('retry');
+        expect(info.terminal).toBe(true);
+        expect(info.retryable).toBe(false);
+        expect(info.description).toContain('Manual intervention');
     });
 
     it('estado desconocido devuelve fallback', () => {

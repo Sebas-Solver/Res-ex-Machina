@@ -14,7 +14,43 @@ import { env } from '../config/env.js';
  * - L2 blockchain (getBlockNumber)
  *
  * Devuelve status por componente para diagnóstico rápido.
+ *
+ * Redis y blockchain reutilizan clientes singleton para evitar
+ * crear conexiones nuevas en cada llamada (importante para liveness probes).
  */
+
+// --- Clientes singleton (se crean una sola vez) ---
+
+let redisClient: Redis | null = null;
+
+function getRedisClient(): Redis {
+    if (!redisClient) {
+        const redisUrl = new URL(env.REDIS_URL);
+        redisClient = new Redis({
+            host: redisUrl.hostname,
+            port: parseInt(redisUrl.port || '6379', 10),
+            password: redisUrl.password || undefined,
+            tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
+            maxRetriesPerRequest: 1,
+            connectTimeout: 3000,
+            lazyConnect: true,
+        });
+
+        // Si la conexión se pierde, invalidar para recrear en el próximo check
+        redisClient.on('error', () => {
+            redisClient?.disconnect();
+            redisClient = null;
+        });
+    }
+    return redisClient;
+}
+
+const l2HealthClient = createPublicClient({
+    transport: http(env.L2_RPC_URL),
+});
+
+// --- Routes ---
+
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
     app.get('/health', async (_request, reply) => {
         const checks = await Promise.allSettled([
@@ -54,28 +90,17 @@ async function checkDatabase(): Promise<{ status: string; latencyMs: number }> {
 
 async function checkRedis(): Promise<{ status: string; latencyMs: number }> {
     const start = Date.now();
-    const redisUrl = new URL(env.REDIS_URL);
-    const client = new Redis({
-        host: redisUrl.hostname,
-        port: parseInt(redisUrl.port || '6379', 10),
-        password: redisUrl.password || undefined,
-        tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
-        maxRetriesPerRequest: 1,
-        connectTimeout: 3000,
-        lazyConnect: true,
-    });
-    await client.connect();
+    const client = getRedisClient();
+    if (client.status !== 'ready') {
+        await client.connect();
+    }
     await client.ping();
-    await client.disconnect();
     return { status: 'ok', latencyMs: Date.now() - start };
 }
 
 async function checkBlockchain(): Promise<{ status: string; latencyMs: number; blockNumber?: number }> {
     const start = Date.now();
-    const client = createPublicClient({
-        transport: http(env.L2_RPC_URL),
-    });
-    const blockNumber = await client.getBlockNumber();
+    const blockNumber = await l2HealthClient.getBlockNumber();
     return {
         status: 'ok',
         latencyMs: Date.now() - start,

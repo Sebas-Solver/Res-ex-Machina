@@ -21,6 +21,7 @@ vi.mock('viem', () => ({
     }),
     http: () => ({}),
     formatEther: (val: bigint) => (Number(val) / 1e18).toString(),
+    parseEther: (val: string) => BigInt(Math.round(parseFloat(val) * 1e18)),
 }));
 
 vi.mock('../src/config/env.js', () => ({

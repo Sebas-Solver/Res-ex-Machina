@@ -76,7 +76,7 @@ export const feeTxExpired = () =>
     new ApiError(402, 'fee_tx_expired', 'Fee transaction is too old (>24h)');
 
 export const feeTxReused = () =>
-    new ApiError(402, 'fee_tx_reused', 'Fee transaction has already been used for another record');
+    new ApiError(409, 'fee_tx_reused', 'Fee transaction has already been used for another record');
 
 export const duplicateContentHash = () =>
     new ApiError(409, 'duplicate_content_hash', 'A record with this content_hash already exists');
@@ -153,14 +153,11 @@ export function apiErrorHandler(
     }
 
     // Error no esperado — nunca exponer detalles técnicos
-    console.error('Unhandled error:', {
-        name: error.name,
-        message: error.message,
+    _request.log.error({
+        err: error,
         statusCode: (error as unknown as { statusCode?: number }).statusCode,
         code: (error as unknown as { code?: string }).code,
-        constructor: error.constructor?.name,
-        keys: Object.keys(error),
-    });
+    }, 'Unhandled error');
     return reply.status(500).send({
         error: {
             code: 'internal_error',

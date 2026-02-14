@@ -26,9 +26,9 @@ const STATE_MAP: Record<string, StateInfo> = {
         description: 'Record anchored on-chain. Verification available.',
     },
     anchor_failed: {
-        terminal: false,
-        retryable: true,
-        description: 'Anchoring failed after max attempts. System will retry automatically.',
+        terminal: true,
+        retryable: false,
+        description: 'Anchoring failed after max attempts. Manual intervention required.',
     },
 };
 
