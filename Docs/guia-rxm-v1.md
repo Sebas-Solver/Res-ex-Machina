@@ -135,6 +135,9 @@ Esto significa que para usar RxM v1.0 necesitas:
 | **Consultar** | Busca un registro por su ID | Si quieres ver los detalles de un registro concreto |
 | **Verificar** | Comprueba si existe un registro para un contenido | Si alguien te dice "esto lo generé yo" y quieres verificarlo |
 | **Exportar** | Descarga el receipt completo de un registro | Si necesitas una prueba formal para presentar a alguien |
+| **Verificar receipt** | Comprueba que un receipt es auténtico | Si recibes un receipt y quieres confirmar que no ha sido manipulado |
+
+> **Novedad:** Desde la versión alpha.2, los receipts exportados incluyen toda la información necesaria para verificarlos de forma independiente: algoritmo de hash, dominio EIP-712, hash anclado en blockchain, etc. No necesitas confiar en RxM — puedes comprobarlo tú mismo.
 
 ### Ejemplo real (simplificado)
 
@@ -146,6 +149,7 @@ Imagina que tienes un agente de IA que genera informes. Quieres que cada informe
 4. **Días después**, alguien pregunta: "¿Esto lo generó tu IA?"
 5. **Verificas** en RxM con el hash del informe → "Sí, registrado el 12/02/2026 a las 14:30"
 6. **Exportas** el receipt como prueba formal
+7. **El tercero verifica** el receipt con el verificador CLI → `✅ RECORD AUTÉNTICO`
 
 ---
 

@@ -5,6 +5,23 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ---
 
+## [Unreleased] — Para alpha.2
+
+### Verificación Independiente de Receipts
+
+#### Añadido
+
+- **Metadatos de verificación en export** — El endpoint `/v1/records/:id/export` ahora incluye:
+  - `verification`: algoritmo de hash, canonización, campos usados
+  - `pog_bundle.eip712_domain`: dominio EIP-712 para verificar firma sin código fuente
+  - `anchor.anchored_hash` + `anchor.anchor_method`: qué se ancla y cómo
+  - `fee.chain_id` + `fee.to`: datos de trazabilidad del fee
+- **Receipt Verification Spec** — `Docs/receipt-verification-spec.md`: especificación formal (1 página) para verificación offline
+- **Verificador CLI** — `scripts/verify-receipt.ts`: herramienta independiente que verifica receipt_hash, firma EIP-712 y anchoring on-chain
+- **Issues creadas** — #20 (links auto), #21 (listar registros), #22 (modo degradado), #23 (fee enrichment), #24 (CLI verifier), #25 (export minimal)
+
+---
+
 ## [1.0.0-alpha.1] — 2026-02-12
 
 ### Primer Deploy Público (Alpha) 🚀

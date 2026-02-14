@@ -291,17 +291,44 @@ const exportData = await receipt.json();
   "schema": "rex.receipt.v1",
   "record_id": "01952abc-def0-7890-abcd-ef0123456789",
   "content_hash": "sha256:e3b0c44...",
-  "pog_bundle": { ... },
+  "pog_bundle": {
+    "schema": "pog.v1",
+    "content_hash": "sha256:e3b0c44...",
+    "agent_wallet": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "model_id": "openai:gpt-4:2025-01",
+    "runtime_id": "my-agent-v1",
+    "signature": "0xabc123...",
+    "eip712_domain": {
+      "name": "ResExMachina",
+      "version": "1",
+      "chain_id": 0,
+      "verifying_contract": "0x0000000000000000000000000000000000000000"
+    }
+  },
   "receipt_hash": "sha256:...",
+  "verification": {
+    "receipt_hash_algo": "sha256",
+    "receipt_canonicalization": "pipe-separated",
+    "receipt_fields": "record_id|content_hash|agent_wallet_lowercase|nonce|created_at_iso8601",
+    "eip712_primary_type": "PoGBundle"
+  },
   "state": "anchored",
   "created_at": "2026-02-12T14:30:01.234Z",
+  "fee": {
+    "amount": "0.00020000",
+    "currency": "ETH",
+    "tx_hash": "0xfee123...",
+    "chain_id": 84532,
+    "to": "0x13bB040691BBa236a2A2AB83fE904EcC965Ba8a0"
+  },
   "anchor": {
     "tx_hash": "0xdef456...",
     "block": 12345678,
-    "chain_id": 31337,
-    "anchored_at": "2026-02-12T14:32:15.000Z"
-  },
-  "verification_url": "http://localhost:3000/v1/records/01952abc-def0-7890-abcd-ef0123456789"
+    "chain_id": 84532,
+    "anchored_at": "2026-02-12T14:32:15.000Z",
+    "anchored_hash": "sha256:...",
+    "anchor_method": "calldata"
+  }
 }
 ```
 
@@ -574,42 +601,75 @@ ANCHOR_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae78
 
 ## Offline Receipt Verification
 
-Receipts exported via `/records/:id/export` are self-contained and can be verified without the API:
+Receipts exported via `/records/:id/export` are self-contained and can be verified without the API.
+
+### CLI Verifier (recommended)
+
+The easiest way to verify:
+
+```bash
+# From a JSON file
+npx tsx scripts/verify-receipt.ts receipt.json
+
+# Directly from the API
+npx tsx scripts/verify-receipt.ts https://res-ex-machina-api.onrender.com/v1/records/{id}/export
+```
+
+Output:
+```
+1️⃣  Verificando receipt_hash...
+   ✅ VÁLIDO — hash recalculado coincide
+2️⃣  Verificando firma EIP-712...
+   ✅ VÁLIDA — firmado por 0xDd68...
+3️⃣  Verificando anchoring en blockchain...
+   ✅ CONFIRMADO — bloque 37655645
+📋 Veredicto: ✅ RECORD AUTÉNTICO
+```
+
+### Manual Verification
+
+For full specification see: [Receipt Verification Spec](receipt-verification-spec.md)
 
 ```typescript
 import { createHash } from 'node:crypto';
-import { verifyTypedData } from 'viem';
+import { verifyTypedData, createPublicClient, http } from 'viem';
 
-// 1. Recalculate receipt_hash
-const receipt = exportedData; // from /export endpoint
-const hashPayload = JSON.stringify({
-  record_id: receipt.record_id,
-  content_hash: receipt.content_hash,
-  pog_bundle: receipt.pog_bundle,
-  created_at: receipt.created_at,
-});
-const calculatedHash = 'sha256:' + createHash('sha256')
-  .update(hashPayload)
-  .digest('hex');
+// 1. Recalculate receipt_hash (pipe-separated canonicalization)
+const canonical = [
+  receipt.record_id,
+  receipt.content_hash,
+  receipt.pog_bundle.agent_wallet.toLowerCase(),
+  receipt.pog_bundle.nonce,
+  receipt.created_at,
+].join('|');
+const computed = 'sha256:' + createHash('sha256').update(canonical).digest('hex');
+console.assert(computed === receipt.receipt_hash, 'Receipt hash mismatch!');
 
-console.assert(calculatedHash === receipt.receipt_hash, 'Receipt hash mismatch!');
-
-// 2. Verify EIP-712 signature
+// 2. Verify EIP-712 signature (domain included in receipt since alpha.2)
+const domain = receipt.pog_bundle.eip712_domain;
 const isValid = await verifyTypedData({
-  domain: { name: 'ResExMachina', version: '1', chainId: 0n, verifyingContract: '0x0...' },
+  address: receipt.pog_bundle.agent_wallet,
+  domain: {
+    name: domain.name,
+    version: domain.version,
+    chainId: domain.chain_id,
+    verifyingContract: domain.verifying_contract,
+  },
   types: { PoGBundle: [...] }, // see EIP-712 section above
   primaryType: 'PoGBundle',
-  message: { /* mapped fields */ },
+  message: { /* mapped fields from pog_bundle */ },
   signature: receipt.pog_bundle.signature,
-  address: receipt.pog_bundle.agent_wallet,
 });
-
 console.assert(isValid, 'Signature invalid!');
 
-// 3. Verify anchor on-chain (if anchored)
+// 3. Verify anchor on-chain
 if (receipt.anchor?.tx_hash) {
   const tx = await publicClient.getTransaction({ hash: receipt.anchor.tx_hash });
-  // verify tx contains receipt_hash
+  const calldata = Buffer.from(tx.input.slice(2), 'hex').toString('utf-8');
+  console.assert(
+    calldata === receipt.anchor.anchored_hash,
+    'Anchor calldata does not match receipt_hash!'
+  );
 }
 ```
 
@@ -699,7 +759,7 @@ Not all fields in a PoG bundle carry the same trust level:
 
 See [CHANGELOG.md](../CHANGELOG.md) for the full release history.
 
-Current version: **v1.0.0-rc2** (2026-02-12)
+Current version: **v1.0.0-alpha.1** (2026-02-14)
 
 ## Further Reading
 
