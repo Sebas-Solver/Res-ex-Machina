@@ -1,9 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm';
-import { createPublicClient, http } from 'viem';
-import { Redis } from 'ioredis';
-import { env } from '../config/env.js';
+import { createHealthRedisClient } from '../config/redis.js';
+import { publicClient as l2HealthClient } from '../config/blockchain.js';
 
 /**
  * Health check detallado — GET /v1/health
@@ -15,26 +14,17 @@ import { env } from '../config/env.js';
  *
  * Devuelve status por componente para diagnóstico rápido.
  *
- * Redis y blockchain reutilizan clientes singleton para evitar
- * crear conexiones nuevas en cada llamada (importante para liveness probes).
+ * Redis usa factory de config/redis.ts, blockchain usa publicClient
+ * compartido de config/blockchain.ts (Issue #16).
  */
 
-// --- Clientes singleton (se crean una sola vez) ---
+// --- Cliente Redis singleton para health check ---
 
-let redisClient: Redis | null = null;
+let redisClient: ReturnType<typeof createHealthRedisClient> | null = null;
 
-function getRedisClient(): Redis {
+function getRedisClient() {
     if (!redisClient) {
-        const redisUrl = new URL(env.REDIS_URL);
-        redisClient = new Redis({
-            host: redisUrl.hostname,
-            port: parseInt(redisUrl.port || '6379', 10),
-            password: redisUrl.password || undefined,
-            tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
-            maxRetriesPerRequest: 1,
-            connectTimeout: 3000,
-            lazyConnect: true,
-        });
+        redisClient = createHealthRedisClient();
 
         // Si la conexión se pierde, invalidar para recrear en el próximo check
         redisClient.on('error', () => {
@@ -45,9 +35,6 @@ function getRedisClient(): Redis {
     return redisClient;
 }
 
-const l2HealthClient = createPublicClient({
-    transport: http(env.L2_RPC_URL),
-});
 
 // --- Routes ---
 

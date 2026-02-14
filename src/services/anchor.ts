@@ -1,64 +1,10 @@
-import {
-    createPublicClient,
-    createWalletClient,
-    http,
-    type Hex,
-    type Address,
-    type Chain,
-} from 'viem';
-import { privateKeyToAccount } from 'viem/accounts';
-import { foundry, baseSepolia } from 'viem/chains';
+import { type Hex, type Address } from 'viem';
 import { env } from '../config/env.js';
+import { publicClient, walletClient, anchorAccount } from '../config/blockchain.js';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 
-/**
- * Cuenta wallet para firmar transacciones de anchoring.
- * Usa la private key configurada en ANCHOR_WALLET_PRIVATE_KEY.
- */
-const anchorAccount = privateKeyToAccount(env.ANCHOR_WALLET_PRIVATE_KEY as Hex);
-
-/**
- * Mapa de chains conocidas.
- * Permite seleccionar la chain correcta por L2_CHAIN_ID.
- *
- * - 31337: Anvil (desarrollo local)
- * - 84532: Base Sepolia (testnet alpha)
- *
- * Si el chain ID no está en el mapa, se crea una definición custom.
- */
-const KNOWN_CHAINS: Record<number, Chain> = {
-    31337: foundry,
-    84532: baseSepolia,
-};
-
-const baseChain = KNOWN_CHAINS[env.L2_CHAIN_ID];
-const chain = baseChain
-    ? { ...baseChain, id: env.L2_CHAIN_ID }
-    : {
-        id: env.L2_CHAIN_ID,
-        name: `custom-${env.L2_CHAIN_ID}`,
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: [env.L2_RPC_URL] } },
-    };
-
-/**
- * Cliente público para leer la blockchain.
- */
-const publicClient = createPublicClient({
-    chain,
-    transport: http(env.L2_RPC_URL),
-});
-
-/**
- * Cliente wallet para enviar transacciones.
- */
-const walletClient = createWalletClient({
-    account: anchorAccount,
-    chain,
-    transport: http(env.L2_RPC_URL),
-});
 
 /**
  * Resultado de un anchoring exitoso.

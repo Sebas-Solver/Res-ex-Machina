@@ -1,26 +1,15 @@
 import { Queue } from 'bullmq';
-import { env } from '../config/env.js';
-
-/**
- * Conexión Redis para BullMQ.
- * Parseamos la URL de Redis para extraer host, puerto, password y TLS.
- * Upstash usa rediss:// (TLS) + password en la URL.
- */
-const redisUrl = new URL(env.REDIS_URL);
-const redisConnection = {
-    host: redisUrl.hostname,
-    port: parseInt(redisUrl.port || '6379', 10),
-    password: redisUrl.password || undefined,
-    tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
-    maxRetriesPerRequest: null as null, // Requerido por BullMQ
-};
+import { redisConnectionConfig } from '../config/redis.js';
 
 /**
  * Cola de anchoring — los jobs se procesan en el worker (Issue #6).
  * Cada job contiene el record_id y receipt_hash para grabar on-chain.
+ *
+ * Conexión Redis centralizada en config/redis.ts (Issue #16).
  */
+
 export const anchorQueue = new Queue('anchor', {
-    connection: redisConnection,
+    connection: redisConnectionConfig,
     defaultJobOptions: {
         attempts: 5,
         backoff: {

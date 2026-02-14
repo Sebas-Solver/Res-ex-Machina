@@ -14,14 +14,16 @@ const mockGetTransactionReceipt = vi.fn();
 const mockGetBlock = vi.fn();
 
 vi.mock('viem', () => ({
-    createPublicClient: () => ({
+    formatEther: (val: bigint) => (Number(val) / 1e18).toString(),
+    parseEther: (val: string) => BigInt(Math.round(parseFloat(val) * 1e18)),
+}));
+
+vi.mock('../src/config/blockchain.js', () => ({
+    publicClient: {
         getTransaction: (...args: unknown[]) => mockGetTransaction(...args),
         getTransactionReceipt: (...args: unknown[]) => mockGetTransactionReceipt(...args),
         getBlock: (...args: unknown[]) => mockGetBlock(...args),
-    }),
-    http: () => ({}),
-    formatEther: (val: bigint) => (Number(val) / 1e18).toString(),
-    parseEther: (val: string) => BigInt(Math.round(parseFloat(val) * 1e18)),
+    },
 }));
 
 vi.mock('../src/config/env.js', () => ({

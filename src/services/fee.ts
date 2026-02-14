@@ -1,11 +1,10 @@
 import {
-    createPublicClient,
-    http,
     formatEther,
     parseEther,
     type Hex,
 } from 'viem';
 import { env } from '../config/env.js';
+import { publicClient as l2Client } from '../config/blockchain.js';
 import {
     feeNotVerified,
     feeInsufficient,
@@ -19,13 +18,6 @@ import {
  */
 const FEE_TX_MAX_AGE_MS = env.FEE_TX_MAX_AGE_HOURS * 60 * 60 * 1000;
 
-/**
- * Cliente público de viem para consultar la L2.
- * Se conecta al L2_RPC_URL configurado (Anvil en dev, Polygon en prod).
- */
-const l2Client = createPublicClient({
-    transport: http(env.L2_RPC_URL),
-});
 
 /**
  * Resultado de la verificación de fee.

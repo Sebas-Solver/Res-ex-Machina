@@ -1,5 +1,5 @@
 import { Worker, type Job } from 'bullmq';
-import { env } from '../config/env.js';
+import { redisConnectionConfig } from '../config/redis.js';
 import { anchorRecord, markAnchorFailed } from '../services/anchor.js';
 import type { AnchorJobData } from '../services/queue.js';
 
@@ -14,9 +14,9 @@ import type { AnchorJobData } from '../services/queue.js';
  * - Backoff: exponencial (5s → 10s → 20s → 40s → 80s)
  * - Al agotar retries: state = anchor_failed
  * - Idempotente: si el record ya está anchored, no hace nada
+ *
+ * Conexión Redis centralizada en config/redis.ts (Issue #16).
  */
-
-const redisUrl = new URL(env.REDIS_URL);
 
 const worker = new Worker<AnchorJobData>(
     'anchor',
@@ -36,13 +36,7 @@ const worker = new Worker<AnchorJobData>(
         }
     },
     {
-        connection: {
-            host: redisUrl.hostname,
-            port: parseInt(redisUrl.port || '6379', 10),
-            password: redisUrl.password || undefined,
-            tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
-            maxRetriesPerRequest: null,
-        },
+        connection: redisConnectionConfig,
         concurrency: 3, // Procesar hasta 3 anchors en paralelo
     },
 );
