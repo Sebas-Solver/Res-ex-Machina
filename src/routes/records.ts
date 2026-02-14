@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
+import { env } from '../config/env.js';
 import { verifyPoGSignature } from '../services/signature.js';
 import { verifyFee } from '../services/fee.js';
 import {
@@ -14,6 +15,17 @@ import {
     invalidRecordId,
     recordNotFound,
 } from '../utils/errors.js';
+
+/**
+ * EIP-712 Domain exportado en receipts para verificación offline.
+ * Debe coincidir con signature.ts.
+ */
+const EXPORTED_EIP712_DOMAIN = {
+    name: 'ResExMachina',
+    version: '1',
+    chain_id: 0,
+    verifying_contract: '0x0000000000000000000000000000000000000000',
+} as const;
 
 /**
  * Rutas del recurso /records.
@@ -157,14 +169,25 @@ export default async function recordRoutes(fastify: FastifyInstance) {
             content_hash: record.contentHash,
             content_type: record.contentType,
             visibility: record.visibility,
-            pog_bundle: record.pogBundle,
+            pog_bundle: {
+                ...record.pogBundle as object,
+                eip712_domain: EXPORTED_EIP712_DOMAIN,
+            },
             receipt_hash: record.receiptHash,
+            verification: {
+                receipt_hash_algo: 'sha256',
+                receipt_canonicalization: 'pipe-separated',
+                receipt_fields: 'record_id|content_hash|agent_wallet_lowercase|nonce|created_at_iso8601',
+                eip712_primary_type: 'PoGBundle',
+            },
             created_at: record.createdAt.toISOString(),
             state: record.state,
             fee: {
                 amount: record.feeAmount,
                 currency: record.feeCurrency,
                 tx_hash: record.feeTxHash,
+                chain_id: env.L2_CHAIN_ID,
+                to: env.FEE_RECEIVER_ADDRESS,
             },
             anchor: record.anchorTxHash
                 ? {
@@ -172,6 +195,8 @@ export default async function recordRoutes(fastify: FastifyInstance) {
                     block: record.anchorBlock,
                     chain_id: record.anchorChainId,
                     anchored_at: record.anchoredAt?.toISOString() ?? null,
+                    anchored_hash: record.receiptHash,
+                    anchor_method: 'calldata',
                 }
                 : null,
         });
@@ -208,6 +233,8 @@ function formatRecordResponse(record: typeof records.$inferSelect) {
             amount: record.feeAmount,
             currency: record.feeCurrency,
             tx_hash: record.feeTxHash,
+            chain_id: env.L2_CHAIN_ID,
+            to: env.FEE_RECEIVER_ADDRESS,
         },
         anchor: record.anchorTxHash
             ? {
@@ -215,6 +242,8 @@ function formatRecordResponse(record: typeof records.$inferSelect) {
                 block: record.anchorBlock,
                 chain_id: record.anchorChainId,
                 anchored_at: record.anchoredAt?.toISOString() ?? null,
+                anchored_hash: record.receiptHash,
+                anchor_method: 'calldata',
             }
             : null,
     };
