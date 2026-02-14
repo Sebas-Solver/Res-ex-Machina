@@ -18,17 +18,12 @@ import {
 } from '../utils/errors.js';
 import { getStateInfo } from '../utils/stateInfo.js';
 import { getExplorerTxUrl, getNetworkName } from '../utils/explorer.js';
+import {
+    formatRecordResponse,
+    formatCompactExport,
+    formatFullExport,
+} from '../utils/formatters.js';
 
-/**
- * Dominio EIP-712 que se incluye en el export para verificación offline.
- * Debe coincidir con signature.ts.
- */
-const EXPORTED_EIP712_DOMAIN = {
-    name: 'ResExMachina',
-    version: '1',
-    chain_id: 0,
-    verifying_contract: '0x0000000000000000000000000000000000000000',
-} as const;
 
 /**
  * Rutas del recurso /records.
@@ -228,122 +223,4 @@ function isValidUUID(value: string): boolean {
     return UUID_REGEX.test(value);
 }
 
-/**
- * Construye el bloque anchor con explorer_url y network_name.
- */
-function buildAnchorBlock(record: typeof records.$inferSelect) {
-    if (!record.anchorTxHash) return null;
-    const chainId = record.anchorChainId ?? env.L2_CHAIN_ID;
-    return {
-        tx_hash: record.anchorTxHash,
-        block: record.anchorBlock,
-        chain_id: chainId,
-        anchored_at: record.anchoredAt?.toISOString() ?? null,
-        anchored_hash: record.receiptHash,
-        anchor_method: 'calldata' as const,
-        network_name: getNetworkName(chainId),
-        explorer_url: getExplorerTxUrl(chainId, record.anchorTxHash),
-    };
-}
 
-/**
- * Construye el bloque fee con explorer_url y network_name.
- */
-function buildFeeBlock(record: typeof records.$inferSelect) {
-    return {
-        amount: record.feeAmount,
-        currency: record.feeCurrency,
-        tx_hash: record.feeTxHash,
-        chain_id: env.L2_CHAIN_ID,
-        to: env.FEE_RECEIVER_ADDRESS,
-        network_name: getNetworkName(env.L2_CHAIN_ID),
-        explorer_url: getExplorerTxUrl(env.L2_CHAIN_ID, record.feeTxHash),
-    };
-}
-
-/**
- * Formatea un record de la DB para la respuesta API.
- * Incluye state_info, explorer_url y network_name.
- */
-function formatRecordResponse(record: typeof records.$inferSelect) {
-    return {
-        record_id: record.recordId,
-        content_hash: record.contentHash,
-        content_type: record.contentType,
-        visibility: record.visibility,
-        pog_bundle: record.pogBundle,
-        nonce: record.nonce,
-        agent_wallet: record.agentWallet,
-        state: record.state,
-        state_info: getStateInfo(record.state),
-        created_at: record.createdAt.toISOString(),
-        receipt_hash: record.receiptHash,
-        tags: record.tags,
-        external_ref: record.externalRef,
-        fee: buildFeeBlock(record),
-        anchor: buildAnchorBlock(record),
-    };
-}
-
-/**
- * Formatea el export completo (mode=full, default).
- * Incluye toda la info para verificación offline.
- */
-function formatFullExport(record: typeof records.$inferSelect) {
-    return {
-        schema: 'rex.receipt.v1',
-        spec_version: '1.2',
-        record_id: record.recordId,
-        content_hash: record.contentHash,
-        content_type: record.contentType,
-        visibility: record.visibility,
-        pog_bundle: {
-            ...record.pogBundle as object,
-            eip712_domain: EXPORTED_EIP712_DOMAIN,
-        },
-        receipt_hash: record.receiptHash,
-        verification: {
-            receipt_hash_algo: 'sha256',
-            receipt_canonicalization: 'pipe-separated',
-            receipt_fields: 'record_id|content_hash|agent_wallet_lowercase|nonce|created_at_iso8601',
-            eip712_primary_type: 'PoGBundle',
-        },
-        created_at: record.createdAt.toISOString(),
-        state: record.state,
-        state_info: getStateInfo(record.state),
-        fee: buildFeeBlock(record),
-        anchor: buildAnchorBlock(record),
-    };
-}
-
-/**
- * Formatea el export compacto (mode=compact).
- * Solo incluye los campos necesarios para verificación criptográfica.
- * Optimizado para contextos de LLM donde cada token cuenta.
- */
-function formatCompactExport(record: typeof records.$inferSelect) {
-    const pogBundle = record.pogBundle as Record<string, unknown>;
-    return {
-        schema: 'rex.receipt.v1',
-        spec_version: '1.2',
-        record_id: record.recordId,
-        content_hash: record.contentHash,
-        receipt_hash: record.receiptHash,
-        state: record.state,
-        state_info: getStateInfo(record.state),
-        created_at: record.createdAt.toISOString(),
-        pog_bundle: {
-            agent_wallet: pogBundle.agent_wallet,
-            nonce: pogBundle.nonce,
-            signature: pogBundle.signature,
-            content_hash: pogBundle.content_hash,
-        },
-        verification: {
-            receipt_hash_algo: 'sha256',
-            receipt_canonicalization: 'pipe-separated',
-            receipt_fields: 'record_id|content_hash|agent_wallet_lowercase|nonce|created_at_iso8601',
-            eip712_primary_type: 'PoGBundle',
-        },
-        anchor: buildAnchorBlock(record),
-    };
-}

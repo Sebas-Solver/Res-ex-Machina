@@ -32,3 +32,4 @@ redisdata/
 
 # TestSprite
 testsprite_tests/
+semgrep-results.json

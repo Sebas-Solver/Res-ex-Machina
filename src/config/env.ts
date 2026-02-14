@@ -26,6 +26,9 @@ const envSchema = z.object({
 
     // Anchoring
     ANCHOR_WALLET_PRIVATE_KEY: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
+
+    // API (opcional — para links auto-generados en respuestas)
+    API_BASE_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
