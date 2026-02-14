@@ -20,14 +20,13 @@
 
 El fee de registro cuesta ~0.0002 ETH en Base Sepolia (una testnet, el ETH no tiene valor real).
 
-1. Ve a **[Alchemy Base Sepolia Faucet](https://www.alchemy.com/faucets/base-sepolia)**
+1. Ve a **[Optimism Console (Superchain Faucet)](https://console.optimism.io/faucet)**
 2. Conecta tu wallet o pega tu dirección
-3. Haz clic en "Send Me ETH"
-4. Recibirás ETH de prueba en ~30 segundos
+3. Selecciona **Base Sepolia** como red
+4. Haz clic en "Claim" para recibir ETH de prueba
+5. Recibirás ETH en ~30 segundos
 
-> **Alternativas:**
-> - [Coinbase Base Sepolia Faucet](https://portal.cdp.coinbase.com/products/faucet)
-> - [QuickNode Faucet](https://faucet.quicknode.com/base/sepolia)
+> **Alternativa:** [Coinbase Base Sepolia Faucet](https://portal.cdp.coinbase.com/products/faucet)
 
 ---
 

@@ -139,7 +139,7 @@ async function main() {
     console.log(`   Balance: ${balanceEth.toFixed(6)} ETH`);
     if (balanceEth < FEE_AMOUNT + 0.0001) { // fee + gas
         console.error(`   ❌ Balance insuficiente. Necesitas al menos ${FEE_AMOUNT + 0.0001} ETH`);
-        console.error('   Consigue ETH en: https://www.alchemy.com/faucets/base-sepolia');
+        console.error('   Consigue ETH en: https://console.optimism.io/faucet');
         process.exit(1);
     }
     console.log(`   ✅ Balance suficiente\n`);
