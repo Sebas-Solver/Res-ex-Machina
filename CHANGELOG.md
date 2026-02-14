@@ -18,6 +18,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
   - `fee.chain_id` + `fee.to`: datos de trazabilidad del fee
 - **Receipt Verification Spec** — `Docs/receipt-verification-spec.md`: especificación formal (1 página) para verificación offline
 - **Verificador CLI** — `scripts/verify-receipt.ts`: herramienta independiente que verifica receipt_hash, firma EIP-712 y anchoring on-chain
+- **Spec v1.2** — Modelo de confianza formal, `spec_version` en receipts, semántica temporal `created_at`, vector de prueba oficial con hash esperado
 - **Issues creadas** — #20 (links auto), #21 (listar registros), #22 (modo degradado), #23 (fee enrichment), #24 (CLI verifier), #25 (export minimal)
 
 ---

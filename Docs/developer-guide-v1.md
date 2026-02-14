@@ -289,6 +289,7 @@ const exportData = await receipt.json();
 ```json
 {
   "schema": "rex.receipt.v1",
+  "spec_version": "1.2",
   "record_id": "01952abc-def0-7890-abcd-ef0123456789",
   "content_hash": "sha256:e3b0c44...",
   "pog_bundle": {

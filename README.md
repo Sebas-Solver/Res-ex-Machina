@@ -171,6 +171,7 @@ npm run worker:anchor    # Worker de anchoring
 | `npm run alpha:happy` | Test happy path (Agente A) |
 | `npm run alpha:adversarial` | Test adversarial (Agente D) |
 | `npm run alpha:all` | Ambos tests alpha |
+| `npx tsx scripts/verify-receipt.ts` | Verificador CLI de receipts |
 
 ---
 
@@ -234,6 +235,7 @@ Docs/
 | [`api-examples.md`](Docs/api-examples.md) | Ejemplos curl de todos los endpoints |
 | [`alpha-pilot-plan.md`](Docs/alpha-pilot-plan.md) | Plan de piloto alpha |
 | [`c2pa-interoperability.md`](Docs/c2pa-interoperability.md) | Interoperabilidad con estándares C2PA |
+| [`receipt-verification-spec.md`](Docs/receipt-verification-spec.md) | Especificación de verificación de receipts (v1.2) |
 | [`ADR-001-tech-stack.md`](Docs/30-adr/ADR-001-tech-stack.md) | Architecture Decision Record |
 
 ---
@@ -285,6 +287,16 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | [#13](https://github.com/Sebas-Solver/Res-ex-Machina/issues/13) | v1.1 | Webhooks de estado |
 | [#14](https://github.com/Sebas-Solver/Res-ex-Machina/issues/14) | v1.1 | Doble atestación temporal |
 | [#15](https://github.com/Sebas-Solver/Res-ex-Machina/issues/15) | v2+ | Investigar verificación del `model_id` declarado |
+| [#16](https://github.com/Sebas-Solver/Res-ex-Machina/issues/16) | alpha.2 | Refactor: módulos compartidos de config |
+| [#17](https://github.com/Sebas-Solver/Res-ex-Machina/issues/17) | beta | Rate limit con Redis store |
+| [#18](https://github.com/Sebas-Solver/Res-ex-Machina/issues/18) | alpha.2 | Refactor: formatters unificados |
+| [#19](https://github.com/Sebas-Solver/Res-ex-Machina/issues/19) | beta | Monitorización y alertas |
+| [#20](https://github.com/Sebas-Solver/Res-ex-Machina/issues/20) | alpha.2 | Links auto-generados en export |
+| [#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21) | v1.1 | Listar registros por wallet |
+| [#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22) | alpha.2 | Modo degradado / resiliencia |
+| [#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23) | beta | Enriquecer datos de fee |
+| [#24](https://github.com/Sebas-Solver/Res-ex-Machina/issues/24) | ✅ alpha.2 | Verificador CLI independiente |
+| [#25](https://github.com/Sebas-Solver/Res-ex-Machina/issues/25) | v1.1 | Export minimal para privacidad |
 
 ---
 
@@ -300,7 +312,7 @@ Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubi
 
 ## 📜 Estado actual
 
-🟢 **v1.0.0-alpha.1** — API desplegada en `https://res-ex-machina-api.onrender.com`. 63 tests, CI/CD GitHub Actions. Blockchain: Base Sepolia testnet. DB: Neon. Redis: Upstash. 10 issues cerradas, 5 abiertas (v1.1/v2).
+🟢 **v1.0.0-alpha.1** — API desplegada en `https://res-ex-machina-api.onrender.com`. 63 tests, CI/CD. Especificación de verificación v1.2 con vector de prueba oficial, verificador CLI, y modelo de confianza formal. 15 issues abiertas, 10 cerradas.
 
 ---
 

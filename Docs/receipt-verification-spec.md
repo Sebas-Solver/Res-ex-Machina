@@ -1,6 +1,6 @@
 # Receipt Verification Specification — rex.receipt.v1
 
-> **Versión:** 1.1
+> **Versión:** 1.2
 > **Fecha:** 14 de febrero de 2026
 > **Estado:** Alpha
 
@@ -30,7 +30,7 @@ receipt_hash = "sha256:" + HEX(SHA-256(input))
 |---|---|---|
 | 1 | **Separador** | Carácter pipe `|` (U+007C), sin espacios antes ni después |
 | 2 | **agent_wallet** | Se convierte a **lowercase** ANTES de concatenar. Ejemplo: `0xDd6894B5...` → `0xdd6894b5...`. El prefijo `0x` se mantiene |
-| 3 | **created_at** | Formato **ISO 8601 UTC** exacto: `YYYY-MM-DDTHH:MM:SS.mmmZ`. Siempre con 3 dígitos de milisegundos. Siempre en UTC (sufijo `Z`). Ejemplo: `2026-02-14T14:32:54.661Z`. No se aceptan variantes con offset (`+00:00`) ni sin milisegundos |
+| 3 | **created_at** | Formato **ISO 8601 UTC** exacto: `YYYY-MM-DDTHH:MM:SS.mmmZ`. Siempre con 3 dígitos de milisegundos. Siempre en UTC (sufijo `Z`). Ejemplo: `2026-02-14T14:32:54.661Z`. No se aceptan variantes con offset (`+00:00`) ni sin milisegundos. **Nota:** `created_at` es generado por el servidor RxM en el momento de aceptación del record (ver sección 5: Modelo de Confianza) |
 | 4 | **Encoding** | La cadena completa se codifica como **UTF-8** antes de aplicar SHA-256 |
 | 5 | **Sin padding** | No hay espacios, newlines, ni caracteres extra entre campos ni al inicio/final |
 | 6 | **Prefijo** | El resultado lleva el prefijo `sha256:` seguido de 64 caracteres hexadecimales en lowercase |
@@ -204,11 +204,54 @@ Estos campos están firmados criptográficamente (EIP-712) por la `agent_wallet`
 
 ---
 
-## 5. Objeto Receipt Completo (rex.receipt.v1)
+## 5. Modelo de Confianza
+
+RxM es un **protocolo de atestación técnica**. Es fundamental entender qué garantiza y qué no.
+
+### Lo que RxM garantiza (prueba técnica)
+
+| Garantía | Mecanismo |
+|---|---|
+| **Identidad del firmante** | La `agent_wallet` que firmó el PoG bundle se verifica criptográficamente vía EIP-712. No es posible falsificar la firma sin la clave privada |
+| **Integridad del contenido** | El `content_hash` (SHA-256) vincula el registro a un contenido específico. Cualquier modificación del contenido produce un hash diferente |
+| **Momento de aceptación** | `created_at` es generado por el servidor RxM en el instante en que acepta el record. Este valor forma parte del `receipt_hash` y, por tanto, queda vinculado al anchoring en blockchain |
+| **Existencia en un momento dado** | El anchoring en blockchain establece un **tope temporal superior**: el registro existía como tarde en el bloque donde fue anclado |
+| **Inmutabilidad** | Una vez creado, un registro no puede ser modificado ni eliminado (INV-001, INV-002) |
+| **No-replay** | El `nonce` es único por wallet (constraint en base de datos), impidiendo la reutilización de firmas |
+
+### Lo que RxM NO garantiza (declaración del agente)
+
+| Campo | Por qué no se verifica |
+|---|---|
+| **`model_id`** | RxM no puede verificar qué modelo de IA ejecutó realmente. El agente lo declara y RxM lo registra |
+| **`runtime_id`** | RxM no tiene acceso al entorno de ejecución del agente |
+| **`human_intervention_level`** | Es una autodeclaración; RxM no puede medir la intervención humana |
+| **`process_type`** | Autodeclaración del tipo de proceso generativo |
+| **`pog_bundle.timestamp`** | El agente declara su propio timestamp. RxM registra `created_at` como momento de aceptación, pero no verifica el timestamp del agente |
+
+> **Analogía legal:** Un receipt de RxM es comparable a un **acta notarial de manifestaciones**: el notario (RxM) certifica que una persona (agent_wallet) declaró algo (pog_bundle) en un momento dado (created_at), y lo sella de forma inmutable (anchor). El notario NO certifica que lo declarado sea verdad.
+
+### Semántica temporal: tres momentos distintos
+
+```
+┌─────────────────────┐    ┌──────────────────────┐    ┌────────────────────────┐
+│ pog_bundle.timestamp │ →  │ created_at           │ →  │ anchor.anchored_at     │
+│ Declarado por agente │    │ Fijado por servidor  │    │ Fijado por blockchain  │
+│ ❌ No verificado     │    │ ✅ Parte del receipt  │    │ ✅ Inmutable on-chain   │
+│                      │    │    hash               │    │                        │
+└─────────────────────┘    └──────────────────────┘    └────────────────────────┘
+```
+
+`created_at` es generado por el servidor RxM en el momento de aceptación del record y forma parte del material del `receipt_hash`. Esto implica que el servidor participa en el proceso determinista del receipt. La blockchain establece un tope temporal superior independiente que cualquiera puede verificar.
+
+---
+
+## 6. Objeto Receipt Completo (rex.receipt.v1)
 
 ```json
 {
     "schema": "rex.receipt.v1",
+    "spec_version": "1.2",
     "record_id": "019c5c91-a485-74f5-be0b-4941c49ac507",
     "content_hash": "sha256:aed327...06ac",
     "content_type": "text/plain",
@@ -261,11 +304,13 @@ Estos campos están firmados criptográficamente (EIP-712) por la `agent_wallet`
 }
 ```
 
-> **Nota sobre `eip712_domain`:** `chain_id: 0` y `verifying_contract: 0x0000...0000` son los valores reales de producción. La firma EIP-712 de RxM es off-chain por diseño; estos NO son valores de ejemplo.
+> **Nota sobre `eip712_domain`:** `chain_id: 0` y `verifying_contract: 0x0000...0000` son los valores **reales de producción**, NO placeholders. La firma EIP-712 de RxM es off-chain por diseño: certifica la identidad del agente sin vincularse a ningún contrato desplegado. Esto permite que la misma firma sea válida independientemente de la red donde se ancle.
+
+> **Nota sobre `spec_version`:** Indica la versión de esta especificación con la que se generó el receipt. Si en el futuro cambian las reglas de canonización, el anchor_method, o los tipos EIP-712, el verificador debe aplicar las reglas correspondientes a la `spec_version` del receipt.
 
 ---
 
-## 6. Vector de Prueba Oficial
+## 7. Vector de Prueba Oficial
 
 Este vector permite a cualquier implementación verificar que su código produce los resultados correctos.
 

@@ -165,6 +165,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         // Receipt exportable — contiene toda la info para verificación offline
         return reply.send({
             schema: 'rex.receipt.v1',
+            spec_version: '1.2',
             record_id: record.recordId,
             content_hash: record.contentHash,
             content_type: record.contentType,
