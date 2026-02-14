@@ -1,0 +1,94 @@
+
+­ƒöæ Wallet del agente: 0xDd6894b5447CD6A7103201372041DcAC8b2A0244
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  ­ƒº¬ Test E2E ÔÇö Res ex Machina Alpha
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+­ƒôí Paso 0: Verificando que la API est├í online...
+   Ô£à API OK (DB: 7ms, Redis: 106ms, Blockchain: 145ms)
+
+­ƒôØ Paso 1: Generando contenido de prueba...
+   Contenido: "Este es un contenido de prueba generado por IA. Timestamp: 2..."
+   Hash: sha256:aed32780a79caff3bbb7ad9fcca4a49909e2c3cfa53c54db763bfa79acfd06ac
+
+­ƒÆ░ Paso 2: Verificando balance del agente...
+   Balance: 0.009800 ETH
+   Ô£à Balance suficiente
+
+­ƒÆ© Paso 3: Enviando fee de 0.0002 ETH a 0x13bB040691BBa236a2A2AB83fE904EcC965Ba8a0...
+   ­ƒôñ Tx enviada: 0x185afef19aab770dd5d17c233ed11fb21577d4b0f145be034fe4419f7b431516
+   ÔÅ│ Esperando confirmaci├│n...
+   Ô£à Confirmada en bloque 37655643
+
+Ô£ì´©Å  Paso 4: Firmando PoG bundle con EIP-712...
+   Signature: 0xa3eecc8fafdd1e86d8...
+   Nonce: v4n1rx9v3gassh4k59135f1fgkdp6l3i
+
+­ƒÜÇ Paso 5: Enviando record a la API...
+   Ô£à Record creado exitosamente!
+   Record ID: 019c5c91-a485-74f5-be0b-4941c49ac507
+   Estado: pending_anchor
+   Receipt hash: sha256:20b13a4c3459ce4c6d622a64a7d504872f0620007356b057aa83b19eb140396a
+
+ÔÜô Paso 6: Esperando anchoring (puede tardar ~30 seg)...
+   [5s] Estado: anchored
+
+   Ô£à ┬íANCLADO EN BLOCKCHAIN!
+   ­ƒöù Tx: https://sepolia.basescan.org/tx/0xcb55362f7b339f6a771a5601b9b97423566138a42d8d2e2f25313b0c3c0e29f3
+   ­ƒôª Bloque: 37655645
+   Ôøô´©Å  Chain ID: 84532
+
+­ƒôï Paso 7: Exportando receipt verificable...
+{
+  "schema": "rex.receipt.v1",
+  "record_id": "019c5c91-a485-74f5-be0b-4941c49ac507",
+  "content_hash": "sha256:aed32780a79caff3bbb7ad9fcca4a49909e2c3cfa53c54db763bfa79acfd06ac",
+  "content_type": "text/plain",
+  "visibility": "proof_only",
+  "pog_bundle": {
+    "nonce": "v4n1rx9v3gassh4k59135f1fgkdp6l3i",
+    "schema": "pog.v1",
+    "model_id": "gpt-4-test",
+    "signature": "0xa3eecc8fafdd1e86d82d6e0678b74c35277e29958673dea7ff8a5779de72d4c7298456caa1a8a93c9c13d1bc6eb62dfa28ec84803c219cb5a36f71b1d4579cf51b",
+    "timestamp": "2026-02-14T14:32:54.340Z",
+    "runtime_id": "test-script-alpha-v1",
+    "agent_wallet": "0xDd6894b5447CD6A7103201372041DcAC8b2A0244",
+    "content_hash": "sha256:aed32780a79caff3bbb7ad9fcca4a49909e2c3cfa53c54db763bfa79acfd06ac",
+    "generation_process": {
+      "process_type": "direct",
+      "pipeline_steps": 1,
+      "human_intervention_level": 0
+    }
+  },
+  "receipt_hash": "sha256:20b13a4c3459ce4c6d622a64a7d504872f0620007356b057aa83b19eb140396a",
+  "created_at": "2026-02-14T14:32:54.661Z",
+  "state": "anchored",
+  "fee": {
+    "amount": "0.00020000",
+    "currency": "ETH",
+    "tx_hash": "0x185afef19aab770dd5d17c233ed11fb21577d4b0f145be034fe4419f7b431516"
+  },
+  "anchor": {
+    "tx_hash": "0xcb55362f7b339f6a771a5601b9b97423566138a42d8d2e2f25313b0c3c0e29f3",
+    "block": 37655645,
+    "chain_id": 84532,
+    "anchored_at": "2026-02-14T14:32:58.948Z"
+  }
+}
+
+­ƒöì Paso 8: Verificando por content_hash...
+   Ô£à Record encontrado: true
+   Record ID: 019c5c91-a485-74f5-be0b-4941c49ac507
+   Estado: anchored
+
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+  ­ƒÄë TEST COMPLETADO
+ÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉÔòÉ
+
+Resumen:
+  ­ƒôØ Contenido hash: sha256:aed32780a79caff3bbb7ad9fcca4a49909e2c3cfa53c54db763bfa79acfd06ac
+  ­ƒÆ© Fee tx: https://sepolia.basescan.org/tx/0x185afef19aab770dd5d17c233ed11fb21577d4b0f145be034fe4419f7b431516
+  ­ƒôä Record: https://res-ex-machina-api.onrender.com/v1/records/019c5c91-a485-74f5-be0b-4941c49ac507
+  ­ƒôï Export: https://res-ex-machina-api.onrender.com/v1/records/019c5c91-a485-74f5-be0b-4941c49ac507/export
+  Ôøô´©Å  Anchor: https://sepolia.basescan.org/tx/0xcb55362f7b339f6a771a5601b9b97423566138a42d8d2e2f25313b0c3c0e29f3
+

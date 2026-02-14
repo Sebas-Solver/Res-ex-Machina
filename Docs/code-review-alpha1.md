@@ -155,17 +155,22 @@ src/
 
 ## Plan de acción
 
-### Para alpha.2 (próxima iteración)
+### Para alpha.2 (próxima iteración) — Calidad + UX
 - [ ] #16 — Refactor: módulos compartidos de config (Redis + blockchain + cacheo health)
 - [ ] #18 — Refactor: formatters unificados + sanitización de logs
+- [ ] #20 — Links auto-generados en respuestas y export
+- [ ] #22 — Modo degradado: resiliencia ante fallos de Redis/L2
 
-### Para beta
+### Para beta — Escalabilidad + Ops
 - [ ] #17 — Rate limit con Redis store
 - [ ] #19 — Monitorización y alertas (Sentry o similar)
 
-### Issues existentes (v1.1/v2+)
-- #11 — provenance_metadata
-- #12 — Batch endpoint
-- #13 — Webhooks de estado
-- #14 — Doble atestación temporal
-- #15 — Investigación verificación model_id
+### Para v1.1 — Features
+- [ ] #21 — Listar registros por wallet + búsqueda
+- [ ] #12 — Batch endpoint
+- [ ] #13 — Webhooks de estado
+- [ ] #11 — provenance_metadata
+- [ ] #14 — Doble atestación temporal
+
+### Para v2+
+- [ ] #15 — Investigación verificación model_id
