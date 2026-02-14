@@ -66,11 +66,12 @@ Client (AI Agent)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `POST` | `/records` | EIP-712 signature | Create a new PoG record |
+| `POST` | `/records?wait_for_anchor=true` | EIP-712 signature | Create + wait for anchoring (max 25s) |
 | `GET` | `/records/:id` | None | Get record by UUID |
 | `GET` | `/records/verify?content_hash=` | None | Verify record exists by hash |
 | `GET` | `/records/:id/export` | None | Export verifiable receipt (JSON) |
+| `GET` | `/records/:id/export?mode=compact` | None | Compact receipt (verification only) |
 | `GET` | `/health` | None | System health check |
-| `DELETE` | `/records/:id` | — | Always returns 405 (immutable) |
 
 ### Rate Limits
 

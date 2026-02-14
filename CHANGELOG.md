@@ -21,6 +21,16 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 - **Spec v1.2** — Modelo de confianza formal, `spec_version` en receipts, semántica temporal `created_at`, vector de prueba oficial con hash esperado
 - **Issues creadas** — #20 (links auto), #21 (listar registros), #22 (modo degradado), #23 (fee enrichment), #24 (CLI verifier), #25 (export minimal)
 
+### DX Improvements (Developer + Agent Experience)
+
+#### Añadido
+
+- **`wait_for_anchor=true`** — POST `/v1/records?wait_for_anchor=true` espera hasta 25s a que el anchoring se complete, devolviendo el estado final en una sola llamada. Si timeout, devuelve `pending_anchor` con header `Retry-After: 5`
+- **`state_info` estructurado** — Todas las respuestas incluyen bloque `state_info` con `terminal`, `retryable` y `description` para que agentes actúen programáticamente
+- **`explorer_url` automático** — Bloques `anchor` y `fee` ahora incluyen `explorer_url` y `network_name` generados automáticamente según `chain_id`
+- **Modo compact** — `GET /v1/records/:id/export?mode=compact` devuelve solo campos de verificación criptográfica, omitiendo fee, visibility, metadata de generación (ideal para LLMs)
+- **18 tests nuevos** — Tests unitarios para `stateInfo`, `explorer` y tests de integración para state_info, compact mode
+
 ---
 
 ## [1.0.0-alpha.1] — 2026-02-12

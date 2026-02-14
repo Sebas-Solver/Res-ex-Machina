@@ -288,3 +288,102 @@ describe('GET /v1/records/:id/export', () => {
         expect(res.json().error.code).toBe('record_not_found');
     });
 });
+
+// =============================================
+// DX Features: state_info, explorer_url, compact
+// =============================================
+describe('DX: state_info en respuestas', () => {
+    it('GET /:id incluye state_info con terminal/retryable/description', async () => {
+        mockDbResult = [MOCK_RECORD];
+
+        const res = await app.inject({
+            method: 'GET',
+            url: '/v1/records/01936d8a-1234-7000-8000-000000000001',
+        });
+
+        expect(res.statusCode).toBe(200);
+        const body = res.json();
+        expect(body.state_info).toBeDefined();
+        expect(body.state_info.terminal).toBe(true);
+        expect(body.state_info.retryable).toBe(false);
+        expect(typeof body.state_info.description).toBe('string');
+    });
+
+    it('verify incluye state_info', async () => {
+        mockDbResult = [MOCK_RECORD];
+        const hash = 'sha256:' + 'ab'.repeat(32);
+
+        const res = await app.inject({
+            method: 'GET',
+            url: `/v1/records/verify?content_hash=${hash}`,
+        });
+
+        expect(res.statusCode).toBe(200);
+        const body = res.json();
+        expect(body.state_info).toBeDefined();
+        expect(body.state_info.terminal).toBe(true);
+    });
+
+    it('export incluye state_info', async () => {
+        mockDbResult = [MOCK_RECORD];
+
+        const res = await app.inject({
+            method: 'GET',
+            url: '/v1/records/01936d8a-1234-7000-8000-000000000001/export',
+        });
+
+        const body = res.json();
+        expect(body.state_info).toBeDefined();
+        expect(body.state_info.terminal).toBe(true);
+    });
+});
+
+describe('DX: modo compact en export', () => {
+    it('mode=compact incluye solo campos de verificación', async () => {
+        mockDbResult = [MOCK_RECORD];
+
+        const res = await app.inject({
+            method: 'GET',
+            url: '/v1/records/01936d8a-1234-7000-8000-000000000001/export?mode=compact',
+        });
+
+        expect(res.statusCode).toBe(200);
+        const body = res.json();
+
+        // Campos que SÍ deben estar
+        expect(body.schema).toBe('rex.receipt.v1');
+        expect(body.spec_version).toBe('1.2');
+        expect(body.record_id).toBeDefined();
+        expect(body.content_hash).toBeDefined();
+        expect(body.receipt_hash).toBeDefined();
+        expect(body.state).toBeDefined();
+        expect(body.state_info).toBeDefined();
+        expect(body.verification).toBeDefined();
+        expect(body.pog_bundle.signature).toBeDefined();
+        expect(body.pog_bundle.agent_wallet).toBeDefined();
+        expect(body.anchor).toBeDefined();
+
+        // Campos que NO deben estar en compact
+        expect(body.content_type).toBeUndefined();
+        expect(body.visibility).toBeUndefined();
+        expect(body.fee).toBeUndefined();
+        expect(body.pog_bundle.eip712_domain).toBeUndefined();
+        expect(body.pog_bundle.runtime_id).toBeUndefined();
+        expect(body.pog_bundle.model_id).toBeUndefined();
+    });
+
+    it('mode=full (default) incluye todos los campos', async () => {
+        mockDbResult = [MOCK_RECORD];
+
+        const res = await app.inject({
+            method: 'GET',
+            url: '/v1/records/01936d8a-1234-7000-8000-000000000001/export',
+        });
+
+        const body = res.json();
+        expect(body.content_type).toBeDefined();
+        expect(body.visibility).toBeDefined();
+        expect(body.fee).toBeDefined();
+        expect(body.pog_bundle.eip712_domain).toBeDefined();
+    });
+});
