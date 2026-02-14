@@ -127,17 +127,19 @@ Esto significa que para usar RxM v1.0 necesitas:
 - Una wallet de Ethereum (identidad técnica)
 - Acceso a la red blockchain (para pagar la tasa)
 
-### Las 4 operaciones disponibles
+### Las operaciones disponibles
 
 | Operación | Qué hace | Cuándo usarla |
 |-----------|----------|---------------|
 | **Registrar** | Crea un nuevo registro de generación | Cada vez que tu IA genera algo que quieras certificar |
+| **Registrar y esperar** | Igual, pero espera a que se ancle en blockchain antes de responder (max 25s) | Si necesitas la confirmación completa en una sola llamada |
 | **Consultar** | Busca un registro por su ID | Si quieres ver los detalles de un registro concreto |
 | **Verificar** | Comprueba si existe un registro para un contenido | Si alguien te dice "esto lo generé yo" y quieres verificarlo |
 | **Exportar** | Descarga el receipt completo de un registro | Si necesitas una prueba formal para presentar a alguien |
+| **Exportar (compacto)** | Descarga solo los datos esenciales de verificación | Si un agente IA necesita verificar rápidamente (ahorra tokens) |
 | **Verificar receipt** | Comprueba que un receipt es auténtico | Si recibes un receipt y quieres confirmar que no ha sido manipulado |
 
-> **Novedad:** Desde la versión alpha.2, los receipts exportados incluyen toda la información necesaria para verificarlos de forma independiente: algoritmo de hash, dominio EIP-712, hash anclado en blockchain, etc. No necesitas confiar en RxM — puedes comprobarlo tú mismo.
+> **Novedad alpha.2:** Los receipts ahora incluyen enlaces directos al explorador blockchain. Puedes hacer clic y ver la transacción directamente en BaseScan, Etherscan, etc. No necesitas buscar tú mismo el hash de la transacción.
 
 ### Ejemplo real (simplificado)
 
@@ -146,9 +148,10 @@ Imagina que tienes un agente de IA que genera informes. Quieres que cada informe
 1. **Tu agente genera un informe** → calcula su hash: `sha256:a1b2c3d4...`
 2. **Tu agente firma** los datos con su wallet y paga la tasa
 3. **Tu agente envía** todo a RxM → recibe un receipt con ID `f8d2e7a1-...`
+   - *Opción rápida:* si usa `wait_for_anchor=true`, recibe la confirmación completa inmediatamente (sin tener que esperar y volver a consultar)
 4. **Días después**, alguien pregunta: "¿Esto lo generó tu IA?"
 5. **Verificas** en RxM con el hash del informe → "Sí, registrado el 12/02/2026 a las 14:30"
-6. **Exportas** el receipt como prueba formal
+6. **Exportas** el receipt como prueba formal (o en modo compacto si lo necesita una IA)
 7. **El tercero verifica** el receipt con el verificador CLI → `✅ RECORD AUTÉNTICO`
 
 ---
@@ -272,6 +275,13 @@ Un registro pasa por estos estados:
 - **`pending_anchor`** — Normal. Espera a que el sistema lo ancle en blockchain (1-5 minutos)
 - **`anchored`** — Perfecto. El registro está completo y es inmutable
 - **`anchor_failed`** — Raro. Hubo un problema técnico. Los administradores pueden resolverlo manualmente
+
+> **Novedad alpha.2 — `state_info`:** Ahora la respuesta de la API viene con un bloque extra llamado `state_info` que te dice, en lenguaje claro:
+> - **¿Es un estado final?** (`terminal: true/false`) — Si ya no cambiará más
+> - **¿Se puede reintentar?** (`retryable: true/false`) — Si el sistema lo va a intentar de nuevo automáticamente
+> - **¿Qué significa?** (`description`) — Una descripción en texto de lo que está pasando
+>
+> Esto es especialmente útil para agentes de IA, que pueden decidir qué hacer (esperar, reintentar, continuar...) sin necesidad de interpretar los nombres técnicos de los estados.
 
 ---
 
