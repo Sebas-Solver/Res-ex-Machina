@@ -50,6 +50,8 @@ const MOCK_RECORD = {
     feeAmount: '0.01000000',
     feeCurrency: 'ETH',
     feeTxHash: '0x' + 'ee'.repeat(32),
+    feeBlock: 37655640,
+    feeConfirmedAt: new Date('2026-01-01T00:00:30.000Z'),
     anchorTxHash: '0x' + 'dd'.repeat(32),
     anchorBlock: 42,
     anchorChainId: 84532,
@@ -96,6 +98,19 @@ describe('buildFeeBlock', () => {
         expect(fee.chain_id).toBe(84532);
         expect(fee.network_name).toBe('Base Sepolia');
         expect(fee.explorer_url).toContain('sepolia.basescan.org/tx/');
+    });
+
+    it('incluye block y confirmed_at cuando están disponibles (Issue #23)', () => {
+        const fee = buildFeeBlock(MOCK_RECORD);
+        expect(fee.block).toBe(37655640);
+        expect(fee.confirmed_at).toBe('2026-01-01T00:00:30.000Z');
+    });
+
+    it('devuelve null para block y confirmed_at si no están disponibles', () => {
+        const recordSinFeeBlock = { ...MOCK_RECORD, feeBlock: null, feeConfirmedAt: null } as any;
+        const fee = buildFeeBlock(recordSinFeeBlock);
+        expect(fee.block).toBeNull();
+        expect(fee.confirmed_at).toBeNull();
     });
 });
 

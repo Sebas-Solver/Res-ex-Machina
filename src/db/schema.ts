@@ -79,6 +79,12 @@ export const records = pgTable(
         /** Hash de la transacción de pago del fee — 1:1 con record, no reutilizable */
         feeTxHash: varchar('fee_tx_hash', { length: 66 }).notNull().unique(),
 
+        /** Número de bloque donde se confirmó el fee (Issue #23) */
+        feeBlock: bigint('fee_block', { mode: 'number' }),
+
+        /** Timestamp de confirmación del fee on-chain (Issue #23) */
+        feeConfirmedAt: timestamp('fee_confirmed_at', { withTimezone: true }),
+
         // --- Anchoring ---
         /** Hash de la transacción de anchoring on-chain */
         anchorTxHash: varchar('anchor_tx_hash', { length: 66 }),

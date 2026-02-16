@@ -66,7 +66,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
 
         // 3. Checks de duplicados (content_hash, nonce, fee_tx_hash) en paralelo
         //    + verificar fee on-chain — independientes entre sí
-        await Promise.all([
+        const [, feeVerification] = await Promise.all([
             checkDuplicates(
                 pog_bundle.content_hash,
                 pog_bundle.agent_wallet,
@@ -77,7 +77,11 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         ]);
 
         // 4. Crear record (INSERT DB + enqueue anchor)
-        const result = await createRecord(input);
+        //    Issue #23: pasar datos enriquecidos de fee (block + confirmed_at)
+        const result = await createRecord(input, {
+            feeBlock: Number(feeVerification.blockNumber),
+            feeConfirmedAt: feeVerification.confirmedAt,
+        });
 
         // 5. Si wait_for_anchor=true, esperar al anchoring (max 25s)
         const shouldWait = request.query.wait_for_anchor === 'true';

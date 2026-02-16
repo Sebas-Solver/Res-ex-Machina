@@ -107,6 +107,7 @@ export async function checkDuplicates(
  */
 export async function createRecord(
     input: ReturnType<typeof createRecordSchema.parse>,
+    feeData?: { feeBlock: number; feeConfirmedAt: Date },
 ): Promise<CreateRecordResult> {
     const { pog_bundle } = input;
     const recordId = generateRecordId();
@@ -138,6 +139,8 @@ export async function createRecord(
             feeAmount: input.fee_amount.toFixed(8),
             feeCurrency: input.fee_currency,
             feeTxHash: input.fee_tx_hash,
+            feeBlock: feeData?.feeBlock ?? null,
+            feeConfirmedAt: feeData?.feeConfirmedAt ?? null,
         });
     } catch (dbError: unknown) {
         const pgError = dbError as { code?: string; constraint_name?: string; detail?: string };

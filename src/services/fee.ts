@@ -27,6 +27,7 @@ export interface FeeVerificationResult {
     amount: string;
     recipient: string;
     blockNumber: bigint;
+    confirmedAt: Date;
 }
 
 /**
@@ -97,5 +98,6 @@ export async function verifyFee(feeTxHash: string): Promise<FeeVerificationResul
         amount: formatEther(tx.value),
         recipient: tx.to as string,
         blockNumber: receipt.blockNumber,
+        confirmedAt: new Date(txTimestamp),
     };
 }

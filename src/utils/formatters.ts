@@ -51,6 +51,8 @@ export function buildFeeBlock(record: DbRecord) {
         amount: record.feeAmount,
         currency: record.feeCurrency,
         tx_hash: record.feeTxHash,
+        block: record.feeBlock ?? null,
+        confirmed_at: record.feeConfirmedAt?.toISOString() ?? null,
         chain_id: env.L2_CHAIN_ID,
         to: env.FEE_RECEIVER_ADDRESS,
         network_name: getNetworkName(env.L2_CHAIN_ID),
