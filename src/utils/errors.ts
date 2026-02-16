@@ -92,6 +92,14 @@ export const invalidRecordId = () =>
 export const recordNotFound = () =>
     new ApiError(404, 'record_not_found', 'No record found with the given identifier');
 
+// --- Factory functions para GET /v1/records (Issue #21) ---
+
+export const missingAgentWallet = () =>
+    new ApiError(400, 'missing_agent_wallet', 'Query parameter agent_wallet is required and must be a valid Ethereum address');
+
+export const invalidQueryParam = (details?: Record<string, unknown>) =>
+    new ApiError(400, 'invalid_query_param', 'One or more query parameters are invalid', details);
+
 // --- Factory functions para autenticación de wallet (GET /mine) ---
 
 export const missingAuthHeaders = () =>

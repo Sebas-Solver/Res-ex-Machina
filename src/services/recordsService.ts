@@ -1,7 +1,8 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, sql, desc, asc, gte, lte, arrayContains } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 import { createRecordSchema } from '../routes/schemas/index.js';
+import type { ListRecordsQuery } from '../routes/schemas/listRecordsSchema.js';
 import { generateRecordId } from '../utils/uuid.js';
 import { computeReceiptHash } from './receipt.js';
 import { enqueueAnchorJob } from './queue.js';
@@ -175,3 +176,64 @@ export async function createRecord(
         created_at: createdAt.toISOString(),
     };
 }
+
+// -------------------------------------------------------------------
+// 4. Listar records con filtros y paginación (Issue #21)
+// -------------------------------------------------------------------
+
+/**
+ * Lista records filtrados por wallet (obligatorio) y criterios opcionales.
+ * Devuelve los records paginados + total para la respuesta.
+ */
+export async function listRecords(params: ListRecordsQuery) {
+    // --- Construir condiciones dinámicas ---
+    const conditions = [
+        sql`lower(${records.agentWallet}) = ${params.agent_wallet.toLowerCase()}`,
+    ];
+
+    if (params.state) {
+        conditions.push(eq(records.state, params.state));
+    }
+
+    if (params.content_type) {
+        conditions.push(eq(records.contentType, params.content_type));
+    }
+
+    if (params.tag) {
+        conditions.push(arrayContains(records.tags, [params.tag]));
+    }
+
+    if (params.from) {
+        conditions.push(gte(records.createdAt, new Date(params.from)));
+    }
+
+    if (params.to) {
+        conditions.push(lte(records.createdAt, new Date(params.to)));
+    }
+
+    const whereClause = and(...conditions);
+
+    // --- Contar total ---
+    const countResult = await db
+        .select({ count: sql<number>`cast(count(*) as integer)` })
+        .from(records)
+        .where(whereClause);
+
+    const total = countResult[0]?.count ?? 0;
+
+    // --- Obtener records paginados ---
+    const orderFn = params.sort === 'created_at_asc'
+        ? asc(records.createdAt)
+        : desc(records.createdAt);
+
+    const result = await db
+        .select()
+        .from(records)
+        .where(whereClause)
+        .orderBy(orderFn)
+        .limit(params.limit)
+        .offset(params.offset);
+
+    return { records: result, total };
+}
+

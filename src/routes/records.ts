@@ -7,6 +7,7 @@ import {
     validateAndParseInput,
     checkDuplicates,
     createRecord,
+    listRecords,
 } from '../services/recordsService.js';
 import { verifyPoGSignature } from '../services/signature.js';
 import { verifyFee } from '../services/fee.js';
@@ -15,7 +16,10 @@ import {
     invalidRecordId,
     recordNotFound,
     invalidContentHash,
+    missingAgentWallet,
+    invalidQueryParam,
 } from '../utils/errors.js';
+import { listRecordsQuerySchema } from './schemas/listRecordsSchema.js';
 import { getStateInfo } from '../utils/stateInfo.js';
 import { getExplorerTxUrl, getNetworkName } from '../utils/explorer.js';
 import {
@@ -36,6 +40,52 @@ import { walletAuth } from '../middleware/walletAuth.js';
  * GET /:id/export — Exportar receipt (Issue #5, soporta ?mode=compact)
  */
 export default async function recordRoutes(fastify: FastifyInstance) {
+    // --- Endpoint de listado público (Issue #21) ---
+
+    /**
+     * GET /v1/records?agent_wallet=0x...
+     *
+     * Lista records filtrados por wallet (obligatorio) y criterios opcionales.
+     * Soporta filtros: state, content_type, tag, from, to, sort.
+     * Paginación: limit (1-100, default 20), offset (default 0).
+     */
+    fastify.get<{
+        Querystring: Record<string, string | undefined>;
+    }>('/', async (request, reply) => {
+        // Validar query params con Zod
+        const parsed = listRecordsQuerySchema.safeParse(request.query);
+
+        if (!parsed.success) {
+            const firstError = parsed.error.issues[0];
+            const path = firstError?.path?.join('.') ?? 'unknown';
+
+            // Error específico si falta agent_wallet
+            if (path === 'agent_wallet') {
+                throw missingAgentWallet();
+            }
+
+            throw invalidQueryParam({
+                field: path,
+                issue: firstError?.message,
+            });
+        }
+
+        const params = parsed.data;
+
+        // Consultar DB
+        const result = await listRecords(params);
+
+        return reply.send({
+            records: result.records.map(formatRecordResponse),
+            pagination: {
+                total: result.total,
+                limit: params.limit,
+                offset: params.offset,
+                has_more: params.offset + params.limit < result.total,
+            },
+        });
+    });
+
     /**
      * POST /v1/records
      *
