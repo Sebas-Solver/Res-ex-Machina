@@ -21,8 +21,8 @@ Obtendrás un JSON como este:
     "schema": "pog.v1",
     "content_hash": "sha256:a1b2c3d4e5f6...",
     "agent_wallet": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "model_id": "gpt-4o",
-    "runtime_id": "openai-v1",
+    "model_id": "openai:gpt-4o:2026-01",
+    "runtime_id": "node-22.x",
     "generation_process": {
       "process_type": "direct",
       "human_intervention_level": 0,
