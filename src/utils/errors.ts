@@ -92,6 +92,20 @@ export const invalidRecordId = () =>
 export const recordNotFound = () =>
     new ApiError(404, 'record_not_found', 'No record found with the given identifier');
 
+// --- Factory functions para autenticación de wallet (GET /mine) ---
+
+export const missingAuthHeaders = () =>
+    new ApiError(401, 'missing_auth_headers', 'Wallet authentication requires X-Wallet-Address, X-Signature, and X-Timestamp headers');
+
+export const invalidWalletAddress = () =>
+    new ApiError(401, 'invalid_wallet_address', 'X-Wallet-Address must be a valid Ethereum address (0x + 40 hex chars)');
+
+export const authTimestampExpired = () =>
+    new ApiError(401, 'auth_timestamp_expired', 'X-Timestamp is invalid or outside the 5-minute validity window');
+
+export const authSignatureInvalid = () =>
+    new ApiError(401, 'auth_signature_invalid', 'Wallet signature verification failed. Ensure the message "RexAuth:{timestamp}" is signed correctly');
+
 /**
  * Error handler global para Fastify.
  * Intercepta ApiError y devuelve el formato estándar.

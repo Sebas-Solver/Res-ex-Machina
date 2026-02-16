@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 import { env } from '../config/env.js';
@@ -23,13 +23,15 @@ import {
     formatCompactExport,
     formatFullExport,
 } from '../utils/formatters.js';
+import { walletAuth } from '../middleware/walletAuth.js';
 
 
 /**
  * Rutas del recurso /records.
  *
- * POST /   — Crear un nuevo record con PoG v1 (soporta ?wait_for_anchor=true)
- * GET /:id — Obtener record por ID (Issue #5)
+ * POST /     — Crear un nuevo record con PoG v1 (soporta ?wait_for_anchor=true)
+ * GET /mine  — Listar records propios, autenticado por firma de wallet (Issue #26)
+ * GET /:id   — Obtener record por ID (Issue #5)
  * GET /verify?content_hash= — Verificar existencia (Issue #5)
  * GET /:id/export — Exportar receipt (Issue #5, soporta ?mode=compact)
  */
@@ -114,8 +116,57 @@ export default async function recordRoutes(fastify: FastifyInstance) {
             state_info: getStateInfo(result.state),
         });
     });
+    // --- Endpoint autenticado (Issue #26) ---
 
-    // --- Endpoints de consulta (Issue #5) ---
+    /**
+     * GET /v1/records/mine
+     *
+     * Lista los records del agente autenticado.
+     * Requiere firma EIP-191 del mensaje "RexAuth:{timestamp}" en headers.
+     * Soporta paginación con ?limit=20&offset=0
+     *
+     * IMPORTANTE: Esta ruta DEBE registrarse ANTES de /:id
+     * para que Fastify no interprete "mine" como un UUID.
+     */
+    fastify.get<{
+        Querystring: { limit?: string; offset?: string };
+    }>('/mine', {
+        preHandler: walletAuth,
+    }, async (request, reply) => {
+        const wallet = request.authenticatedWallet!;
+        const limit = Math.min(Math.max(parseInt(request.query.limit ?? '20', 10) || 20, 1), 100);
+        const offset = Math.max(parseInt(request.query.offset ?? '0', 10) || 0, 0);
+
+        // Contar total de records de esta wallet
+        const countResult = await db
+            .select({ count: records.recordId })
+            .from(records)
+            .where(eq(records.agentWallet, wallet));
+
+        const total = countResult.length;
+
+        // Obtener records paginados, más recientes primero
+        const result = await db
+            .select()
+            .from(records)
+            .where(eq(records.agentWallet, wallet))
+            .orderBy(desc(records.createdAt))
+            .limit(limit)
+            .offset(offset);
+
+        return reply.send({
+            wallet,
+            total,
+            records: result.map(formatRecordResponse),
+            pagination: {
+                limit,
+                offset,
+                has_more: offset + limit < total,
+            },
+        });
+    });
+
+    // --- Endpoints de consulta públicos (Issue #5) ---
 
     /**
      * GET /v1/records/:id

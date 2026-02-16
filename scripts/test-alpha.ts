@@ -7,6 +7,10 @@
  *   3. Firma el PoG bundle con EIP-712
  *   4. Llama a POST /v1/records en la API pública
  *   5. Consulta el record para verificar el resultado
+ *   6. Verifica links auto-generados (Issue #20)
+ *   7. Exporta receipt y verifica estructura
+ *   8. Verifica por content_hash
+ *   9. Lista records propios con auth de wallet (Issue #26)
  *
  * Uso:
  *   npx tsx scripts/test-alpha.ts
@@ -155,7 +159,10 @@ async function main() {
     console.log('   ⏳ Esperando confirmación...');
 
     const feeReceipt = await publicClient.waitForTransactionReceipt({ hash: feeTxHash });
-    console.log(`   ✅ Confirmada en bloque ${feeReceipt.blockNumber}\n`);
+    console.log(`   ✅ Confirmada en bloque ${feeReceipt.blockNumber}`);
+    console.log('   ⏳ Esperando 10s para propagación en la red...');
+    await sleep(10000);
+    console.log('   ✅ Listo\n');
 
     // ── Paso 4: Firmar PoG bundle con EIP-712 ──
     console.log('✍️  Paso 4: Firmando PoG bundle con EIP-712...');
@@ -222,6 +229,7 @@ async function main() {
         console.log(`   ✅ Record creado exitosamente!`);
         console.log(`   Record ID: ${apiData.record_id}`);
         console.log(`   Estado: ${apiData.state}`);
+        console.log(`   State info: ${apiData.state_info.description} (terminal: ${apiData.state_info.terminal})`);
         console.log(`   Receipt hash: ${apiData.receipt_hash}\n`);
     } else {
         console.error(`   ❌ Error ${apiRes.status}:`, JSON.stringify(apiData, null, 2));
@@ -231,6 +239,7 @@ async function main() {
     // ── Paso 6: Esperar y verificar anchoring ──
     console.log('⚓ Paso 6: Esperando anchoring (puede tardar ~30 seg)...');
     let anchored = false;
+    let anchoredData: any = null;
     for (let i = 0; i < 12; i++) {
         await sleep(5000);
         const checkRes = await fetch(`${API_URL}/v1/records/${apiData.record_id}`);
@@ -239,10 +248,11 @@ async function main() {
 
         if (checkData.state === 'anchored') {
             anchored = true;
+            anchoredData = checkData;
             console.log(`\n   ✅ ¡ANCLADO EN BLOCKCHAIN!`);
-            console.log(`   🔗 Tx: https://sepolia.basescan.org/tx/${checkData.anchor.tx_hash}`);
+            console.log(`   🔗 Tx: ${checkData.anchor.explorer_url}`);
             console.log(`   📦 Bloque: ${checkData.anchor.block}`);
-            console.log(`   ⛓️  Chain ID: ${checkData.anchor.chain_id}`);
+            console.log(`   ⛓️  Chain: ${checkData.anchor.network_name} (ID: ${checkData.anchor.chain_id})`);
             break;
         } else if (checkData.state === 'anchor_failed') {
             console.error(`\n   ❌ Anchoring falló`);
@@ -255,30 +265,123 @@ async function main() {
         console.log(`   ${API_URL}/v1/records/${apiData.record_id}`);
     }
 
-    // ── Paso 7: Exportar receipt ──
-    console.log('\n📋 Paso 7: Exportando receipt verificable...');
+    // ── Paso 7: Verificar links auto-generados (Issue #20) ──
+    console.log('\n🔗 Paso 7: Verificando links auto-generados...');
+    const linksRes = await fetch(`${API_URL}/v1/records/${apiData.record_id}`);
+    const linksData = await linksRes.json();
+
+    if (linksData.links) {
+        console.log(`   ✅ Links presentes en respuesta:`);
+        console.log(`      self:   ${linksData.links.self}`);
+        console.log(`      export: ${linksData.links.export}`);
+        console.log(`      verify: ${linksData.links.verify}`);
+
+        // Verificar que los links son accesibles
+        const selfCheck = await fetch(linksData.links.self);
+        console.log(`   ${selfCheck.ok ? '✅' : '❌'} Link 'self' ${selfCheck.ok ? 'funciona' : 'falla'} (${selfCheck.status})`);
+
+        const verifyCheck = await fetch(linksData.links.verify);
+        console.log(`   ${verifyCheck.ok ? '✅' : '❌'} Link 'verify' ${verifyCheck.ok ? 'funciona' : 'falla'} (${verifyCheck.status})`);
+    } else {
+        console.log(`   ⚠️ Links no presentes (API_BASE_URL no configurada?)`);
+    }
+
+    // Verificar fee block con explorer
+    if (linksData.fee) {
+        console.log(`\n   💰 Fee block:`);
+        console.log(`      amount:       ${linksData.fee.amount} ${linksData.fee.currency}`);
+        console.log(`      network:      ${linksData.fee.network_name}`);
+        console.log(`      explorer_url: ${linksData.fee.explorer_url}`);
+    }
+
+    // Verificar state_info
+    console.log(`\n   📊 State info: "${linksData.state_info?.description}" (terminal: ${linksData.state_info?.terminal}, retryable: ${linksData.state_info?.retryable})`);
+
+    // ── Paso 8: Exportar receipt ──
+    console.log('\n📋 Paso 8: Exportando receipt verificable...');
     const exportRes = await fetch(`${API_URL}/v1/records/${apiData.record_id}/export`);
     const receipt = await exportRes.json();
-    console.log(JSON.stringify(receipt, null, 2));
 
-    // ── Paso 8: Verificar por content_hash ──
-    console.log('\n🔍 Paso 8: Verificando por content_hash...');
+    // Verificar estructura del export
+    const exportChecks = [
+        ['schema', receipt.schema === 'rex.receipt.v1'],
+        ['spec_version', receipt.spec_version === '1.2'],
+        ['eip712_domain', !!(receipt.pog_bundle as any)?.eip712_domain],
+        ['verification', !!receipt.verification],
+        ['links', !!receipt.links],
+        ['fee.explorer_url', !!receipt.fee?.explorer_url],
+    ];
+    console.log('   Verificación de estructura del export:');
+    for (const [name, ok] of exportChecks) {
+        console.log(`      ${ok ? '✅' : '❌'} ${name}`);
+    }
+
+    // Mostrar export compacto también
+    console.log('\n   📦 Export compacto:');
+    const compactRes = await fetch(`${API_URL}/v1/records/${apiData.record_id}/export?mode=compact`);
+    const compact = await compactRes.json();
+    const compactChecks = [
+        ['schema', compact.schema === 'rex.receipt.v1'],
+        ['sin links (ahorro tokens)', !compact.links],
+        ['sin visibility', !compact.visibility],
+        ['pog_bundle.signature', !!(compact.pog_bundle as any)?.signature],
+    ];
+    for (const [name, ok] of compactChecks) {
+        console.log(`      ${ok ? '✅' : '❌'} ${name}`);
+    }
+
+    // ── Paso 9: Verificar por content_hash ──
+    console.log('\n🔍 Paso 9: Verificando por content_hash...');
     const verifyRes = await fetch(`${API_URL}/v1/records/verify?content_hash=${contentHash}`);
     const verifyData = await verifyRes.json();
     console.log(`   ✅ Record encontrado: ${verifyData.exists}`);
     console.log(`   Record ID: ${verifyData.record_id}`);
     console.log(`   Estado: ${verifyData.state}`);
+    console.log(`   State info: ${verifyData.state_info?.description}`);
+
+    // ── Paso 10: Listar mis records (autenticado) ──
+    console.log('\n🔐 Paso 10: GET /records/mine (autenticado por firma de wallet)...');
+    const authTimestamp = new Date().toISOString();
+    const authMessage = `RexAuth:${authTimestamp}`;
+    const authSignature = await account.signMessage({ message: authMessage });
+
+    const mineRes = await fetch(`${API_URL}/v1/records/mine`, {
+        headers: {
+            'X-Wallet-Address': account.address,
+            'X-Signature': authSignature,
+            'X-Timestamp': authTimestamp,
+        },
+    });
+    const mineData = await mineRes.json();
+
+    if (mineRes.ok) {
+        console.log(`   ✅ Autenticación exitosa`);
+        console.log(`   Wallet: ${mineData.wallet}`);
+        console.log(`   Total records: ${mineData.total}`);
+        console.log(`   Records en esta página: ${mineData.records?.length}`);
+        console.log(`   Paginación: limit=${mineData.pagination?.limit}, offset=${mineData.pagination?.offset}, has_more=${mineData.pagination?.has_more}`);
+
+        // Verificar que el record que acabamos de crear está en la lista
+        const found = mineData.records?.some((r: any) => r.record_id === apiData.record_id);
+        console.log(`   ${found ? '✅' : '❌'} Record recién creado ${found ? 'encontrado' : 'NO encontrado'} en la lista`);
+    } else {
+        console.log(`   ❌ Error ${mineRes.status}: ${JSON.stringify(mineData)}`);
+    }
+
+    // Probar sin auth → debe dar 401
+    const noAuthRes = await fetch(`${API_URL}/v1/records/mine`);
+    console.log(`   ${noAuthRes.status === 401 ? '✅' : '❌'} Sin auth → ${noAuthRes.status} (esperado 401)`);
 
     console.log('\n═══════════════════════════════════════════');
     console.log('  🎉 TEST COMPLETADO');
     console.log('═══════════════════════════════════════════\n');
     console.log('Resumen:');
     console.log(`  📝 Contenido hash: ${contentHash}`);
-    console.log(`  💸 Fee tx: https://sepolia.basescan.org/tx/${feeTxHash}`);
-    console.log(`  📄 Record: ${API_URL}/v1/records/${apiData.record_id}`);
-    console.log(`  📋 Export: ${API_URL}/v1/records/${apiData.record_id}/export`);
-    if (anchored) {
-        console.log(`  ⛓️  Anchor: https://sepolia.basescan.org/tx/${(await (await fetch(`${API_URL}/v1/records/${apiData.record_id}`)).json()).anchor?.tx_hash}`);
+    console.log(`  💸 Fee tx: ${linksData.fee?.explorer_url ?? `https://sepolia.basescan.org/tx/${feeTxHash}`}`);
+    console.log(`  📄 Record: ${linksData.links?.self ?? `${API_URL}/v1/records/${apiData.record_id}`}`);
+    console.log(`  📋 Export: ${linksData.links?.export ?? `${API_URL}/v1/records/${apiData.record_id}/export`}`);
+    if (anchored && anchoredData?.anchor) {
+        console.log(`  ⛓️  Anchor: ${anchoredData.anchor.explorer_url}`);
     }
     console.log('');
 }
