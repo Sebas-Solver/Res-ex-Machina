@@ -7,6 +7,32 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [Unreleased] — Para alpha.2
 
+### Listado Público de Records — Issue #21
+
+#### Añadido
+
+- **`GET /v1/records`** — Endpoint público para listar records por wallet con filtros avanzados
+  - Filtro obligatorio: `agent_wallet` (dirección Ethereum)
+  - Filtros opcionales: `state`, `content_type`, `tag`, rango de fechas (`from`/`to`)
+  - Paginación: `limit` (1-100, default 20) y `offset` (≥0, default 0)
+  - Ordenación: `sort` (`created_at_asc`, `created_at_desc`)
+  - Respuesta con `pagination: { total, limit, offset, has_more }`
+- **`src/routes/schemas/listRecordsSchema.ts`** — Schema Zod para query params del listado
+- **Errores nuevos** — `missing_agent_wallet` (400), `invalid_query_param` (400)
+- **11 tests nuevos** en `tests/records-list.test.ts` (total: 113 → 125)
+
+### Interoperabilidad con Estándares de Procedencia — Issue #11
+
+#### Añadido
+
+- **`provenance_metadata`** — Campo JSONB opcional en `POST /v1/records` para vincular con estándares de procedencia
+  - 5 estándares: `c2pa`, `iptc`, `xmp`, `schema_org`, `custom`
+  - Campos: `standard`, `manifest_hash` (sha256), `claim_generator`, `issuer`, `assertions` (max 20), `manifest_uri`
+  - 100% backward compatible — records sin provenance siguen funcionando
+- **`provenanceMetadataSchema`** — Schema Zod exportado para validación
+- Incluido automáticamente en todas las respuestas API (`formatRecordResponse`, `formatFullExport`)
+- **12 tests nuevos** de validación (total: 125 tests, 10 suites)
+
 ### Infraestructura y Resiliencia — Issues #16, #17, #22
 
 #### Añadido

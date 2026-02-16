@@ -5,8 +5,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/estado-Alpha%20Privada-brightgreen" alt="Estado: Alpha Privada"/>
-  <img src="https://img.shields.io/badge/versión-v1.0.0--alpha.1-blue" alt="Versión: v1.0.0-alpha.1"/>
-  <img src="https://img.shields.io/badge/tests-100%20passing-brightgreen" alt="Tests: 100 passing"/>
+  <img src="https://img.shields.io/badge/versión-v1.0.0--alpha.2--dev-blue" alt="Versión: v1.0.0-alpha.2-dev"/>
+  <img src="https://img.shields.io/badge/tests-125%20passing-brightgreen" alt="Tests: 125 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/licencia-Apache%202.0-lightgrey" alt="Licencia: Apache 2.0"/>
@@ -93,7 +93,7 @@ Agente IA ──────────── API REST ────────
 | Cola de trabajos | Redis + BullMQ |
 | Blockchain | viem + L2 EVM (Base Sepolia testnet / multi-chain) |
 | Firma | EIP-712 (verifyTypedData) |
-| Tests | Vitest (100 tests) + cobertura v8 |
+| Tests | Vitest (125 tests, 10 suites) + cobertura v8 |
 | CI/CD | GitHub Actions (Node 20+22, coverage) |
 | Seguridad | Helmet, CORS, Rate Limit |
 
@@ -106,6 +106,7 @@ Agente IA ──────────── API REST ────────
 | `POST` | `/v1/records?wait_for_anchor=true` | Wallet (EIP-712) | Crear + esperar anchoring (max 25s) |
 | `GET` | `/v1/records/{id}` | — | Consultar por ID |
 | `GET` | `/v1/records/verify?content_hash=` | — | Verificar por hash |
+| `GET` | `/v1/records` | — | Listar records por wallet (filtros, paginación, sort) |
 | `GET` | `/v1/records/mine` | Wallet (EIP-191) | Listar records propios del agente |
 | `GET` | `/v1/records/{id}/export` | — | Exportar receipt verificable |
 | `GET` | `/v1/records/{id}/export?mode=compact` | — | Receipt compacto (solo verificación) |
@@ -123,13 +124,14 @@ Agente IA ──────────── API REST ────────
 ## 🧪 Tests
 
 ```
-100 tests en 9 suites — todos passing ✅
+125 tests en 10 suites — todos passing ✅
 
  ✓ errors.test.ts       (9)   — ApiError + factories
  ✓ receipt.test.ts      (4)   — SHA-256 receipt hash
- ✓ schemas.test.ts      (14)  — Validación Zod
+ ✓ schemas.test.ts      (26)  — Validación Zod (incl. provenance_metadata)
  ✓ fee.test.ts          (9)   — Fee on-chain (5 checks)
  ✓ records-get.test.ts  (18)  — GET /:id, /verify, /export, DX features
+ ✓ records-list.test.ts (11)  — GET /v1/records (filtros, paginación, sort)
  ✓ invariants.test.ts   (14)  — Invariantes del sistema
  ✓ dx-features.test.ts  (13)  — stateInfo + explorer utilities
  ✓ wallet-auth.test.ts  (9)   — Middleware de auth por firma
@@ -175,7 +177,7 @@ npm run worker:anchor    # Worker de anchoring
 | Script | Descripción |
 |---|---|
 | `npm run dev` | Servidor de desarrollo (tsx watch) |
-| `npm test` | Ejecutar 100 tests |
+| `npm test` | Ejecutar 125 tests |
 | `npm run test:coverage` | Tests con reporte de cobertura (v8) |
 | `npm run build` | Build de producción |
 | `npm run db:push` | Aplicar migraciones |
@@ -208,7 +210,8 @@ src/
 │   ├── health.ts             # GET /v1/health (cache 30s)
 │   ├── records.ts            # POST + GET /v1/records
 │   └── schemas/
-│       └── index.ts          # Validación Zod
+│       ├── index.ts          # Validación Zod (PoG, createRecord, provenance)
+│       └── listRecordsSchema.ts  # Validación query params GET /v1/records
 ├── services/
 │   ├── anchor.ts             # Anchoring on-chain
 │   ├── fee.ts                # Verificación fee (5 checks)
@@ -233,6 +236,7 @@ tests/
 ├── receipt.test.ts
 ├── records-get.test.ts
 ├── schemas.test.ts
+├── records-list.test.ts
 └── wallet-auth.test.ts
 Docs/
 ├── 10-specs/                 # Especificaciones técnicas
@@ -298,7 +302,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | **v1.0.0-rc1** | ✅ Taggeado | Alpha testing framework, scripts adversariales, plan de piloto |
 | **v1.0.0-rc2** | ✅ Taggeado | Fix rate limit 429, fee $0.01, trust model docs, guías usuario + dev |
 | **v1.0.0-alpha.1** | ✅ Desplegado | Deploy en Render + Neon + Upstash + Base Sepolia. Multi-chain, Redis TLS, worker inline |
-| **v1.1** | 🔲 Planificado | `provenance_metadata` (C2PA/IPTC/XMP), batch endpoint, webhooks, doble atestación |
+| **v1.1** | 🔲 Planificado | Batch endpoint, webhooks, doble atestación |
 | **v2** | 🔲 Planificado | Verificación model_id (#15), content pointers, identidad dual, fee fiat |
 | **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace doble procedencia |
 
@@ -306,7 +310,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 
 | Issue | Versión | Descripción |
 |---|---|---|
-| [#11](https://github.com/Sebas-Solver/Res-ex-Machina/issues/11) | v1.1 | `provenance_metadata` — Campo genérico de interoperabilidad |
+| ~~[#11](https://github.com/Sebas-Solver/Res-ex-Machina/issues/11)~~ | ✅ alpha.2 | ~~`provenance_metadata` — Campo genérico de interoperabilidad~~ |
 | [#12](https://github.com/Sebas-Solver/Res-ex-Machina/issues/12) | v1.1 | Batch endpoint — `POST /v1/records/batch` |
 | [#13](https://github.com/Sebas-Solver/Res-ex-Machina/issues/13) | v1.1 | Webhooks de estado |
 | [#14](https://github.com/Sebas-Solver/Res-ex-Machina/issues/14) | v1.1 | Doble atestación temporal |
@@ -314,7 +318,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | ~~[#16](https://github.com/Sebas-Solver/Res-ex-Machina/issues/16)~~ | ✅ alpha.2 | ~~Health cache + módulos compartidos~~ |
 | ~~[#17](https://github.com/Sebas-Solver/Res-ex-Machina/issues/17)~~ | ✅ alpha.2 | ~~Rate limit con Redis store~~ |
 | [#19](https://github.com/Sebas-Solver/Res-ex-Machina/issues/19) | beta | Monitorización y alertas |
-| [#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21) | v1.1 | Listar registros por wallet (filtros avanzados) |
+| ~~[#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21)~~ | ✅ alpha.2 | ~~Listar registros por wallet (filtros avanzados)~~ |
 | ~~[#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22)~~ | ✅ alpha.2 | ~~Modo degradado / resiliencia~~ |
 | [#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23) | beta | Enriquecer datos de fee |
 
@@ -332,7 +336,7 @@ Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubi
 
 ## 📜 Estado actual
 
-🟢 **v1.0.0-alpha.2-dev** — API desplegada en `https://res-ex-machina-api.onrender.com`. 100 tests en 9 suites, CI/CD. Autenticación por wallet (`GET /records/mine`). Health cache 30s con `Cache-Control`/`X-Cache`. Rate limit con Redis store. Modo degradado (resiliencia Redis/L2). 8 issues abiertas, 17 cerradas.
+🟢 **v1.0.0-alpha.2-dev** — API desplegada en `https://res-ex-machina-api.onrender.com`. 125 tests en 10 suites, CI/CD. Autenticación por wallet (`GET /records/mine`). Health cache 30s con `Cache-Control`/`X-Cache`. Rate limit con Redis store. Modo degradado (resiliencia Redis/L2). `GET /v1/records` con filtros avanzados. `provenance_metadata` (C2PA/IPTC/XMP). 5 issues abiertas, 20 cerradas.
 
 ---
 
