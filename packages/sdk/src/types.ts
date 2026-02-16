@@ -5,19 +5,19 @@ import type { Address, Hex, Account } from 'viem';
 export interface RxMClientOptions {
     /** viem Account (LocalAccount from privateKeyToAccount, mnemonicToAccount, etc.) */
     account: Account;
-    /** RPC URL de la L2 para pagar fees (ej: https://sepolia.base.org) */
+    /** L2 RPC URL for paying fees (e.g., https://sepolia.base.org) */
     rpcUrl: string;
-    /** URL base de la API RxM (ej: https://res-ex-machina-api.onrender.com) */
+    /** RxM API base URL (e.g., https://res-ex-machina-api.onrender.com) */
     apiUrl: string;
-    /** Dirección que recibe los fees */
+    /** Address that receives fees */
     feeReceiverAddress: Address;
-    /** Fee en ETH/MATIC nativo (default: 0.01) */
+    /** Fee in native ETH/MATIC (default: 0.01) */
     feeAmount?: number;
-    /** Chain ID de la L2 (default: 84532 = Base Sepolia) */
+    /** L2 Chain ID (default: 84532 = Base Sepolia) */
     chainId?: number;
-    /** Timeout para peticiones HTTP en ms (default: 10000) */
+    /** HTTP request timeout in ms (default: 10000) */
     httpTimeoutMs?: number;
-    /** Número de reintentos HTTP (default: 3) */
+    /** Number of HTTP retries (default: 3) */
     httpRetries?: number;
 }
 
@@ -28,41 +28,41 @@ export type ProcessType = 'direct' | 'pipeline' | 'iterative' | 'autonomous';
 export type Visibility = 'proof_only' | 'input_hash_only' | 'content_optional';
 
 export interface RecordOptions {
-    /** Identificador del modelo: provider:model:version (ej: openai:gpt-4o:2026-01) */
+    /** Model identifier: provider:model:version (e.g., openai:gpt-4o:2026-01) */
     modelId: string;
-    /** Tipo MIME del contenido (default: text/plain) */
+    /** Content MIME type (default: text/plain) */
     contentType?: string;
-    /** Tags descriptivos (máx 10, máx 64 chars cada uno) */
+    /** Descriptive tags (max 10, max 64 chars each) */
     tags?: string[];
-    /** Visibilidad del registro (default: proof_only) */
+    /** Record visibility (default: proof_only) */
     visibility?: Visibility;
-    /** Referencia externa URL (opcional) */
+    /** External reference URL (optional) */
     externalRef?: string;
-    /** ID del runtime (default: auto-detect) */
+    /** Runtime ID (default: auto-detect) */
     runtimeId?: string;
-    /** Tipo de proceso (default: direct) */
+    /** Process type (default: direct) */
     processType?: ProcessType;
-    /** Nivel de intervención humana 0-5 (default: 0) */
+    /** Human intervention level 0-5 (default: 0) */
     humanInterventionLevel?: number;
-    /** Pasos del pipeline (default: 1) */
+    /** Pipeline steps (default: 1) */
     pipelineSteps?: number;
 
-    // ─── Modo BYO (Bring Your Own) ─────────────────────────────
+    // ─── BYO (Bring Your Own) mode ──────────────────────────────
 
-    /** Si se proporciona, el SDK NO paga fee (modo BYO) */
+    /** If provided, the SDK will NOT pay the fee (BYO mode) */
     feeTxHash?: Hex;
-    /** Si se proporciona, el SDK NO calcula hash (modo BYO) */
+    /** If provided, the SDK will NOT compute the hash (BYO mode) */
     contentHash?: string;
-    /** Si true, espera a que el record se ancle en blockchain */
+    /** If true, wait for the record to be anchored on-chain */
     waitForAnchor?: boolean;
 }
 
 // ─── Batch ─────────────────────────────────────────────────────
 
 export interface BatchItem {
-    /** Contenido a registrar */
+    /** Content to register */
     content: string | Buffer | Uint8Array;
-    /** Opciones del record (feeTxHash obligatorio en v0.1) */
+    /** Record options (feeTxHash required in v0.1) */
     options: RecordOptions & { feeTxHash: Hex };
 }
 
@@ -80,7 +80,7 @@ export interface BatchResult {
     summary: { created: number; errors: number };
 }
 
-// ─── Respuestas ────────────────────────────────────────────────
+// ─── Responses ─────────────────────────────────────────────────
 
 export interface Receipt {
     recordId: string;
@@ -141,7 +141,7 @@ export interface Webhook {
 
 export interface WebhookRegistration {
     webhookId: string;
-    /** Secret HMAC — only returned once at registration */
+    /** HMAC secret — only returned once at registration */
     secret: string;
 }
 

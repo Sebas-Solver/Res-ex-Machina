@@ -1,18 +1,18 @@
 /**
- * Firma EIP-712 para PoG bundles.
+ * EIP-712 signing for PoG bundles.
  *
- * Importa domain y types desde la fuente única de verdad (src/constants/eip712.ts)
- * para garantizar que SDK y servidor siempre firman/verifican con los mismos parámetros.
+ * Domain and types are defined here as the single source of truth
+ * to ensure SDK and server always sign/verify with the same parameters.
  */
 import type { Hex, Address, Account } from 'viem';
 
-// ─── EIP-712 Constants (fuente única: compartida con el servidor) ───
+// ─── EIP-712 Constants (single source of truth: synced with server) ───
 
 /**
- * NOTA: Estos valores son idénticos a src/constants/eip712.ts del servidor.
- * En un monorepo con workspaces, el SDK importaría directamente del servidor.
- * Para v0.1 (publicación npm independiente), se mantienen sincronizados manualmente.
- * El CI del monorepo fallará si divergen.
+ * NOTE: These values are identical to src/constants/eip712.ts on the server.
+ * In a monorepo with workspaces, the SDK would import directly from the server.
+ * For v0.1 (standalone npm package), they are kept in sync manually.
+ * The CI pipeline will fail if they diverge.
  */
 export const EIP712_DOMAIN = {
     name: 'ResExMachina',
@@ -37,7 +37,7 @@ export const EIP712_TYPES = {
 } as const;
 
 /**
- * Mensaje EIP-712 para firma — campos del PoG bundle aplanados.
+ * EIP-712 message for signing — flattened PoG bundle fields.
  */
 export interface PoGSignatureMessage {
     schema: string;
@@ -53,14 +53,14 @@ export interface PoGSignatureMessage {
 }
 
 /**
- * Firma un PoG bundle con EIP-712 usando el account proporcionado.
+ * Signs a PoG bundle with EIP-712 using the provided account.
  *
  * @param account - viem Account (LocalAccount)
- * @param message - Campos del PoG aplanados
- * @returns Firma EIP-712 (0x + 130 hex chars)
+ * @param message - Flattened PoG fields
+ * @returns EIP-712 signature (0x + 130 hex chars)
  */
 export async function signPoGBundle(account: Account, message: PoGSignatureMessage): Promise<Hex> {
-    // Account debe tener signTypedData (LocalAccount)
+    // Account must have signTypedData (LocalAccount)
     if (!account.signTypedData) {
         throw new Error('Account must support signTypedData (use privateKeyToAccount or similar)');
     }

@@ -1,19 +1,19 @@
-# @rxm/sdk
+# @res-ex-machina/sdk
 
-**SDK oficial de [Res ex Machina](https://github.com/Sebas-Solver/Res-ex-Machina)** — Registro neutral de hechos de generación por IA.
+**Official SDK for [Res ex Machina](https://github.com/Sebas-Solver/Res-ex-Machina)** — Neutral registry for AI-generated content provenance.
 
-Reduce la integración de ~80 líneas a ~5 líneas.
+Reduces integration from ~80 lines to ~5 lines.
 
-## Instalación
+## Installation
 
 ```bash
-npm install @rxm/sdk viem
+npm install @res-ex-machina/sdk viem
 ```
 
 ## Quick Start
 
 ```typescript
-import { RxMClient } from '@rxm/sdk';
+import { RxMClient } from '@res-ex-machina/sdk';
 import { privateKeyToAccount } from 'viem/accounts';
 
 const account = privateKeyToAccount('0x...');
@@ -25,7 +25,7 @@ const rxm = new RxMClient({
   feeReceiverAddress: '0x...',
 });
 
-// 5 líneas: hash → sign → fee → POST
+// 5 lines: hash → sign → fee → POST
 const receipt = await rxm.record('Generated output by AI', {
   modelId: 'openai:gpt-4o:2026-01',
 });
@@ -33,34 +33,34 @@ const receipt = await rxm.record('Generated output by AI', {
 console.log(receipt.recordId, receipt.receiptHash);
 ```
 
-## Modos de uso
+## Usage Modes
 
-### Modo Simple (baterías incluidas)
+### Simple Mode (batteries included)
 
 ```typescript
 const receipt = await rxm.record(content, {
   modelId: 'openai:gpt-4o:2026-01',
   tags: ['report', 'quarterly'],
-  waitForAnchor: true, // espera a que se ancle en blockchain
+  waitForAnchor: true, // wait for blockchain anchoring
 });
 ```
 
-### Modo BYO (Bring Your Own)
+### BYO Mode (Bring Your Own)
 
-Para integradores que controlan fees, hash, o ambos:
+For integrators who control fees, hash, or both:
 
 ```typescript
 const receipt = await rxm.record(content, {
   modelId: 'anthropic:claude-sonnet-4-20250514:2026-01',
-  feeTxHash: '0xabc...',    // ya pagaste el fee → NO paga otra vez
-  contentHash: 'sha256:...' // ya calculaste el hash → NO recalcula
+  feeTxHash: '0xabc...',    // already paid fee → does NOT pay again
+  contentHash: 'sha256:...' // already computed hash → does NOT recompute
 });
 ```
 
 ## Batch
 
 ```typescript
-// v0.1: cada item requiere feeTxHash (BYO)
+// v0.1: each item requires feeTxHash (BYO)
 const results = await rxm.recordBatch([
   { content: 'Output 1', options: { modelId: 'm:v:1', feeTxHash: '0x...' } },
   { content: 'Output 2', options: { modelId: 'm:v:1', feeTxHash: '0x...' } },
@@ -70,15 +70,15 @@ const results = await rxm.recordBatch([
 ## Webhooks
 
 ```typescript
-// Subcliente separado de record()
+// Separate subclient from record()
 const wh = await rxm.webhooks.register('https://my-server.com/hook');
-console.log(wh.secret); // HMAC secret — se muestra solo una vez
+console.log(wh.secret); // HMAC secret — shown only once
 
 const list = await rxm.webhooks.list();
 await rxm.webhooks.delete(wh.webhookId);
 ```
 
-## Consulta y Verificación
+## Query & Verification
 
 ```typescript
 const exists = await rxm.verify('content or sha256:hash');
@@ -87,56 +87,56 @@ const exported = await rxm.export('record-id');
 const list = await rxm.listRecords({ state: 'anchored', limit: 10 });
 ```
 
-## Manejo de errores
+## Error Handling
 
 ```typescript
-import { RxMRateLimitError, RxMValidationError } from '@rxm/sdk';
+import { RxMRateLimitError, RxMValidationError } from '@res-ex-machina/sdk';
 
 try {
   await rxm.record(content, { modelId: '...' });
 } catch (e) {
   if (e instanceof RxMRateLimitError) {
-    // Los agentes pueden reintentar programáticamente
+    // Agents can retry programmatically
     await sleep(e.retryAfterMs);
   }
   if (e instanceof RxMValidationError) {
-    // Error de validación local (sin llamar a la API)
+    // Local validation error (no API call made)
     console.error(e.code, e.message);
   }
 }
 ```
 
-## Opciones del constructor
+## Constructor Options
 
-| Opción | Tipo | Default | Descripción |
+| Option | Type | Default | Description |
 |---|---|---|---|
-| `account` | `Account` | — | viem Account (requerido) |
-| `rpcUrl` | `string` | — | RPC URL de la L2 (requerido) |
-| `apiUrl` | `string` | — | URL de la API RxM (requerido) |
-| `feeReceiverAddress` | `Address` | — | Dirección que recibe fees (requerido) |
-| `feeAmount` | `number` | `0.01` | Fee en nativo (ETH/MATIC) |
+| `account` | `Account` | — | viem Account (required) |
+| `rpcUrl` | `string` | — | L2 RPC URL (required) |
+| `apiUrl` | `string` | — | RxM API URL (required) |
+| `feeReceiverAddress` | `Address` | — | Fee receiver address (required) |
+| `feeAmount` | `number` | `0.01` | Fee in native currency (ETH/MATIC) |
 | `chainId` | `number` | `84532` | Chain ID (Base Sepolia) |
-| `httpTimeoutMs` | `number` | `10000` | Timeout HTTP en ms |
-| `httpRetries` | `number` | `3` | Reintentos HTTP |
+| `httpTimeoutMs` | `number` | `10000` | HTTP timeout in ms |
+| `httpRetries` | `number` | `3` | HTTP retries |
 
-## Opciones de `record()`
+## `record()` Options
 
-| Opción | Tipo | Default | Descripción |
+| Option | Type | Default | Description |
 |---|---|---|---|
-| `modelId` | `string` | — | `provider:model:version` (requerido) |
-| `contentType` | `string` | `text/plain` | Tipo MIME |
-| `tags` | `string[]` | `[]` | Máx 10, 64 chars cada uno |
+| `modelId` | `string` | — | `provider:model:version` (required) |
+| `contentType` | `string` | `text/plain` | MIME type |
+| `tags` | `string[]` | `[]` | Max 10, 64 chars each |
 | `processType` | `ProcessType` | `direct` | `direct\|pipeline\|iterative\|autonomous` |
 | `humanInterventionLevel` | `number` | `0` | 0-5 |
 | `feeTxHash` | `Hex` | — | BYO: skip fee payment |
 | `contentHash` | `string` | — | BYO: skip hash calculation |
-| `waitForAnchor` | `boolean` | `false` | Esperar anchoring |
+| `waitForAnchor` | `boolean` | `false` | Wait for anchoring |
 
-## Requisitos
+## Requirements
 
 - **Node.js ≥ 18**
 - **viem ≥ 2.0** (peerDependency)
 
-## Licencia
+## License
 
 ISC

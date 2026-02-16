@@ -1041,12 +1041,12 @@ DELETE /v1/webhooks/{webhook_id}
 
 Soft-deletes the webhook (deactivates it). Only the owner wallet can delete.
 
-## SDK Integration (`@rxm/sdk`)
+## SDK Integration (`@res-ex-machina/sdk`)
 
 The TypeScript SDK abstracts the entire registration flow into a single method call:
 
 ```typescript
-import { RxMClient } from '@rxm/sdk';
+import { RxMClient } from '@res-ex-machina/sdk';
 
 const rxm = new RxMClient({
   account: agentWallet,       // viem LocalAccount

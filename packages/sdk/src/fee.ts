@@ -1,9 +1,9 @@
 /**
- * Pago de fee on-chain para RxM.
+ * On-chain fee payment for RxM.
  *
- * Envía ETH/MATIC nativo al fee receiver y espera confirmación.
- * Este módulo es OPCIONAL: si el usuario proporciona feeTxHash (modo BYO),
- * este módulo no se ejecuta.
+ * Sends native ETH/MATIC to the fee receiver and waits for confirmation.
+ * This module is OPTIONAL: if the user provides feeTxHash (BYO mode),
+ * this module is not executed.
  */
 import {
     createWalletClient,
@@ -17,7 +17,7 @@ import {
 } from 'viem';
 import { baseSepolia, polygon, base } from 'viem/chains';
 
-/** Mapeo de chain IDs a definiciones de chain de viem */
+/** Mapping from chain IDs to viem chain definitions */
 const CHAIN_MAP: Record<number, Chain> = {
     84532: baseSepolia,
     137: polygon,
@@ -33,9 +33,9 @@ export interface FeeConfig {
 }
 
 /**
- * Paga el fee en nativo (ETH/MATIC) y espera confirmación.
+ * Pays the fee in native currency (ETH/MATIC) and waits for confirmation.
  *
- * @returns Hash de la transacción de fee confirmada
+ * @returns Hash of the confirmed fee transaction
  */
 export async function payFee(config: FeeConfig): Promise<Hex> {
     const chain = CHAIN_MAP[config.chainId];
@@ -54,13 +54,13 @@ export async function payFee(config: FeeConfig): Promise<Hex> {
         transport: http(config.rpcUrl),
     });
 
-    // Enviar transacción de fee
+    // Send fee transaction
     const txHash = await walletClient.sendTransaction({
         to: config.feeReceiverAddress,
         value: parseEther(config.feeAmount.toString()),
     });
 
-    // Esperar confirmación (1 bloque)
+    // Wait for confirmation (1 block)
     await publicClient.waitForTransactionReceipt({
         hash: txHash,
         confirmations: 1,

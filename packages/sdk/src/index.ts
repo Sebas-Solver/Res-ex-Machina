@@ -1,12 +1,12 @@
 /**
- * @rxm/sdk — SDK oficial de Res ex Machina
+ * @res-ex-machina/sdk — Official Res ex Machina SDK
  *
- * Registro neutral de hechos de generación por IA.
- * Funciona con cualquier proveedor: OpenAI, Anthropic, Google, modelos locales.
+ * Neutral registry for AI-generated content provenance.
+ * Works with any provider: OpenAI, Anthropic, Google, local models.
  *
  * @example
  * ```typescript
- * import { RxMClient } from '@rxm/sdk';
+ * import { RxMClient } from '@res-ex-machina/sdk';
  * import { privateKeyToAccount } from 'viem/accounts';
  *
  * const account = privateKeyToAccount('0x...');
@@ -25,10 +25,10 @@
  * @packageDocumentation
  */
 
-// ─── Clase principal ───────────────────────────────────────────
+// ─── Main class ────────────────────────────────────────────────
 export { RxMClient } from './client.js';
 
-// ─── Tipos públicos ────────────────────────────────────────────
+// ─── Public types ──────────────────────────────────────────────
 export type {
     RxMClientOptions,
     RecordOptions,
@@ -48,7 +48,7 @@ export type {
     WebhookListResult,
 } from './types.js';
 
-// ─── Errores tipados ───────────────────────────────────────────
+// ─── Typed errors ──────────────────────────────────────────────
 export {
     RxMError,
     RxMRateLimitError,
@@ -56,7 +56,7 @@ export {
     RxMValidationError,
 } from './errors.js';
 
-// ─── Utilidades (para integradores avanzados) ──────────────────
+// ─── Utilities (for advanced integrators) ──────────────────────
 export { computeContentHash } from './hash.js';
 export { signPoGBundle, EIP712_DOMAIN, EIP712_TYPES } from './sign.js';
 export type { PoGSignatureMessage } from './sign.js';

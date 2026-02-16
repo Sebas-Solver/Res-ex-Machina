@@ -146,7 +146,7 @@ Agente IA ──────────── API REST ────────
  ✓ eip712-sync.test.ts    (8)   — Sincronización constantes servidor↔SDK
 ```
 
-### SDK `@rxm/sdk` (30 tests, 4 suites)
+### SDK `@res-ex-machina/sdk` (30 tests, 4 suites)
 ```
  ✓ hash.test.ts           (6)   — WebCrypto SHA-256 hashing
  ✓ sign.test.ts           (7)   — EIP-712 signing
@@ -156,12 +156,12 @@ Agente IA ──────────── API REST ────────
 
 ---
 
-## 📦 SDK TypeScript (`@rxm/sdk`)
+## 📦 SDK TypeScript (`@res-ex-machina/sdk`)
 
 Integración trivial — de 50+ líneas de código a 5:
 
 ```typescript
-import { RxMClient } from '@rxm/sdk';
+import { RxMClient } from '@res-ex-machina/sdk';
 
 const rxm = new RxMClient({ account: wallet, rpcUrl: '...', apiUrl: '...' });
 const receipt = await rxm.record('AI generated content', {
@@ -346,7 +346,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | **v1.0.0-rc2** | ✅ Taggeado | Fix rate limit 429, fee $0.01, trust model docs, guías usuario + dev |
 | **v1.0.0-alpha.1** | ✅ Desplegado | Deploy en Render + Neon + Upstash + Base Sepolia. Multi-chain, Redis TLS, worker inline |
 | **v1.1** | ✅ Completado | Batch endpoint (#12), webhooks con seguridad (#13), doble atestación temporal (#14) |
-| **v1.2** | 🔲 Planificado | SDK npm `@rxm/sdk` — integración trivial para humanos y agentes (#27) |
+| **v1.2** | 🔲 Planificado | SDK npm `@res-ex-machina/sdk` — integración trivial para humanos y agentes (#27) |
 | **v2** | 🔲 Planificado | Verificación model_id (#15), content pointers, identidad dual, fee fiat |
 | **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace doble procedencia |
 
@@ -365,7 +365,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | ~~[#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21)~~ | ✅ alpha.2 | ~~Listar registros por wallet (filtros avanzados)~~ |
 | ~~[#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22)~~ | ✅ alpha.2 | ~~Modo degradado / resiliencia~~ |
 | [#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23) | beta | Enriquecer datos de fee |
-| [#27](https://github.com/Sebas-Solver/Res-ex-Machina/issues/27) | v1.2 | SDK npm `@rxm/sdk` para humanos y agentes |
+| [#27](https://github.com/Sebas-Solver/Res-ex-Machina/issues/27) | v1.2 | SDK npm `@res-ex-machina/sdk` para humanos y agentes |
 
 ---
 

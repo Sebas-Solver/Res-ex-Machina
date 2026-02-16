@@ -1,10 +1,10 @@
 import { RxMNetworkError, parseApiError } from './errors.js';
 
 /**
- * HTTP client wrapper con retry, timeout y parsing de errores RxM.
+ * HTTP client wrapper with retry, timeout, and RxM error parsing.
  *
- * Diseñado para agentes: si falla, lanza errores tipados que el agente
- * puede manejar programáticamente (especialmente rate limits).
+ * Designed for agents: on failure, throws typed errors that agents
+ * can handle programmatically (especially rate limits).
  */
 export class RxMHttpClient {
     private readonly baseUrl: string;
@@ -12,7 +12,7 @@ export class RxMHttpClient {
     private readonly maxRetries: number;
 
     constructor(baseUrl: string, timeoutMs = 10_000, maxRetries = 3) {
-        // Eliminar trailing slash
+        // Remove trailing slash
         this.baseUrl = baseUrl.replace(/\/+$/, '');
         this.timeoutMs = timeoutMs;
         this.maxRetries = maxRetries;
@@ -59,7 +59,7 @@ export class RxMHttpClient {
 
                 clearTimeout(timeout);
 
-                // Respuesta exitosa
+                // Successful response
                 if (response.ok) {
                     // 204 No Content
                     if (response.status === 204) {
@@ -68,14 +68,14 @@ export class RxMHttpClient {
                     return await response.json() as T;
                 }
 
-                // Error de la API — parsear y lanzar
+                // API error — parse and throw
                 const errorBody = await response.json().catch(() => ({}));
                 throw parseApiError(response.status, errorBody);
 
             } catch (error) {
                 lastError = error as Error;
 
-                // No reintentar errores de validación (4xx excepto 429)
+                // Do not retry validation errors (4xx except 429)
                 if (error instanceof Error && 'statusCode' in error) {
                     const statusCode = (error as { statusCode: number }).statusCode;
                     if (statusCode >= 400 && statusCode < 500 && statusCode !== 429) {
@@ -83,18 +83,18 @@ export class RxMHttpClient {
                     }
                 }
 
-                // Si es el último intento, lanzar
+                // If this is the last attempt, break
                 if (attempt === this.maxRetries) {
                     break;
                 }
 
-                // Backoff exponencial: 1s, 2s, 4s
+                // Exponential backoff: 1s, 2s, 4s
                 const backoffMs = Math.min(1000 * Math.pow(2, attempt), 8000);
                 await new Promise(resolve => setTimeout(resolve, backoffMs));
             }
         }
 
-        // Si llegamos aquí, todos los reintentos fallaron
+        // If we get here, all retries failed
         if (lastError && 'code' in lastError) {
             throw lastError;
         }

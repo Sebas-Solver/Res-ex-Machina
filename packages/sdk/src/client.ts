@@ -1,12 +1,12 @@
 /**
- * RxMClient — Orquestador principal del SDK.
+ * RxMClient — Main SDK orchestrator.
  *
- * Principios:
- * - Defaults inteligentes: un agente registra outputs sin conocer EIP-712 ni fees
- * - Opciones BYO: un integrador avanzado controla todo (feeTxHash, contentHash)
- * - Fail-safe: si algo falla, errores tipados para retry programático
+ * Principles:
+ * - Smart defaults: an agent registers outputs without knowing EIP-712 or fees
+ * - BYO options: advanced integrators control everything (feeTxHash, contentHash)
+ * - Fail-safe: on failure, typed errors enable programmatic retry
  *
- * Uso mínimo:
+ * Minimal usage:
  *   const rxm = new RxMClient({ account, rpcUrl, apiUrl, feeReceiverAddress });
  *   const receipt = await rxm.record(content, { modelId: 'openai:gpt-4o:2026-01' });
  */
@@ -31,7 +31,7 @@ import type {
 } from './types.js';
 
 /**
- * Detecta el runtime actual para el campo runtime_id.
+ * Detects the current runtime for the runtime_id field.
  */
 function detectRuntime(): string {
     if (typeof process !== 'undefined' && process.versions?.node) {
@@ -43,7 +43,7 @@ function detectRuntime(): string {
     return 'unknown';
 }
 
-// Declaración para evitar error TypeScript con Deno
+// Declaration to avoid TypeScript error with Deno
 declare const Deno: { version?: { deno: string } } | undefined;
 
 export class RxMClient {
@@ -55,7 +55,7 @@ export class RxMClient {
     private readonly chainId: number;
     private readonly http: RxMHttpClient;
 
-    /** Subcliente de webhooks (register, list, delete) */
+    /** Webhooks subclient (register, list, delete) */
     public readonly webhooks: WebhooksClient;
 
     constructor(options: RxMClientOptions) {
@@ -64,7 +64,7 @@ export class RxMClient {
         this.apiUrl = options.apiUrl;
         this.feeReceiverAddress = options.feeReceiverAddress;
         this.feeAmount = options.feeAmount ?? 0.01;
-        this.chainId = options.chainId ?? 84532; // Base Sepolia por defecto
+        this.chainId = options.chainId ?? 84532; // Base Sepolia default
 
         this.http = new RxMHttpClient(
             options.apiUrl,
@@ -75,29 +75,29 @@ export class RxMClient {
         this.webhooks = new WebhooksClient(this.http, this.account);
     }
 
-    // ─── REGISTRO ──────────────────────────────────────────────
+    // ─── RECORD ───────────────────────────────────────────────
 
     /**
-     * Registra un output en RxM.
+     * Register an output in RxM.
      *
-     * Flujo completo (modo simple):
-     *   1. Calcula SHA-256 del contenido
-     *   2. Genera nonce único
-     *   3. Construye PoG bundle
-     *   4. Firma con EIP-712
-     *   5. Paga fee on-chain
+     * Full flow (simple mode):
+     *   1. Compute SHA-256 of content
+     *   2. Generate unique nonce
+     *   3. Build PoG bundle
+     *   4. Sign with EIP-712
+     *   5. Pay fee on-chain
      *   6. POST /v1/records
      *
-     * Modo BYO:
-     *   - Si feeTxHash viene, salta paso 5
-     *   - Si contentHash viene, salta paso 1
+     * BYO mode:
+     *   - If feeTxHash provided, skip step 5
+     *   - If contentHash provided, skip step 1
      *
-     * @param content - Contenido a registrar (string, Buffer, Uint8Array)
-     * @param options - Opciones del record
-     * @returns Receipt con recordId, state, receiptHash
+     * @param content - Content to register (string, Buffer, Uint8Array)
+     * @param options - Record options
+     * @returns Receipt with recordId, state, receiptHash
      */
     async record(content: string | Buffer | Uint8Array, options: RecordOptions): Promise<Receipt> {
-        // Validación local (falla antes de llamar a la API)
+        // Local validation (fail before calling the API)
         this.validateRecordOptions(options);
 
         // 1. Hash
@@ -110,7 +110,7 @@ export class RxMClient {
         // 3. Timestamp
         const timestamp = new Date().toISOString();
 
-        // 4. PoG message (aplanado para EIP-712)
+        // 4. PoG message (flattened for EIP-712)
         const pogMessage: PoGSignatureMessage = {
             schema: 'pog.v1',
             content_hash: contentHash,
@@ -124,10 +124,10 @@ export class RxMClient {
             nonce,
         };
 
-        // 5. Firma EIP-712
+        // 5. EIP-712 signature
         const signature = await signPoGBundle(this.account, pogMessage);
 
-        // 6. Fee (skip si BYO)
+        // 6. Fee (skip if BYO)
         let feeTxHash = options.feeTxHash;
         if (!feeTxHash) {
             const feeConfig: FeeConfig = {
@@ -180,7 +180,7 @@ export class RxMClient {
             createdAt: response.created_at,
         };
 
-        // 8. Wait for anchor (opcional)
+        // 8. Wait for anchor (optional)
         if (options.waitForAnchor) {
             return this.waitForRecord(receipt.recordId);
         }
@@ -189,8 +189,8 @@ export class RxMClient {
     }
 
     /**
-     * Registra un batch de outputs (hasta 100).
-     * v0.1: cada item DEBE tener feeTxHash (modo BYO).
+     * Register a batch of outputs (up to 100).
+     * v0.1: each item MUST have feeTxHash (BYO mode).
      */
     async recordBatch(items: BatchItem[]): Promise<BatchResult> {
         if (items.length === 0) {
@@ -200,7 +200,7 @@ export class RxMClient {
             throw new RxMValidationError('Batch cannot exceed 100 items');
         }
 
-        // Construir cada record del batch
+        // Build each batch record
         const records = await Promise.all(
             items.map(async (item) => {
                 const contentHash = item.options.contentHash
@@ -252,10 +252,10 @@ export class RxMClient {
         return this.http.post<BatchResult>('/v1/records/batch', { records });
     }
 
-    // ─── CONSULTA ──────────────────────────────────────────────
+    // ─── QUERY ────────────────────────────────────────────────
 
     /**
-     * Verifica si un contenido (o hash) ya está registrado.
+     * Verify whether content (or hash) is already registered.
      */
     async verify(contentOrHash: string): Promise<VerifyResult> {
         const hash = contentOrHash.startsWith('sha256:')
@@ -266,21 +266,21 @@ export class RxMClient {
     }
 
     /**
-     * Obtiene detalles de un record por ID.
+     * Get record details by ID.
      */
     async getRecord(recordId: string): Promise<RecordDetail> {
         return this.http.get<RecordDetail>(`/v1/records/${recordId}`);
     }
 
     /**
-     * Exporta un receipt verificable offline.
+     * Export an offline-verifiable receipt.
      */
     async export(recordId: string): Promise<ExportData> {
         return this.http.get<ExportData>(`/v1/records/${recordId}/export`);
     }
 
     /**
-     * Lista records del wallet actual con filtros.
+     * List records from the current wallet with filters.
      */
     async listRecords(options?: ListRecordsOptions): Promise<ListRecordsResult> {
         const params = new URLSearchParams();
@@ -293,14 +293,14 @@ export class RxMClient {
         return this.http.get<ListRecordsResult>(`/v1/records?${params.toString()}`);
     }
 
-    // ─── POLLING ───────────────────────────────────────────────
+    // ─── POLLING ──────────────────────────────────────────────
 
     /**
-     * Espera a que un record se ancle en blockchain (polling).
+     * Wait for a record to be anchored on-chain (polling).
      *
-     * @param recordId - ID del record
-     * @param timeoutMs - Timeout máximo (default: 30s)
-     * @param intervalMs - Intervalo de polling (default: 2s)
+     * @param recordId - Record ID
+     * @param timeoutMs - Maximum timeout (default: 30s)
+     * @param intervalMs - Polling interval (default: 2s)
      */
     async waitForRecord(recordId: string, timeoutMs = 30_000, intervalMs = 2_000): Promise<Receipt> {
         const start = Date.now();
@@ -320,7 +320,7 @@ export class RxMClient {
             await new Promise(resolve => setTimeout(resolve, intervalMs));
         }
 
-        // Timeout — devolver estado actual
+        // Timeout — return current state
         const record = await this.getRecord(recordId);
         return {
             recordId: record.recordId,
@@ -330,7 +330,7 @@ export class RxMClient {
         };
     }
 
-    // ─── VALIDACIÓN LOCAL ──────────────────────────────────────
+    // ─── LOCAL VALIDATION ─────────────────────────────────────
 
     private validateRecordOptions(options: RecordOptions): void {
         if (!options.modelId || options.modelId.length === 0) {

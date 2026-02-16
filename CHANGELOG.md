@@ -18,11 +18,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
   - ❌ 5 tests fallidos (limitación de TestSprite: no puede generar firmas EIP-712 ni transacciones on-chain)
   - Los 5 fallos **confirman que las validaciones funcionan** (rate limiting, schema Zod, rechazo de firmas inválidas)
 
-### SDK npm (`@rxm/sdk`) — Issue #27
+### SDK npm (`@res-ex-machina/sdk`) — Issue #27
 
 #### Añadido
 
-- **Paquete `@rxm/sdk`** en `packages/sdk/` — SDK TypeScript completo para integración trivial con RxM
+- **Paquete `@res-ex-machina/sdk`** en `packages/sdk/` — SDK TypeScript completo para integración trivial con RxM
   - `RxMClient` — Orquestador: `record()`, `recordBatch()`, `verify()`, `getRecord()`, `export()`, `listRecords()`, `waitForRecord()`
   - **Modo BYO fee** — `record()` acepta `feeTxHash` opcional; si se proporciona, el SDK no paga on-chain
   - **Webhooks subclient** — `rxm.webhooks.register()`, `list()`, `delete()` con autenticación EIP-191

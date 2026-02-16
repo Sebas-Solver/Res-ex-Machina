@@ -1,9 +1,9 @@
 /**
- * Errores tipados del SDK @rxm/sdk.
+ * Typed errors for the @res-ex-machina/sdk.
  *
- * Cada error tiene un `code` que mapea directamente al catálogo de errores
- * de la API (error-catalog.md), permitiendo a los agentes hacer retry
- * programático basado en el código.
+ * Each error has a `code` that maps directly to the API error catalog
+ * (error-catalog.md), enabling agents to perform programmatic retry
+ * based on error codes.
  */
 
 export class RxMError extends Error {
@@ -21,8 +21,8 @@ export class RxMError extends Error {
 }
 
 /**
- * Rate limit alcanzado. Incluye `retryAfterMs` para que los agentes
- * puedan reintentar programáticamente.
+ * Rate limit exceeded. Includes `retryAfterMs` so agents
+ * can retry programmatically.
  */
 export class RxMRateLimitError extends RxMError {
     public readonly retryAfterMs: number;
@@ -35,7 +35,7 @@ export class RxMRateLimitError extends RxMError {
 }
 
 /**
- * Error de red o timeout.
+ * Network or timeout error.
  */
 export class RxMNetworkError extends RxMError {
     constructor(message: string) {
@@ -45,7 +45,7 @@ export class RxMNetworkError extends RxMError {
 }
 
 /**
- * Error de validación local (antes de llamar a la API).
+ * Local validation error (before calling the API).
  */
 export class RxMValidationError extends RxMError {
     constructor(message: string, details?: Record<string, unknown>) {
@@ -55,7 +55,7 @@ export class RxMValidationError extends RxMError {
 }
 
 /**
- * Parsea una respuesta de error de la API RxM y lanza la excepción tipada.
+ * Parses an API error response and throws the appropriate typed exception.
  */
 export function parseApiError(statusCode: number, body: unknown): RxMError {
     const errorBody = body as { error?: { code?: string; message?: string; details?: Record<string, unknown> } };

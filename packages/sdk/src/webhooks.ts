@@ -1,8 +1,8 @@
 /**
- * Subcliente de webhooks — operaciones de gestión (no registro).
+ * Webhooks subclient — management operations (not record registration).
  *
- * Los webhooks usan autenticación EIP-191 (firma de mensaje plano),
- * diferente de los records que usan EIP-712.
+ * Webhooks use EIP-191 authentication (plain message signature),
+ * different from records which use EIP-712.
  */
 import type { Account, Hex } from 'viem';
 import { RxMHttpClient } from './http.js';
@@ -18,8 +18,8 @@ export class WebhooksClient {
     }
 
     /**
-     * Genera los headers de autenticación EIP-191 para webhooks.
-     * Firma: "RxM-Webhook:{wallet}:{timestamp}"
+     * Generates EIP-191 authentication headers for webhooks.
+     * Signature message: "RxM-Webhook:{wallet}:{timestamp}"
      */
     private async getAuthHeaders(): Promise<Record<string, string>> {
         const timestamp = new Date().toISOString();
@@ -40,9 +40,9 @@ export class WebhooksClient {
     }
 
     /**
-     * Registra un webhook. El secret HMAC se devuelve solo una vez.
+     * Register a webhook. The HMAC secret is returned only once.
      *
-     * @param url - URL HTTPS donde enviar notificaciones
+     * @param url - HTTPS URL to receive notifications
      * @returns { webhookId, secret }
      */
     async register(url: string): Promise<WebhookRegistration> {
@@ -51,7 +51,7 @@ export class WebhooksClient {
     }
 
     /**
-     * Lista los webhooks activos del wallet actual.
+     * List active webhooks for the current wallet.
      */
     async list(): Promise<WebhookListResult> {
         const headers = await this.getAuthHeaders();
@@ -59,9 +59,9 @@ export class WebhooksClient {
     }
 
     /**
-     * Desactiva (soft-delete) un webhook.
+     * Deactivate (soft-delete) a webhook.
      *
-     * @param webhookId - ID del webhook a eliminar
+     * @param webhookId - ID of the webhook to remove
      */
     async delete(webhookId: string): Promise<void> {
         const headers = await this.getAuthHeaders();
