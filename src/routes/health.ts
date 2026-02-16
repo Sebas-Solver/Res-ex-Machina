@@ -35,11 +35,29 @@ function getRedisClient() {
     return redisClient;
 }
 
+// --- Health cache (Issue #16) ---
+// Cachea el resultado del health check 30 segundos para reducir
+// llamadas a Upstash (free tier: 10K cmd/día) y RPC blockchain.
+
+const HEALTH_CACHE_TTL_MS = 30_000;
+let cachedHealth: { body: Record<string, unknown>; statusCode: number } | null = null;
+let cachedAt = 0;
+
 
 // --- Routes ---
 
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
     app.get('/health', async (_request, reply) => {
+        // Devolver cache si es válido
+        const now = Date.now();
+        if (cachedHealth && (now - cachedAt) < HEALTH_CACHE_TTL_MS) {
+            return reply
+                .status(cachedHealth.statusCode)
+                .header('Cache-Control', 'public, max-age=30')
+                .header('X-Cache', 'HIT')
+                .send(cachedHealth.body);
+        }
+
         const checks = await Promise.allSettled([
             checkDatabase(),
             checkRedis(),
@@ -54,7 +72,7 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
 
         const statusCode = allHealthy ? 200 : 503;
 
-        return reply.status(statusCode).send({
+        const body = {
             status: allHealthy ? 'ok' : 'degraded',
             version: 'v1',
             timestamp: new Date().toISOString(),
@@ -63,7 +81,26 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
                 redis: redisStatus,
                 blockchain: l2Status,
             },
-        });
+        };
+
+        // Guardar en cache
+        cachedHealth = { body, statusCode };
+        cachedAt = now;
+
+        const headers: Record<string, string> = {
+            'Cache-Control': 'public, max-age=30',
+            'X-Cache': 'MISS',
+        };
+
+        // Issue #22: Retry-After cuando hay degradación
+        if (statusCode === 503) {
+            headers['Retry-After'] = '30';
+        }
+
+        return reply
+            .status(statusCode)
+            .headers(headers)
+            .send(body);
     });
 }
 

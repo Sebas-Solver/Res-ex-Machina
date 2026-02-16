@@ -48,3 +48,25 @@ export function createHealthRedisClient(): Redis {
 
     return client;
 }
+
+/**
+ * Factory para crear un cliente ioredis para rate limiting (Issue #17).
+ *
+ * Usa lazyConnect y connectTimeout corto para no bloquear el startup.
+ * Si Redis no está disponible, @fastify/rate-limit con skipOnError
+ * hace fallback a in-memory automáticamente (Issue #22).
+ */
+export function createRateLimitRedisClient(): Redis {
+    const client = new Redis({
+        host: redisUrl.hostname,
+        port: parseInt(redisUrl.port || '6379', 10),
+        password: redisUrl.password || undefined,
+        tls: redisUrl.protocol === 'rediss:' ? {} : undefined,
+        maxRetriesPerRequest: 1,
+        connectTimeout: 3000,
+        lazyConnect: true,
+        enableOfflineQueue: false,
+    });
+
+    return client;
+}

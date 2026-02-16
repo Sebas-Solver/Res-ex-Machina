@@ -151,8 +151,19 @@ export async function createRecord(
         throw dbError;
     }
 
-    // Encolar anchor job
-    await enqueueAnchorJob(recordId, receiptHash);
+    // Encolar anchor job (Issue #22: si Redis no está disponible,
+    // el record se guarda igualmente y el anchoring se reintenta
+    // cuando el worker se reconecte)
+    try {
+        await enqueueAnchorJob(recordId, receiptHash);
+    } catch (enqueueError) {
+        // No lanzar — el record ya está guardado en DB con state=pending_anchor.
+        // El worker procesará el job cuando Redis vuelva.
+        console.error(
+            `⚠️ No se pudo encolar anchor para ${recordId} (Redis down?):`,
+            enqueueError instanceof Error ? enqueueError.message : String(enqueueError),
+        );
+    }
 
     return {
         record_id: recordId,
