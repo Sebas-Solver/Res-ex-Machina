@@ -4,6 +4,7 @@ import { publicClient, walletClient, anchorAccount } from '../config/blockchain.
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { enqueueWebhookDispatch } from './webhookDispatcher.js';
 
 
 /**
@@ -65,6 +66,19 @@ export async function anchorRecord(
         })
         .where(eq(records.recordId, recordId));
 
+    // Disparar webhooks (async, no bloquea) — Issue #13
+    try {
+        // Obtener wallet del record para buscar webhooks
+        const [record] = await db.select({ agentWallet: records.agentWallet })
+            .from(records).where(eq(records.recordId, recordId)).limit(1);
+        if (record) {
+            await enqueueWebhookDispatch(
+                record.agentWallet, recordId, 'pending_anchor', 'anchored',
+                { txHash: result.txHash, block: result.block, chainId: result.chainId },
+            );
+        }
+    } catch { /* webhook dispatch failure must never block anchoring */ }
+
     return result;
 }
 
@@ -85,4 +99,15 @@ export async function markAnchorFailed(
             anchorRetries: retries,
         })
         .where(eq(records.recordId, recordId));
+
+    // Disparar webhooks (async, no bloquea) — Issue #13
+    try {
+        const [record] = await db.select({ agentWallet: records.agentWallet })
+            .from(records).where(eq(records.recordId, recordId)).limit(1);
+        if (record) {
+            await enqueueWebhookDispatch(
+                record.agentWallet, recordId, 'pending_anchor', 'anchor_failed',
+            );
+        }
+    } catch { /* webhook dispatch failure must never block anchoring */ }
 }

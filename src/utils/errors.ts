@@ -111,6 +111,20 @@ export const batchTooLarge = () =>
 export const batchInvalidPayload = (details?: Record<string, unknown>) =>
     new ApiError(400, 'batch_invalid_payload', 'Batch request body is malformed', details);
 
+// --- Factory functions para webhooks (Issue #13) ---
+
+export const webhookNotFound = () =>
+    new ApiError(404, 'webhook_not_found', 'Webhook not found or does not belong to this wallet');
+
+export const webhookLimitReached = () =>
+    new ApiError(400, 'webhook_limit_reached', 'Maximum of 5 webhooks per wallet reached');
+
+export const webhookInvalidUrl = (details?: Record<string, unknown>) =>
+    new ApiError(400, 'webhook_invalid_url', 'Webhook URL is not allowed (SSRF protection)', details);
+
+export const webhookForbidden = () =>
+    new ApiError(403, 'webhook_forbidden', 'You can only manage your own webhooks');
+
 // --- Factory functions para autenticación de wallet (GET /mine) ---
 
 export const missingAuthHeaders = () =>
