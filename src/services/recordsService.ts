@@ -137,6 +137,7 @@ export async function createRecord(
             receiptHash,
             tags: input.tags,
             externalRef: input.external_ref ?? null,
+            provenanceMetadata: input.provenance_metadata ?? null,
             feeAmount: input.fee_amount.toFixed(8),
             feeCurrency: input.fee_currency,
             feeTxHash: input.fee_tx_hash,

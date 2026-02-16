@@ -33,6 +33,25 @@ export const pogBundleSchema = z.object({
 export type PogBundle = z.infer<typeof pogBundleSchema>;
 
 /**
+ * Schema de metadatos de procedencia (Issue #11).
+ *
+ * Permite vincular un record de RxM con estándares de procedencia
+ * embebida: C2PA, IPTC, XMP, Schema.org, o custom.
+ *
+ * Referencia: Docs/c2pa-interoperability.md, OP-14
+ */
+export const provenanceMetadataSchema = z.object({
+    standard: z.enum(['c2pa', 'iptc', 'xmp', 'schema_org', 'custom']),
+    manifest_hash: z.string().regex(CONTENT_HASH_REGEX, 'Must match sha256:{64hex}'),
+    claim_generator: z.string().max(256).optional(),
+    issuer: z.string().max(256).optional(),
+    assertions: z.array(z.string().max(128)).max(20).optional(),
+    manifest_uri: z.string().url().max(1024).optional(),
+});
+
+export type ProvenanceMetadata = z.infer<typeof provenanceMetadataSchema>;
+
+/**
  * Schema del body completo del POST /v1/records.
  */
 export const createRecordSchema = z.object({
@@ -46,9 +65,11 @@ export const createRecordSchema = z.object({
         .max(10)
         .default([]),
     external_ref: z.string().url().max(512).optional(),
+    provenance_metadata: provenanceMetadataSchema.optional(),
     fee_amount: z.number().positive(),
     fee_currency: z.string().min(1).max(8),
     fee_tx_hash: z.string().regex(TX_HASH_REGEX, 'Must be valid transaction hash'),
 });
 
 export type CreateRecordInput = z.infer<typeof createRecordSchema>;
+

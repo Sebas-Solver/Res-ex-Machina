@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createRecordSchema, pogBundleSchema } from '../src/routes/schemas/index.js';
+import { createRecordSchema, pogBundleSchema, provenanceMetadataSchema } from '../src/routes/schemas/index.js';
 
 describe('pogBundleSchema', () => {
     const validBundle = {
@@ -130,4 +130,114 @@ describe('createRecordSchema', () => {
         const result = createRecordSchema.safeParse({ ...validBody, fee_tx_hash: 'no-es-hash' });
         expect(result.success).toBe(false);
     });
+
+    // --- provenance_metadata (Issue #11) ---
+
+    it('acepta body sin provenance_metadata (backward compatible)', () => {
+        const result = createRecordSchema.safeParse(validBody);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.provenance_metadata).toBeUndefined();
+        }
+    });
+
+    it('acepta provenance_metadata C2PA válido', () => {
+        const result = createRecordSchema.safeParse({
+            ...validBody,
+            provenance_metadata: {
+                standard: 'c2pa',
+                manifest_hash: 'sha256:' + 'ab'.repeat(32),
+                claim_generator: 'Adobe Photoshop 25.0',
+                issuer: 'Adobe Inc.',
+                assertions: ['c2pa.created', 'c2pa.hash.data'],
+                manifest_uri: 'https://example.com/manifest.c2pa',
+            },
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('acepta provenance_metadata con solo campos obligatorios', () => {
+        const result = createRecordSchema.safeParse({
+            ...validBody,
+            provenance_metadata: {
+                standard: 'iptc',
+                manifest_hash: 'sha256:' + 'cc'.repeat(32),
+            },
+        });
+        expect(result.success).toBe(true);
+    });
 });
+
+// =============================================
+// provenanceMetadataSchema (Issue #11)
+// =============================================
+
+describe('provenanceMetadataSchema', () => {
+    const validProvenance = {
+        standard: 'c2pa',
+        manifest_hash: 'sha256:' + 'ab'.repeat(32),
+    };
+
+    it('acepta los 5 standards válidos', () => {
+        for (const std of ['c2pa', 'iptc', 'xmp', 'schema_org', 'custom']) {
+            const result = provenanceMetadataSchema.safeParse({ ...validProvenance, standard: std });
+            expect(result.success).toBe(true);
+        }
+    });
+
+    it('rechaza standard inválido', () => {
+        const result = provenanceMetadataSchema.safeParse({ ...validProvenance, standard: 'unknown' });
+        expect(result.success).toBe(false);
+    });
+
+    it('rechaza manifest_hash sin formato sha256:', () => {
+        const result = provenanceMetadataSchema.safeParse({ ...validProvenance, manifest_hash: 'abc123' });
+        expect(result.success).toBe(false);
+    });
+
+    it('rechaza manifest_hash con md5:', () => {
+        const result = provenanceMetadataSchema.safeParse({ ...validProvenance, manifest_hash: 'md5:' + 'ab'.repeat(32) });
+        expect(result.success).toBe(false);
+    });
+
+    it('rechaza más de 20 assertions', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            assertions: Array.from({ length: 21 }, (_, i) => `assertion-${i}`),
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('acepta hasta 20 assertions', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            assertions: Array.from({ length: 20 }, (_, i) => `assertion-${i}`),
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rechaza claim_generator > 256 chars', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            claim_generator: 'x'.repeat(257),
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rechaza manifest_uri no URL', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            manifest_uri: 'not-a-url',
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('acepta manifest_uri URL válida', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            manifest_uri: 'https://example.com/manifest.c2pa',
+        });
+        expect(result.success).toBe(true);
+    });
+});
+

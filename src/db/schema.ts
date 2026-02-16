@@ -69,6 +69,9 @@ export const records = pgTable(
         /** URL o pointer a contenido externo (IPFS, S3, etc.) */
         externalRef: text('external_ref'),
 
+        /** Metadatos de procedencia (C2PA, IPTC, XMP, Schema.org) — Issue #11 */
+        provenanceMetadata: jsonb('provenance_metadata'),
+
         // --- Fee ---
         /** Monto del fee pagado */
         feeAmount: numeric('fee_amount', { precision: 18, scale: 8 }).notNull(),
