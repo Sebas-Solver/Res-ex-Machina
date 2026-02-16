@@ -69,16 +69,19 @@ Client (AI Agent)
 | `POST` | `/records?wait_for_anchor=true` | EIP-712 signature | Create + wait for anchoring (max 25s) |
 | `GET` | `/records/:id` | None | Get record by UUID |
 | `GET` | `/records/verify?content_hash=` | None | Verify record exists by hash |
+| `GET` | `/records/mine` | EIP-191 wallet signature | List agent's own records |
 | `GET` | `/records/:id/export` | None | Export verifiable receipt (JSON) |
 | `GET` | `/records/:id/export?mode=compact` | None | Compact receipt (verification only) |
-| `GET` | `/health` | None | System health check |
+| `GET` | `/health` | None | System health check (cached 30s) |
 
 ### Rate Limits
 
-| Scope | Limit | Window |
-|-------|-------|--------|
-| Global (all endpoints) | 100 req | 1 min |
-| POST /records (per wallet) | 10 req | 1 min |
+| Scope | Limit | Window | Backend |
+|-------|-------|--------|--------|
+| Global (all endpoints) | 100 req | 1 min | Redis (with `skipOnError` fallback) |
+| POST /records (per wallet) | 10 req | 1 min | Redis (with `skipOnError` fallback) |
+
+> **Note:** Rate limiting is backed by Redis (`@fastify/rate-limit` with `ioredis`). If Redis is temporarily unavailable, rate limiting is bypassed (`skipOnError: true`) to ensure API availability. This is a deliberate degraded-mode tradeoff.
 
 ---
 
@@ -362,6 +365,10 @@ All errors follow this format:
 | 400 | `invalid_visibility` | Not one of: `proof_only`, `input_hash_only`, `content_optional` |
 | 401 | `invalid_signature` | EIP-712 signature is malformed or unverifiable |
 | 401 | `signer_mismatch` | Recovered signer ≠ declared `agent_wallet` |
+| 401 | `missing_auth_headers` | `GET /records/mine` called without auth headers |
+| 401 | `invalid_wallet_address` | `X-Wallet-Address` is not a valid Ethereum address |
+| 401 | `auth_timestamp_expired` | `X-Timestamp` is older than 5 minutes |
+| 401 | `auth_signature_invalid` | EIP-191 signature verification failed |
 | 402 | `fee_not_verified` | Fee tx not found, unconfirmed, or failed on-chain |
 | 402 | `fee_insufficient` | Fee amount < minimum required |
 | 402 | `fee_wrong_recipient` | Fee tx `to` address doesn't match `fee_receiver_address` |
@@ -487,6 +494,119 @@ The anchor worker uses BullMQ with exponential backoff: 5s → 10s → 20s → 4
 
 ---
 
+## Wallet Authentication (GET /records/mine)
+
+`GET /records/mine` is a protected endpoint that requires **EIP-191 (personal_sign)** authentication.
+
+### Auth Headers
+
+| Header | Description | Example |
+|--------|-------------|--------|
+| `X-Wallet-Address` | The agent's Ethereum address | `0xDd6894b5...` |
+| `X-Signature` | EIP-191 signature of the auth message | `0x4f8e...` |
+| `X-Timestamp` | ISO-8601 timestamp (must be within 5 minutes) | `2026-02-16T12:00:00.000Z` |
+
+### Auth Message Format
+
+The message to sign is: `RexAuth:{timestamp}` where `{timestamp}` is the same `X-Timestamp` value.
+
+```typescript
+import { privateKeyToAccount } from 'viem/accounts';
+
+const account = privateKeyToAccount('0xYOUR_PRIVATE_KEY');
+const timestamp = new Date().toISOString();
+const message = `RexAuth:${timestamp}`;
+
+// Sign with personal_sign (EIP-191)
+const signature = await account.signMessage({ message });
+
+// Make the authenticated request
+const response = await fetch('https://api.example.com/v1/records/mine?limit=20', {
+  headers: {
+    'X-Wallet-Address': account.address,
+    'X-Signature': signature,
+    'X-Timestamp': timestamp,
+  },
+});
+
+const { records, pagination } = await response.json();
+```
+
+### Response
+
+```json
+{
+  "records": [
+    {
+      "record_id": "01952abc-...",
+      "content_hash": "sha256:...",
+      "state": "anchored",
+      "created_at": "2026-02-14T..."
+    }
+  ],
+  "pagination": {
+    "total": 12,
+    "limit": 20,
+    "offset": 0,
+    "has_more": false
+  }
+}
+```
+
+> **Note:** This is a different auth mechanism than `POST /records` (which uses EIP-712). EIP-191 (`personal_sign`) is simpler and sufficient for read-only endpoints.
+
+---
+
+## Health Check & Caching
+
+`GET /v1/health` checks the status of all subsystems (DB, Redis, L2 blockchain) and returns a summary.
+
+### Caching
+
+Health check results are **cached for 30 seconds** (in-memory TTL cache) to reduce load on Upstash and L2 RPC, especially on free tiers.
+
+### Response Headers
+
+| Header | Value | When |
+|--------|-------|------|
+| `Cache-Control` | `public, max-age=30` | Always |
+| `X-Cache` | `HIT` | Response served from cache |
+| `X-Cache` | `MISS` | Fresh response (cache refreshed) |
+| `Retry-After` | `30` | When status is 503 (degraded) |
+
+### Health States
+
+| HTTP | `status` field | Meaning |
+|------|----------------|-------|
+| 200 | `healthy` | All subsystems operational |
+| 503 | `degraded` | One or more subsystems down |
+
+---
+
+## Degraded Mode (Resilience)
+
+The API is designed to remain functional even when external services (Redis, L2 blockchain) are temporarily unavailable.
+
+### How it works
+
+| Service Down | Impact | Failsafe |
+|-------------|--------|----------|
+| **Redis** | Rate limiting disabled | `skipOnError: true` — requests are allowed without rate limiting |
+| **Redis** | Anchor job can't be enqueued | `try/catch` — record saved to DB with `state: pending_anchor`; job will be enqueued when Redis reconnects |
+| **Redis** | Health check shows `degraded` | Cached for 30s; `Retry-After: 30` header returned |
+| **L2 blockchain** | Fee verification fails | POST /records returns 402 (expected) |
+| **L2 blockchain** | Anchoring fails | Worker retries up to 5 times with exponential backoff |
+| **L2 blockchain** | Health check shows `degraded` | Cached for 30s; `Retry-After: 30` header |
+
+### Key design decisions
+
+- **Availability over strictness:** When Redis goes down, it's better to serve requests without rate limiting than to return 500 errors to all users.
+- **Records are always saved:** Even if the anchor job can't be enqueued, the record is persisted in PostgreSQL. No data is lost.
+- **Workers are passive:** The anchor worker reconnects automatically when Redis comes back. Pending jobs are processed.
+- **Health cache reduces blast radius:** A 30s cache prevents cascading failures when external services are slow or unreachable.
+
+---
+
 ## Database Schema
 
 Main table: `records`
@@ -593,7 +713,7 @@ ANCHOR_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae78
 | `npm run dev` | Start API (dev mode with pino-pretty) |
 | `npm run worker:anchor` | Start anchor worker |
 | `npm run check` | Run tsc type checking |
-| `npm test` | Run vitest (63 tests) |
+| `npm test` | Run vitest (100 tests) |
 | `npm run db:push` | Apply schema to database |
 | `npm run alpha:happy` | Run Agent A happy path test |
 | `npm run alpha:adversarial` | Run Agent D adversarial test |
@@ -761,7 +881,7 @@ Not all fields in a PoG bundle carry the same trust level:
 
 See [CHANGELOG.md](../CHANGELOG.md) for the full release history.
 
-Current version: **v1.0.0-alpha.1** (2026-02-14)
+Current version: **v1.0.0-alpha.2-dev** (2026-02-16)
 
 ## Further Reading
 

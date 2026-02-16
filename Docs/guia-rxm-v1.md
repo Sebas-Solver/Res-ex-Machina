@@ -116,6 +116,34 @@ El registro se crea **inmediatamente** en la base de datos de RxM (estado `pendi
 
 ---
 
+## ¿Qué pasa si algo falla temporalmente?
+
+RxM está diseñado para **seguir funcionando** incluso cuando partes del sistema tienen problemas. Es como un hospital con un generador de emergencia: si se va la luz principal, los servicios esenciales siguen operando.
+
+### Si Redis se cae (la cola de trabajo)
+
+| Qué pasa | Qué hace RxM |
+|----------|-------------|
+| El control de velocidad (rate limit) deja de funcionar | **Se desactiva temporalmente** — se permiten todas las solicitudes sin límite hasta que vuelva |
+| No se puede poner en cola el anclaje en blockchain | **El registro se guarda igualmente** en la base de datos. Cuando Redis vuelva, el anclaje se procesará |
+| El health check muestra "degraded" | Normal. Dice `Retry-After: 30` para que los clientes sepan cuándo volver a intentar |
+
+### Si la blockchain L2 se cae
+
+| Qué pasa | Qué hace RxM |
+|----------|-------------|
+| No se pueden verificar pagos (fees) | Las peticiones de registro devuelven error 402 (esperado) |
+| No se puede anclar | El worker reintenta automáticamente hasta 5 veces |
+| El health check muestra "degraded" | Normal |
+
+### Resumen: tus datos están a salvo
+
+> **Lo importante:** Tu registro *nunca se pierde*. Aunque Redis o la blockchain estén temporalmente fuera de servicio, el registro se guarda en la base de datos. Los pasos pendientes (anclaje, cola de trabajo) se completan automáticamente cuando el servicio vuelve.
+>
+> Además, el health check de la API se refresca cada 30 segundos (tiene una "caché" de 30s). Esto evita hacer cientos de llamadas innecesarias a sistemas que podrían estar saturados.
+
+---
+
 ## ¿Cómo se usa la v1.0?
 
 ### Importante: v1.0 es solo API
@@ -135,6 +163,7 @@ Esto significa que para usar RxM v1.0 necesitas:
 | **Registrar y esperar** | Igual, pero espera a que se ancle en blockchain antes de responder (max 25s) | Si necesitas la confirmación completa en una sola llamada |
 | **Consultar** | Busca un registro por su ID | Si quieres ver los detalles de un registro concreto |
 | **Verificar** | Comprueba si existe un registro para un contenido | Si alguien te dice "esto lo generé yo" y quieres verificarlo |
+| **Mis registros** | Lista todos los registros de tu agente | Si quieres ver qué ha registrado tu IA (requiere autenticación) |
 | **Exportar** | Descarga el receipt completo de un registro | Si necesitas una prueba formal para presentar a alguien |
 | **Exportar (compacto)** | Descarga solo los datos esenciales de verificación | Si un agente IA necesita verificar rápidamente (ahorra tokens) |
 | **Verificar receipt** | Comprueba que un receipt es auténtico | Si recibes un receipt y quieres confirmar que no ha sido manipulado |
@@ -153,6 +182,38 @@ Imagina que tienes un agente de IA que genera informes. Quieres que cada informe
 5. **Verificas** en RxM con el hash del informe → "Sí, registrado el 12/02/2026 a las 14:30"
 6. **Exportas** el receipt como prueba formal (o en modo compacto si lo necesita una IA)
 7. **El tercero verifica** el receipt con el verificador CLI → `✅ RECORD AUTÉNTICO`
+
+---
+
+## Consultar mis propios registros
+
+> **Novedad alpha.2** — Tu agente puede ahora **listar todos sus registros** usando la operación "Mis registros" (`GET /records/mine`).
+
+### ¿Cómo funciona?
+
+La API necesita comprobar que realmente eres tú quien pide los datos (para que nadie pueda ver los registros de otro). Lo hace mediante un mecanismo de autenticación simple:
+
+1. Tu agente genera una marca de tiempo actual
+2. Tu agente firma un mensaje con su wallet que dice: "Soy yo, y estoy pidiendo esto ahora"
+3. Tu agente envía la petición junto con la firma
+4. RxM comprueba la firma y devuelve solo los registros de esa wallet
+
+Es como **mostrar tu DNI en una ventanilla**: la API verifica tu identidad antes de darte la información.
+
+### ¿Qué datos devuelve?
+
+Una lista con todos los registros que ha hecho tu agente, con paginación (si tienes muchos registros, los devuelve en páginas de 20).
+
+### Posibles errores
+
+| Error | Qué significa | Qué hacer |
+|-------|-------------|----------|
+| `missing_auth_headers` | Falta la firma de autenticación | Tu agente debe incluir los datos de auth |
+| `invalid_wallet_address` | La dirección de wallet no es válida | Verifica que la dirección sea correcta |
+| `auth_timestamp_expired` | La marca de tiempo tiene más de 5 minutos | Tu agente debe generar una marca de tiempo nueva |
+| `auth_signature_invalid` | La firma no coincide | Verifica que la wallet que firma es la correcta |
+
+> **Nota:** Este sistema de autenticación es diferente al que se usa para registrar (EIP-712). Para listar registros se usa un método más simple llamado EIP-191 ("firma personal").
 
 ---
 

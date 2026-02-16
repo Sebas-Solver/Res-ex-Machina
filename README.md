@@ -175,7 +175,7 @@ npm run worker:anchor    # Worker de anchoring
 | Script | Descripción |
 |---|---|
 | `npm run dev` | Servidor de desarrollo (tsx watch) |
-| `npm test` | Ejecutar 81 tests |
+| `npm test` | Ejecutar 100 tests |
 | `npm run test:coverage` | Tests con reporte de cobertura (v8) |
 | `npm run build` | Build de producción |
 | `npm run db:push` | Aplicar migraciones |
@@ -195,14 +195,17 @@ npm run worker:anchor    # Worker de anchoring
 src/
 ├── app.ts                    # Entry point Fastify
 ├── config/
-│   └── env.ts                # Variables de entorno (Zod)
+│   ├── blockchain.ts          # Clientes L2 compartidos (viem)
+│   ├── env.ts                # Variables de entorno (Zod)
+│   └── redis.ts              # Clientes Redis (BullMQ, health, rate limit)
 ├── db/
 │   ├── index.ts              # Conexión Drizzle
 │   └── schema.ts             # Modelo records
 ├── middleware/
-│   └── rateLimit.ts          # Rate limiting por IP
+│   ├── rateLimit.ts          # Rate limiting por IP (Redis + skipOnError)
+│   └── walletAuth.ts         # Autenticación EIP-191 (GET /records/mine)
 ├── routes/
-│   ├── health.ts             # GET /v1/health
+│   ├── health.ts             # GET /v1/health (cache 30s)
 │   ├── records.ts            # POST + GET /v1/records
 │   └── schemas/
 │       └── index.ts          # Validación Zod
@@ -225,10 +228,12 @@ tests/
 ├── dx-features.test.ts
 ├── errors.test.ts
 ├── fee.test.ts
+├── formatters.test.ts
 ├── invariants.test.ts
 ├── receipt.test.ts
 ├── records-get.test.ts
-└── schemas.test.ts
+├── schemas.test.ts
+└── wallet-auth.test.ts
 Docs/
 ├── 10-specs/                 # Especificaciones técnicas
 ├── 20-security/              # Threat model
@@ -306,16 +311,12 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | [#13](https://github.com/Sebas-Solver/Res-ex-Machina/issues/13) | v1.1 | Webhooks de estado |
 | [#14](https://github.com/Sebas-Solver/Res-ex-Machina/issues/14) | v1.1 | Doble atestación temporal |
 | [#15](https://github.com/Sebas-Solver/Res-ex-Machina/issues/15) | v2+ | Investigar verificación del `model_id` declarado |
-| [#16](https://github.com/Sebas-Solver/Res-ex-Machina/issues/16) | alpha.2 | Refactor: módulos compartidos de config |
-| [#17](https://github.com/Sebas-Solver/Res-ex-Machina/issues/17) | beta | Rate limit con Redis store |
-| [#18](https://github.com/Sebas-Solver/Res-ex-Machina/issues/18) | alpha.2 | Refactor: formatters unificados |
+| ~~[#16](https://github.com/Sebas-Solver/Res-ex-Machina/issues/16)~~ | ✅ alpha.2 | ~~Health cache + módulos compartidos~~ |
+| ~~[#17](https://github.com/Sebas-Solver/Res-ex-Machina/issues/17)~~ | ✅ alpha.2 | ~~Rate limit con Redis store~~ |
 | [#19](https://github.com/Sebas-Solver/Res-ex-Machina/issues/19) | beta | Monitorización y alertas |
-| [#20](https://github.com/Sebas-Solver/Res-ex-Machina/issues/20) | alpha.2 | Links auto-generados en export |
-| [#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21) | v1.1 | Listar registros por wallet |
-| [#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22) | alpha.2 | Modo degradado / resiliencia |
+| [#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21) | v1.1 | Listar registros por wallet (filtros avanzados) |
+| ~~[#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22)~~ | ✅ alpha.2 | ~~Modo degradado / resiliencia~~ |
 | [#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23) | beta | Enriquecer datos de fee |
-| [#24](https://github.com/Sebas-Solver/Res-ex-Machina/issues/24) | ✅ alpha.2 | Verificador CLI independiente |
-| [#25](https://github.com/Sebas-Solver/Res-ex-Machina/issues/25) | v1.1 | Export minimal para privacidad |
 
 ---
 
@@ -331,7 +332,7 @@ Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubi
 
 ## 📜 Estado actual
 
-🟢 **v1.0.0-alpha.2-dev** — API desplegada en `https://res-ex-machina-api.onrender.com`. 81 tests en 7 suites, CI/CD. DX improvements (wait_for_anchor, state_info, explorer_url, compact mode). Code review refactoring aplicado. 15 issues abiertas, 10 cerradas.
+🟢 **v1.0.0-alpha.2-dev** — API desplegada en `https://res-ex-machina-api.onrender.com`. 100 tests en 9 suites, CI/CD. Autenticación por wallet (`GET /records/mine`). Health cache 30s con `Cache-Control`/`X-Cache`. Rate limit con Redis store. Modo degradado (resiliencia Redis/L2). 8 issues abiertas, 17 cerradas.
 
 ---
 
