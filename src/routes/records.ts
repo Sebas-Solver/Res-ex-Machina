@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 import { env } from '../config/env.js';
@@ -137,11 +137,13 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         const limit = Math.min(Math.max(parseInt(request.query.limit ?? '20', 10) || 20, 1), 100);
         const offset = Math.max(parseInt(request.query.offset ?? '0', 10) || 0, 0);
 
-        // Contar total de records de esta wallet
+        // Contar total de records de esta wallet (case-insensitive)
+        const walletFilter = sql`lower(${records.agentWallet}) = ${wallet}`;
+
         const countResult = await db
             .select({ count: records.recordId })
             .from(records)
-            .where(eq(records.agentWallet, wallet));
+            .where(walletFilter);
 
         const total = countResult.length;
 
@@ -149,7 +151,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         const result = await db
             .select()
             .from(records)
-            .where(eq(records.agentWallet, wallet))
+            .where(walletFilter)
             .orderBy(desc(records.createdAt))
             .limit(limit)
             .offset(offset);
