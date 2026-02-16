@@ -22,6 +22,12 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ### Quick Start Guide — Issue #28 ✅ Cerrado
 
+### README English Translation
+
+#### Changed
+
+- **README.md** — Full translation from Spanish to English (403 lines). All sections preserved: badges, architecture, endpoints, tests, roadmap, issues table, philosophy. Updated current status with accurate counts (73 tests, 17 suites, 5 open / 16 closed issues, SDK npm link)
+
 #### Añadido
 
 - **`Docs/quick-start.md`** — "Zero to first record in 5 minutes", guía en inglés con copy-paste
