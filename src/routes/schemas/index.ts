@@ -33,10 +33,13 @@ export const pogBundleSchema = z.object({
 export type PogBundle = z.infer<typeof pogBundleSchema>;
 
 /**
- * Schema de metadatos de procedencia (Issue #11).
+ * Schema de metadatos de procedencia (Issues #11, #14).
  *
  * Permite vincular un record de RxM con estándares de procedencia
  * embebida: C2PA, IPTC, XMP, Schema.org, o custom.
+ *
+ * pki_timestamp: timestamp PKI opcional del estándar de procedencia
+ * para doble atestación temporal (blockchain + PKI). Issue #14.
  *
  * Referencia: Docs/c2pa-interoperability.md, OP-14
  */
@@ -47,6 +50,7 @@ export const provenanceMetadataSchema = z.object({
     issuer: z.string().max(256).optional(),
     assertions: z.array(z.string().max(128)).max(20).optional(),
     manifest_uri: z.string().url().max(1024).optional(),
+    pki_timestamp: z.string().datetime({ message: 'Must be ISO-8601 with timezone' }).optional(),
 });
 
 export type ProvenanceMetadata = z.infer<typeof provenanceMetadataSchema>;

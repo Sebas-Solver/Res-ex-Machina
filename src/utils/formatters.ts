@@ -135,6 +135,14 @@ export function formatFullExport(record: DbRecord) {
         state: record.state,
         state_info: getStateInfo(record.state),
         provenance_metadata: record.provenanceMetadata ?? null,
+        temporal_attestation: {
+            blockchain_timestamp: record.anchoredAt?.toISOString() ?? null,
+            pki_timestamp: (record.provenanceMetadata as Record<string, unknown> | null)?.pki_timestamp ?? null,
+            sources: [
+                'blockchain_anchor',
+                ...((record.provenanceMetadata as Record<string, unknown> | null)?.pki_timestamp ? ['pki_standard'] : []),
+            ],
+        },
         fee: buildFeeBlock(record),
         anchor: buildAnchorBlock(record),
         links: buildLinks(record),

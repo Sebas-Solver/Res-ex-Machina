@@ -239,5 +239,35 @@ describe('provenanceMetadataSchema', () => {
         });
         expect(result.success).toBe(true);
     });
+
+    // --- pki_timestamp (Issue #14) ---
+
+    it('acepta pki_timestamp ISO-8601 válido', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            pki_timestamp: '2026-02-16T12:00:00.000Z',
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rechaza pki_timestamp no ISO-8601', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            pki_timestamp: '16/02/2026 12:00',
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('acepta provenance completa con doble atestación temporal', () => {
+        const result = provenanceMetadataSchema.safeParse({
+            ...validProvenance,
+            claim_generator: 'Adobe Photoshop 25.0',
+            issuer: 'Adobe Inc.',
+            assertions: ['c2pa.created'],
+            manifest_uri: 'https://example.com/manifest.c2pa',
+            pki_timestamp: '2026-02-16T10:00:00.000Z',
+        });
+        expect(result.success).toBe(true);
+    });
 });
 
