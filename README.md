@@ -158,6 +158,10 @@ Agente IA ──────────── API REST ────────
 
 ## 📦 SDK TypeScript (`@res-ex-machina/sdk`)
 
+[![npm](https://img.shields.io/npm/v/@res-ex-machina/sdk)](https://www.npmjs.com/package/@res-ex-machina/sdk)
+
+Instalación: `npm install @res-ex-machina/sdk viem`
+
 Integración trivial — de 50+ líneas de código a 5:
 
 ```typescript
@@ -346,7 +350,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | **v1.0.0-rc2** | ✅ Taggeado | Fix rate limit 429, fee $0.01, trust model docs, guías usuario + dev |
 | **v1.0.0-alpha.1** | ✅ Desplegado | Deploy en Render + Neon + Upstash + Base Sepolia. Multi-chain, Redis TLS, worker inline |
 | **v1.1** | ✅ Completado | Batch endpoint (#12), webhooks con seguridad (#13), doble atestación temporal (#14) |
-| **v1.2** | 🔲 Planificado | SDK npm `@res-ex-machina/sdk` — integración trivial para humanos y agentes (#27) |
+| **v1.2** | ✅ Publicado | SDK npm [`@res-ex-machina/sdk`](https://www.npmjs.com/package/@res-ex-machina/sdk) — integración trivial para humanos y agentes (#27) |
 | **v2** | 🔲 Planificado | Verificación model_id (#15), content pointers, identidad dual, fee fiat |
 | **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace doble procedencia |
 
@@ -365,7 +369,10 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | ~~[#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21)~~ | ✅ alpha.2 | ~~Listar registros por wallet (filtros avanzados)~~ |
 | ~~[#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22)~~ | ✅ alpha.2 | ~~Modo degradado / resiliencia~~ |
 | [#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23) | beta | Enriquecer datos de fee |
-| [#27](https://github.com/Sebas-Solver/Res-ex-Machina/issues/27) | v1.2 | SDK npm `@res-ex-machina/sdk` para humanos y agentes |
+| ~~[#27](https://github.com/Sebas-Solver/Res-ex-Machina/issues/27)~~ | ✅ v1.2 | ~~SDK npm `@res-ex-machina/sdk` para humanos y agentes~~ |
+| [#28](https://github.com/Sebas-Solver/Res-ex-Machina/issues/28) | v1.2 | Quick Start Guide — "Del cero al primer record en 5 min" |
+| [#29](https://github.com/Sebas-Solver/Res-ex-Machina/issues/29) | v2+ | Plugins para frameworks de agentes (LangChain, AutoGen, CrewAI) |
+| [#30](https://github.com/Sebas-Solver/Res-ex-Machina/issues/30) | v2+ | SDK Python (`rxm`) — Mismo diseño que TypeScript |
 
 ---
 

@@ -18,7 +18,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
   - ❌ 5 tests fallidos (limitación de TestSprite: no puede generar firmas EIP-712 ni transacciones on-chain)
   - Los 5 fallos **confirman que las validaciones funcionan** (rate limiting, schema Zod, rechazo de firmas inválidas)
 
-### SDK npm (`@res-ex-machina/sdk`) — Issue #27
+### SDK npm (`@res-ex-machina/sdk`) — Issue #27 ✅ Cerrado
 
 #### Añadido
 
@@ -33,6 +33,14 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
   - **30 tests unitarios** en 4 suites (hash, sign, errors, client)
   - **README completo** — Instalación, quick start, modos de uso, error handling, referencia API
 - **`src/constants/eip712.ts`** — Constantes EIP-712 extraídas como fuente única de verdad (server + SDK importan de aquí)
+
+#### Publicado
+
+- **📦 Publicado en npm** — [`@res-ex-machina/sdk@0.1.0`](https://www.npmjs.com/package/@res-ex-machina/sdk) (2026-02-16)
+  - 38 archivos (dist/ compilado a ESM)
+  - Paquete público bajo organización npm `res-ex-machina`
+  - Código y documentación traducidos al inglés para adopción internacional
+  - `npm install @res-ex-machina/sdk viem`
 
 ### Mejoras en Tests
 
