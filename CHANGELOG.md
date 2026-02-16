@@ -13,6 +13,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 - **Code Review alpha.2** — `Docs/code-review-alpha2.md`, informe exhaustivo de revisión de código que cubre arquitectura, seguridad, rendimiento y calidad
 - **Semgrep SAST scan** — Análisis estático de seguridad con Semgrep MCP sobre archivos críticos (`walletAuth.ts`, SDK completo): **0 vulnerabilidades detectadas**
+- **Smoke test E2E** — `scripts/smoke-test-live.ts` + `npm run smoke:live`: valida SDK publicado contra API en producción (health → balance → fee → record → verify → export). 6/6 pasos OK. Cierra Issue #31
 - **TestSprite API testing** — `testsprite_tests/testsprite-mcp-test-report.md`, ejecución de 7 test cases automatizados contra la API:
   - ✅ 2 tests pasados (export endpoints — error handling 400/404 correcto)
   - ❌ 5 tests fallidos (limitación de TestSprite: no puede generar firmas EIP-712 ni transacciones on-chain)

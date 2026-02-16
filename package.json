@@ -22,7 +22,8 @@
     "start:worker": "node dist/workers/anchor.worker.js",
     "alpha:happy": "tsx scripts/alpha/agent-a-happy-path.ts",
     "alpha:adversarial": "tsx scripts/alpha/agent-d-adversarial.ts",
-    "alpha:all": "npm run alpha:happy && npm run alpha:adversarial"
+    "alpha:all": "npm run alpha:happy && npm run alpha:adversarial",
+    "smoke:live": "tsx scripts/smoke-test-live.ts"
   },
   "repository": {
     "type": "git",
@@ -39,6 +40,7 @@
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
     "@fastify/rate-limit": "^10.3.0",
+    "@res-ex-machina/sdk": "^0.1.0",
     "bullmq": "^5.67.3",
     "dotenv": "^17.2.4",
     "drizzle-orm": "^0.45.1",
