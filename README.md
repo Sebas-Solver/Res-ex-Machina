@@ -53,6 +53,10 @@ NO CUSTODIA     → El agente controla su identidad (wallet).
 
 ---
 
+> 🚀 **[Quick Start — Zero to first record in 5 minutes →](Docs/quick-start.md)**
+
+---
+
 ## 📦 Qué se registra (y qué NO)
 
 ### ✅ Siempre se registra
@@ -370,7 +374,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | ~~[#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22)~~ | ✅ alpha.2 | ~~Modo degradado / resiliencia~~ |
 | [#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23) | beta | Enriquecer datos de fee |
 | ~~[#27](https://github.com/Sebas-Solver/Res-ex-Machina/issues/27)~~ | ✅ v1.2 | ~~SDK npm `@res-ex-machina/sdk` para humanos y agentes~~ |
-| [#28](https://github.com/Sebas-Solver/Res-ex-Machina/issues/28) | v1.2 | Quick Start Guide — "Del cero al primer record en 5 min" |
+| ~~[#28](https://github.com/Sebas-Solver/Res-ex-Machina/issues/28)~~ | ✅ v1.2 | ~~Quick Start Guide — "Zero to first record in 5 min"~~ |
 | [#29](https://github.com/Sebas-Solver/Res-ex-Machina/issues/29) | v2+ | Plugins para frameworks de agentes (LangChain, AutoGen, CrewAI) |
 | [#30](https://github.com/Sebas-Solver/Res-ex-Machina/issues/30) | v2+ | SDK Python (`rxm`) — Mismo diseño que TypeScript |
 

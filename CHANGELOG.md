@@ -20,6 +20,15 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ### SDK npm (`@res-ex-machina/sdk`) — Issue #27 ✅ Cerrado
 
+### Quick Start Guide — Issue #28 ✅ Cerrado
+
+#### Añadido
+
+- **`Docs/quick-start.md`** — "Zero to first record in 5 minutes", guía en inglés con copy-paste
+  - Install → Create wallet → Record → Verify → Complete working example
+  - Menos de 50 líneas de código total
+  - Enlace añadido al README principal
+
 #### Añadido
 
 - **Paquete `@res-ex-machina/sdk`** en `packages/sdk/` — SDK TypeScript completo para integración trivial con RxM
