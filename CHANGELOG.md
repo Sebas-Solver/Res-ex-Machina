@@ -7,6 +7,24 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [Unreleased] — Para alpha.2
 
+### Autenticación por Wallet — Listado de Records Propios (Issue #26)
+
+#### Añadido
+
+- **`GET /v1/records/mine`** — Endpoint autenticado para listar records propios del agente
+  - Autenticación EIP-191 (personal_sign) con headers `X-Wallet-Address`, `X-Signature`, `X-Timestamp`
+  - Mensaje firmado: `RexAuth:{timestamp}` con ventana de 5 minutos
+  - Paginación con `?limit=20&offset=0`
+  - Solo devuelve records de la wallet autenticada
+- **`src/middleware/walletAuth.ts`** — Nuevo middleware de verificación de firma de wallet
+- **4 errores de auth** en `errors.ts`: `missing_auth_headers`, `invalid_wallet_address`, `auth_timestamp_expired`, `auth_signature_invalid`
+- **9 tests unitarios** en `tests/wallet-auth.test.ts` (total: 100 tests)
+- **Paso 10 en test-alpha.ts** — E2E de autenticación + listado propio
+
+#### Corregido
+
+- **Case-sensitivity en wallet** — SQL `lower()` para comparación correcta entre DB (mixed-case) y middleware (lowercase)
+
 ### Verificación Independiente de Receipts
 
 #### Añadido

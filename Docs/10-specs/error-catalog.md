@@ -49,6 +49,15 @@ Todos los errores siguen este formato JSON:
 | 409 | `duplicate_nonce` | Este nonce ya fue usado por esta wallet | Anti-replay |
 | 429 | `rate_limit_exceeded` | Demasiadas solicitudes por esta wallet | Superado el límite por ventana |
 
+### GET /v1/records/mine
+
+| HTTP | Código | Descripción | Cuándo |
+|---|---|---|---|
+| 401 | `missing_auth_headers` | Faltan headers de autenticación | No se envían X-Wallet-Address, X-Signature o X-Timestamp |
+| 401 | `invalid_wallet_address` | Dirección de wallet inválida | X-Wallet-Address no cumple formato 0x + 40 hex |
+| 401 | `auth_timestamp_expired` | Timestamp fuera de ventana | X-Timestamp inválido o fuera de la ventana de 5 minutos |
+| 401 | `auth_signature_invalid` | Firma de wallet inválida | La firma EIP-191 no corresponde a la wallet declarada |
+
 ### GET /v1/records/{id}
 
 | HTTP | Código | Descripción | Cuándo |

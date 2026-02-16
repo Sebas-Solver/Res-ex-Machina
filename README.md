@@ -6,7 +6,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/estado-Alpha%20Privada-brightgreen" alt="Estado: Alpha Privada"/>
   <img src="https://img.shields.io/badge/versión-v1.0.0--alpha.1-blue" alt="Versión: v1.0.0-alpha.1"/>
-  <img src="https://img.shields.io/badge/tests-81%20passing-brightgreen" alt="Tests: 81 passing"/>
+  <img src="https://img.shields.io/badge/tests-100%20passing-brightgreen" alt="Tests: 100 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/licencia-Apache%202.0-lightgrey" alt="Licencia: Apache 2.0"/>
@@ -93,7 +93,7 @@ Agente IA ──────────── API REST ────────
 | Cola de trabajos | Redis + BullMQ |
 | Blockchain | viem + L2 EVM (Base Sepolia testnet / multi-chain) |
 | Firma | EIP-712 (verifyTypedData) |
-| Tests | Vitest (81 tests) + cobertura v8 |
+| Tests | Vitest (100 tests) + cobertura v8 |
 | CI/CD | GitHub Actions (Node 20+22, coverage) |
 | Seguridad | Helmet, CORS, Rate Limit |
 
@@ -106,6 +106,7 @@ Agente IA ──────────── API REST ────────
 | `POST` | `/v1/records?wait_for_anchor=true` | Wallet (EIP-712) | Crear + esperar anchoring (max 25s) |
 | `GET` | `/v1/records/{id}` | — | Consultar por ID |
 | `GET` | `/v1/records/verify?content_hash=` | — | Verificar por hash |
+| `GET` | `/v1/records/mine` | Wallet (EIP-191) | Listar records propios del agente |
 | `GET` | `/v1/records/{id}/export` | — | Exportar receipt verificable |
 | `GET` | `/v1/records/{id}/export?mode=compact` | — | Receipt compacto (solo verificación) |
 
@@ -122,7 +123,7 @@ Agente IA ──────────── API REST ────────
 ## 🧪 Tests
 
 ```
-81 tests en 7 suites — todos passing ✅
+100 tests en 9 suites — todos passing ✅
 
  ✓ errors.test.ts       (9)   — ApiError + factories
  ✓ receipt.test.ts      (4)   — SHA-256 receipt hash
@@ -131,6 +132,8 @@ Agente IA ──────────── API REST ────────
  ✓ records-get.test.ts  (18)  — GET /:id, /verify, /export, DX features
  ✓ invariants.test.ts   (14)  — Invariantes del sistema
  ✓ dx-features.test.ts  (13)  — stateInfo + explorer utilities
+ ✓ wallet-auth.test.ts  (9)   — Middleware de auth por firma
+ ✓ formatters.test.ts   (10)  — Formateadores de respuesta
 ```
 
 ---
