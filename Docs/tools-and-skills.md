@@ -62,15 +62,19 @@ Documentación actualizada de librerías y frameworks.
 Plataforma de testing autónomo.
 - **Uso**: Generación automática de casos de prueba E2E y unitarios complejos.
 - **Convenio**: Invocar para aumentar la cobertura de tests en módulos críticos (ej. `src/services/anchor.ts`).
+- **Última ejecución (2026-02-16)**: 7 test cases generados contra la API. 2 pasados (export endpoints), 5 fallidos por limitaciones del tool (no puede generar firmas EIP-712 ni fees on-chain). Informe: `testsprite_tests/testsprite-mcp-test-report.md`.
+- **Limitación conocida**: TestSprite requiere servidor local corriendo. No soporta tests directos contra APIs remotas. No puede generar firmas criptográficas (EIP-712/EIP-191) ni interacciones blockchain reales.
 
 ### Semgrep
 Análisis estático de código (SAST).
 - **Uso**: Escaneo de seguridad y calidad de código.
 - **Convenio**: Ejecutar periódicamente para detectar vulnerabilidades (OWASP Top 10) y antipatrones antes de releases mayores.
+- **Última ejecución (2026-02-16)**: Scan sobre `walletAuth.ts` y SDK (`client.ts`, `errors.ts`, `hash.ts`, `http.ts`, `sign.ts`) — **0 vulnerabilidades** detectadas.
+- **Limitación conocida en Windows**: Funciona bien archivo por archivo vía MCP. Los scans por lotes pueden fallar con errores de encoding si hay caracteres especiales en rutas o comentarios en español.
 
 ---
 
 > **Nota**: Para utilizar TestSprite o Semgrep, asegúrate de que los servidores MCP correspondientes estén configurados en `mi-antigravity-config`.
 
 ---
-*Última actualización: 2026-02-12*
+*Última actualización: 2026-02-16*

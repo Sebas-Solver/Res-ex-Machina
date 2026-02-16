@@ -7,6 +7,17 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [Unreleased] — Para alpha.2
 
+### Auditoría de Seguridad y Testing Automatizado
+
+#### Añadido
+
+- **Code Review alpha.2** — `Docs/code-review-alpha2.md`, informe exhaustivo de revisión de código que cubre arquitectura, seguridad, rendimiento y calidad
+- **Semgrep SAST scan** — Análisis estático de seguridad con Semgrep MCP sobre archivos críticos (`walletAuth.ts`, SDK completo): **0 vulnerabilidades detectadas**
+- **TestSprite API testing** — `testsprite_tests/testsprite-mcp-test-report.md`, ejecución de 7 test cases automatizados contra la API:
+  - ✅ 2 tests pasados (export endpoints — error handling 400/404 correcto)
+  - ❌ 5 tests fallidos (limitación de TestSprite: no puede generar firmas EIP-712 ni transacciones on-chain)
+  - Los 5 fallos **confirman que las validaciones funcionan** (rate limiting, schema Zod, rechazo de firmas inválidas)
+
 ### SDK npm (`@rxm/sdk`) — Issue #27
 
 #### Añadido
