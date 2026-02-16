@@ -6,8 +6,8 @@ describe('pogBundleSchema', () => {
         schema: 'pog.v1',
         content_hash: 'sha256:' + 'a'.repeat(64),
         agent_wallet: '0x' + 'f'.repeat(40),
-        model_id: 'gpt-4o',
-        runtime_id: 'openai-api-v1',
+        model_id: 'openai:gpt-4o:2026-01',
+        runtime_id: 'node-22.x',
         generation_process: {
             process_type: 'direct',
             human_intervention_level: 0,
@@ -68,8 +68,8 @@ describe('createRecordSchema', () => {
             schema: 'pog.v1',
             content_hash: 'sha256:' + 'b'.repeat(64),
             agent_wallet: '0x' + '1'.repeat(40),
-            model_id: 'claude-3.5',
-            runtime_id: 'anthropic-v1',
+            model_id: 'anthropic:claude-3.5:2026-01',
+            runtime_id: 'node-22.x',
             generation_process: {
                 process_type: 'pipeline',
                 human_intervention_level: 2,

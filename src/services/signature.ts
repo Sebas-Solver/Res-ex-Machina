@@ -1,36 +1,7 @@
 import { verifyTypedData, type Hex, type Address } from 'viem';
 import { invalidSignature, signerMismatch } from '../utils/errors.js';
 import type { PogBundle } from '../routes/schemas/index.js';
-
-/**
- * EIP-712 Domain — off-chain (chainId: 0, sin contrato).
- * Referencia: pog-v1-spec.md sección 4.1
- */
-const EIP712_DOMAIN = {
-    name: 'ResExMachina',
-    version: '1',
-    chainId: 0,
-    verifyingContract: '0x0000000000000000000000000000000000000000' as Address,
-} as const;
-
-/**
- * EIP-712 Types — estructura PoGBundle.
- * Referencia: pog-v1-spec.md sección 4.2
- */
-const EIP712_TYPES = {
-    PoGBundle: [
-        { name: 'schema', type: 'string' },
-        { name: 'content_hash', type: 'string' },
-        { name: 'agent_wallet', type: 'address' },
-        { name: 'model_id', type: 'string' },
-        { name: 'runtime_id', type: 'string' },
-        { name: 'process_type', type: 'string' },
-        { name: 'human_intervention_level', type: 'uint8' },
-        { name: 'pipeline_steps', type: 'uint16' },
-        { name: 'timestamp', type: 'string' },
-        { name: 'nonce', type: 'string' },
-    ],
-} as const;
+import { EIP712_DOMAIN, EIP712_TYPES } from '../constants/eip712.js';
 
 /**
  * Verifica la firma EIP-712 del PoG bundle.

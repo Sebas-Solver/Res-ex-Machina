@@ -21,8 +21,8 @@ const validRecord = {
         schema: 'pog.v1',
         content_hash: 'sha256:' + 'cd'.repeat(32),
         agent_wallet: '0xDd688C11a20e1aDa37CC4A6e4492D5A22bE23A47',
-        model_id: 'gpt-4',
-        runtime_id: 'test-runtime',
+        model_id: 'openai:gpt-4:2026-01',
+        runtime_id: 'node-22.x',
         generation_process: {
             process_type: 'direct',
             human_intervention_level: 0,

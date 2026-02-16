@@ -6,7 +6,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/estado-Alpha%20Privada-brightgreen" alt="Estado: Alpha Privada"/>
   <img src="https://img.shields.io/badge/versión-v1.0.0--alpha.2--dev-blue" alt="Versión: v1.0.0-alpha.2-dev"/>
-  <img src="https://img.shields.io/badge/tests-159%20passing-brightgreen" alt="Tests: 159 passing"/>
+  <img src="https://img.shields.io/badge/tests-73%20passing%20(43%20server%20%2B%2030%20SDK)-brightgreen" alt="Tests: 73 passing (43+30)"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/licencia-Apache%202.0-lightgrey" alt="Licencia: Apache 2.0"/>
@@ -93,7 +93,7 @@ Agente IA ──────────── API REST ────────
 | Cola de trabajos | Redis + BullMQ |
 | Blockchain | viem + L2 EVM (Base Sepolia testnet / multi-chain) |
 | Firma | EIP-712 (verifyTypedData) |
-| Tests | Vitest (159 tests, 12 suites) + cobertura v8 |
+| Tests | Vitest (73 tests: 43 servidor + 30 SDK) + cobertura v8 |
 | CI/CD | GitHub Actions (Node 20+22, coverage) |
 | Seguridad | Helmet, CORS, Rate Limit |
 
@@ -129,9 +129,8 @@ Agente IA ──────────── API REST ────────
 
 ## 🧪 Tests
 
+### Servidor (43 tests, 13 suites)
 ```
-159 tests en 12 suites — todos passing ✅
-
  ✓ errors.test.ts         (9)   — ApiError + factories
  ✓ receipt.test.ts        (4)   — SHA-256 receipt hash
  ✓ schemas.test.ts        (26)  — Validación Zod (incl. provenance + pki_timestamp)
@@ -144,7 +143,36 @@ Agente IA ──────────── API REST ────────
  ✓ formatters.test.ts     (10)  — Formateadores de respuesta
  ✓ records-batch.test.ts  (13)  — Batch endpoint (schema + errors)
  ✓ webhooks.test.ts       (18)  — Webhooks (schema, SSRF, HMAC, errors)
+ ✓ eip712-sync.test.ts    (8)   — Sincronización constantes servidor↔SDK
 ```
+
+### SDK `@rxm/sdk` (30 tests, 4 suites)
+```
+ ✓ hash.test.ts           (6)   — WebCrypto SHA-256 hashing
+ ✓ sign.test.ts           (7)   — EIP-712 signing
+ ✓ errors.test.ts         (7)   — Errores tipados del SDK
+ ✓ client.test.ts         (10)  — Validación del cliente
+```
+
+---
+
+## 📦 SDK TypeScript (`@rxm/sdk`)
+
+Integración trivial — de 50+ líneas de código a 5:
+
+```typescript
+import { RxMClient } from '@rxm/sdk';
+
+const rxm = new RxMClient({ account: wallet, rpcUrl: '...', apiUrl: '...' });
+const receipt = await rxm.record('AI generated content', {
+  modelId: 'openai:gpt-4o:2026-01',
+  contentType: 'text/plain',
+});
+```
+
+**Features**: hashing WebCrypto, firma EIP-712, pago de fee automático (o BYO), retry con backoff, webhooks subclient, errores tipados.
+
+📖 **[Documentación completa del SDK →](packages/sdk/README.md)**
 
 ---
 

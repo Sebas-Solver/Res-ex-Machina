@@ -7,6 +7,31 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [Unreleased] — Para alpha.2
 
+### SDK npm (`@rxm/sdk`) — Issue #27
+
+#### Añadido
+
+- **Paquete `@rxm/sdk`** en `packages/sdk/` — SDK TypeScript completo para integración trivial con RxM
+  - `RxMClient` — Orquestador: `record()`, `recordBatch()`, `verify()`, `getRecord()`, `export()`, `listRecords()`, `waitForRecord()`
+  - **Modo BYO fee** — `record()` acepta `feeTxHash` opcional; si se proporciona, el SDK no paga on-chain
+  - **Webhooks subclient** — `rxm.webhooks.register()`, `list()`, `delete()` con autenticación EIP-191
+  - **Errores tipados** — `RxMError`, `RxMRateLimitError` (con `retryAfterMs`), `RxMValidationError`
+  - **HTTP con retry** — Exponential backoff (1s→2s→4s), timeout configurable
+  - **Hashing WebCrypto** — `crypto.subtle` primero, fallback a `node:crypto` para Node 18+
+  - **Firma EIP-712** — Importa constantes compartidas con el servidor
+  - **30 tests unitarios** en 4 suites (hash, sign, errors, client)
+  - **README completo** — Instalación, quick start, modos de uso, error handling, referencia API
+- **`src/constants/eip712.ts`** — Constantes EIP-712 extraídas como fuente única de verdad (server + SDK importan de aquí)
+
+### Mejoras en Tests
+
+#### Mejorado
+
+- **Provider-agnostic model_id** — Actualizado formato en 6 test files de `gpt-4o` a `openai:gpt-4o:2026-01` (consistente con política provider-agnostic)
+  - Archivos: `schemas.test.ts`, `invariants.test.ts`, `records-list.test.ts`, `records-get.test.ts`, `records-batch.test.ts`, `formatters.test.ts`
+- **`tests/eip712-sync.test.ts`** — Nuevo test crítico: verifica que las constantes EIP-712 del SDK coinciden exactamente con las del servidor (previene divergencia silenciosa de firmas)
+- **Total tests**: 43 servidor + 30 SDK = 73 tests
+
 ### Batch Endpoint — Issue #12
 
 #### Añadido

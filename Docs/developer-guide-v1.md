@@ -1041,6 +1041,43 @@ DELETE /v1/webhooks/{webhook_id}
 
 Soft-deletes the webhook (deactivates it). Only the owner wallet can delete.
 
+## SDK Integration (`@rxm/sdk`)
+
+The TypeScript SDK abstracts the entire registration flow into a single method call:
+
+```typescript
+import { RxMClient } from '@rxm/sdk';
+
+const rxm = new RxMClient({
+  account: agentWallet,       // viem LocalAccount
+  rpcUrl: 'https://...',      // L2 RPC endpoint
+  apiUrl: 'https://...',      // RxM API base URL
+});
+
+// Register — internally: hash → sign EIP-712 → pay fee → POST /v1/records
+const receipt = await rxm.record('Generated content...', {
+  modelId: 'openai:gpt-4o:2026-01',
+  contentType: 'text/plain',
+  tags: ['report'],
+});
+
+// BYO mode — skip automatic fee payment
+const receipt2 = await rxm.record('Content...', {
+  modelId: 'anthropic:claude-sonnet-4-20250514:2026-01',
+  feeTxHash: '0x...',  // Your own on-chain fee tx
+});
+
+// Webhooks
+const webhook = await rxm.webhooks.register('https://my-server.com/hook');
+const list = await rxm.webhooks.list();
+
+// Verify & export
+const verified = await rxm.verify(contentHash);
+const exported = await rxm.export(recordId);
+```
+
+For full documentation, see [`packages/sdk/README.md`](../packages/sdk/README.md).
+
 ---
 
 ## Changelog

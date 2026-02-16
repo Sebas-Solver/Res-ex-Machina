@@ -1,0 +1,49 @@
+{
+    "name": "@rxm/sdk",
+    "version": "0.1.0",
+    "description": "SDK oficial de Res ex Machina — registro de hechos de generación IA",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "typecheck": "tsc --noEmit"
+    },
+    "peerDependencies": {
+        "viem": "^2.0.0"
+    },
+    "devDependencies": {
+        "typescript": "^5.9.3",
+        "vitest": "^4.0.18",
+        "viem": "^2.45.2"
+    },
+    "keywords": [
+        "rxm",
+        "res-ex-machina",
+        "proof-of-generation",
+        "ai-agents",
+        "blockchain",
+        "eip-712",
+        "traceability"
+    ],
+    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Sebas-Solver/Res-ex-Machina.git",
+        "directory": "packages/sdk"
+    }
+}
