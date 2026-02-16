@@ -84,6 +84,33 @@ Todos los errores siguen este formato JSON:
 | HTTP | Código | Descripción | Cuándo |
 |---|---|---|---|
 | — | — | Este endpoint siempre devuelve 200 | Nunca falla (devuelve status: degraded si hay problemas) |
+### POST /v1/records/batch
+
+| HTTP | Código | Descripción | Cuándo |
+|---|---|---|---|
+| 400 | `batch_empty` | El batch no contiene records | Array `records` vacío |
+| 400 | `batch_too_large` | El batch excede el límite de 100 records | Más de 100 records en el array |
+| 400 | `batch_invalid_payload` | Request body del batch malformado | JSON inválido o schema no válido |
+| 201 | — | Todos los records creados correctamente | Todos los items procesados con éxito |
+| 207 | — | Respuesta mixta (éxitos y fallos) | Algunos items fallaron, otros ok |
+
+> **Nota**: Cada record individual puede devolver los mismos errores que `POST /v1/records` (invalid_payload, fee_*, duplicate_*, etc.) dentro del array `results`.
+
+### POST /v1/webhooks
+
+| HTTP | Código | Descripción | Cuándo |
+|---|---|---|---|
+| 400 | `webhook_invalid_url` | URL no permitida (protección SSRF) | URL HTTP, IP privada, localhost |
+| 400 | `webhook_limit_reached` | Límite de 5 webhooks por wallet alcanzado | Ya hay 5 webhooks activos |
+| 401 | `missing_auth_headers` | Faltan headers de autenticación | No se envían headers walletAuth |
+| 401 | `auth_signature_invalid` | Firma de wallet inválida | EIP-191 no corresponde a la wallet |
+
+### DELETE /v1/webhooks/{id}
+
+| HTTP | Código | Descripción | Cuándo |
+|---|---|---|---|
+| 403 | `webhook_forbidden` | Solo el owner puede gestionar su webhook | Wallet autenticada ≠ owner del webhook |
+| 404 | `webhook_not_found` | Webhook no encontrado | ID inexistente o no pertenece a la wallet |
 
 ---
 

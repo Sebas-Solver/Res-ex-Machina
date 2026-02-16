@@ -6,7 +6,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/estado-Alpha%20Privada-brightgreen" alt="Estado: Alpha Privada"/>
   <img src="https://img.shields.io/badge/versión-v1.0.0--alpha.2--dev-blue" alt="Versión: v1.0.0-alpha.2-dev"/>
-  <img src="https://img.shields.io/badge/tests-125%20passing-brightgreen" alt="Tests: 125 passing"/>
+  <img src="https://img.shields.io/badge/tests-159%20passing-brightgreen" alt="Tests: 159 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/licencia-Apache%202.0-lightgrey" alt="Licencia: Apache 2.0"/>
@@ -93,7 +93,7 @@ Agente IA ──────────── API REST ────────
 | Cola de trabajos | Redis + BullMQ |
 | Blockchain | viem + L2 EVM (Base Sepolia testnet / multi-chain) |
 | Firma | EIP-712 (verifyTypedData) |
-| Tests | Vitest (125 tests, 10 suites) + cobertura v8 |
+| Tests | Vitest (159 tests, 12 suites) + cobertura v8 |
 | CI/CD | GitHub Actions (Node 20+22, coverage) |
 | Seguridad | Helmet, CORS, Rate Limit |
 
@@ -110,6 +110,10 @@ Agente IA ──────────── API REST ────────
 | `GET` | `/v1/records/mine` | Wallet (EIP-191) | Listar records propios del agente |
 | `GET` | `/v1/records/{id}/export` | — | Exportar receipt verificable |
 | `GET` | `/v1/records/{id}/export?mode=compact` | — | Receipt compacto (solo verificación) |
+| `POST` | `/v1/records/batch` | Wallet (EIP-712) | Crear hasta 100 records en una sola llamada |
+| `POST` | `/v1/webhooks` | Wallet (EIP-191) | Registrar webhook de notificación |
+| `GET` | `/v1/webhooks` | Wallet (EIP-191) | Listar webhooks propios |
+| `DELETE` | `/v1/webhooks/{id}` | Wallet (EIP-191) | Desactivar webhook |
 
 ### Anti-abuso
 - **Fee on-chain** obligatorio — verificado con 5 checks (exists, confirmed, amount, recipient, recent)
@@ -118,24 +122,28 @@ Agente IA ──────────── API REST ────────
 - **Nonce único** — por wallet, anti-replay (409)
 - **Body limit** — 64KB máximo
 - **Helmet** — Headers de seguridad automáticos
+- **SSRF** — Webhooks solo HTTPS, bloqueo IPs privadas/localhost
+- **HMAC-SHA256** — Firma de payloads en webhooks
 
 ---
 
 ## 🧪 Tests
 
 ```
-125 tests en 10 suites — todos passing ✅
+159 tests en 12 suites — todos passing ✅
 
- ✓ errors.test.ts       (9)   — ApiError + factories
- ✓ receipt.test.ts      (4)   — SHA-256 receipt hash
- ✓ schemas.test.ts      (26)  — Validación Zod (incl. provenance_metadata)
- ✓ fee.test.ts          (9)   — Fee on-chain (5 checks)
- ✓ records-get.test.ts  (18)  — GET /:id, /verify, /export, DX features
- ✓ records-list.test.ts (11)  — GET /v1/records (filtros, paginación, sort)
- ✓ invariants.test.ts   (14)  — Invariantes del sistema
- ✓ dx-features.test.ts  (13)  — stateInfo + explorer utilities
- ✓ wallet-auth.test.ts  (9)   — Middleware de auth por firma
- ✓ formatters.test.ts   (10)  — Formateadores de respuesta
+ ✓ errors.test.ts         (9)   — ApiError + factories
+ ✓ receipt.test.ts        (4)   — SHA-256 receipt hash
+ ✓ schemas.test.ts        (26)  — Validación Zod (incl. provenance + pki_timestamp)
+ ✓ fee.test.ts            (9)   — Fee on-chain (5 checks)
+ ✓ records-get.test.ts    (18)  — GET /:id, /verify, /export, DX features
+ ✓ records-list.test.ts   (11)  — GET /v1/records (filtros, paginación, sort)
+ ✓ invariants.test.ts     (14)  — Invariantes del sistema
+ ✓ dx-features.test.ts    (13)  — stateInfo + explorer utilities
+ ✓ wallet-auth.test.ts    (9)   — Middleware de auth por firma
+ ✓ formatters.test.ts     (10)  — Formateadores de respuesta
+ ✓ records-batch.test.ts  (13)  — Batch endpoint (schema + errors)
+ ✓ webhooks.test.ts       (18)  — Webhooks (schema, SSRF, HMAC, errors)
 ```
 
 ---
@@ -177,7 +185,7 @@ npm run worker:anchor    # Worker de anchoring
 | Script | Descripción |
 |---|---|
 | `npm run dev` | Servidor de desarrollo (tsx watch) |
-| `npm test` | Ejecutar 125 tests |
+| `npm test` | Ejecutar 159 tests |
 | `npm run test:coverage` | Tests con reporte de cobertura (v8) |
 | `npm run build` | Build de producción |
 | `npm run db:push` | Aplicar migraciones |
@@ -202,28 +210,33 @@ src/
 │   └── redis.ts              # Clientes Redis (BullMQ, health, rate limit)
 ├── db/
 │   ├── index.ts              # Conexión Drizzle
-│   └── schema.ts             # Modelo records
+│   └── schema.ts             # Modelo records + webhooks
 ├── middleware/
 │   ├── rateLimit.ts          # Rate limiting por IP (Redis + skipOnError)
-│   └── walletAuth.ts         # Autenticación EIP-191 (GET /records/mine)
+│   └── walletAuth.ts         # Autenticación EIP-191 (webhooks + /records/mine)
 ├── routes/
 │   ├── health.ts             # GET /v1/health (cache 30s)
-│   ├── records.ts            # POST + GET /v1/records
+│   ├── records.ts            # POST + GET /v1/records + batch
+│   ├── webhooks.ts           # POST + GET + DELETE /v1/webhooks
 │   └── schemas/
 │       ├── index.ts          # Validación Zod (PoG, createRecord, provenance)
-│       └── listRecordsSchema.ts  # Validación query params GET /v1/records
+│       ├── listRecordsSchema.ts  # Validación query params GET /v1/records
+│       ├── batchRecordSchema.ts  # Validación batch endpoint
+│       └── webhookSchema.ts  # Validación webhook endpoint
 ├── services/
-│   ├── anchor.ts             # Anchoring on-chain
+│   ├── anchor.ts             # Anchoring on-chain + webhook dispatch
 │   ├── fee.ts                # Verificación fee (5 checks)
-│   ├── queue.ts              # BullMQ job queue
+│   ├── queue.ts              # BullMQ anchor queue
 │   ├── receipt.ts            # SHA-256 receipt hash
 │   ├── recordsService.ts     # Lógica de negocio (validar, duplicados, crear)
 │   ├── signature.ts          # EIP-712 verification
-│   └── waitForAnchor.ts      # Polling DB para esperar anchoring
+│   ├── waitForAnchor.ts      # Polling DB para esperar anchoring
+│   └── webhookDispatcher.ts  # BullMQ webhook queue + HMAC-SHA256
 ├── utils/
 │   ├── errors.ts             # ApiError + factories
 │   ├── explorer.ts           # URLs de blockchain explorer por chain
 │   ├── stateInfo.ts          # Metadata estructurada de estados
+│   ├── urlValidator.ts       # Validación SSRF para webhooks
 │   └── uuid.ts               # UUID v7
 └── workers/
     └── anchor.worker.ts      # Worker BullMQ
@@ -234,10 +247,12 @@ tests/
 ├── formatters.test.ts
 ├── invariants.test.ts
 ├── receipt.test.ts
+├── records-batch.test.ts
 ├── records-get.test.ts
-├── schemas.test.ts
 ├── records-list.test.ts
-└── wallet-auth.test.ts
+├── schemas.test.ts
+├── wallet-auth.test.ts
+└── webhooks.test.ts
 Docs/
 ├── 10-specs/                 # Especificaciones técnicas
 ├── 20-security/              # Threat model
@@ -302,7 +317,7 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | **v1.0.0-rc1** | ✅ Taggeado | Alpha testing framework, scripts adversariales, plan de piloto |
 | **v1.0.0-rc2** | ✅ Taggeado | Fix rate limit 429, fee $0.01, trust model docs, guías usuario + dev |
 | **v1.0.0-alpha.1** | ✅ Desplegado | Deploy en Render + Neon + Upstash + Base Sepolia. Multi-chain, Redis TLS, worker inline |
-| **v1.1** | 🔲 Planificado | Batch endpoint, webhooks, doble atestación |
+| **v1.1** | ✅ Completado | Batch endpoint (#12), webhooks con seguridad (#13), doble atestación temporal (#14) |
 | **v2** | 🔲 Planificado | Verificación model_id (#15), content pointers, identidad dual, fee fiat |
 | **v3** | 🔲 Planificado | Smart contracts, W3C Verifiable Credentials, marketplace doble procedencia |
 
@@ -311,9 +326,9 @@ El sistema tiene **24 invariantes** que nunca se violan:
 | Issue | Versión | Descripción |
 |---|---|---|
 | ~~[#11](https://github.com/Sebas-Solver/Res-ex-Machina/issues/11)~~ | ✅ alpha.2 | ~~`provenance_metadata` — Campo genérico de interoperabilidad~~ |
-| [#12](https://github.com/Sebas-Solver/Res-ex-Machina/issues/12) | v1.1 | Batch endpoint — `POST /v1/records/batch` |
-| [#13](https://github.com/Sebas-Solver/Res-ex-Machina/issues/13) | v1.1 | Webhooks de estado |
-| [#14](https://github.com/Sebas-Solver/Res-ex-Machina/issues/14) | v1.1 | Doble atestación temporal |
+| ~~[#12](https://github.com/Sebas-Solver/Res-ex-Machina/issues/12)~~ | ✅ v1.1 | ~~Batch endpoint — `POST /v1/records/batch`~~ |
+| ~~[#13](https://github.com/Sebas-Solver/Res-ex-Machina/issues/13)~~ | ✅ v1.1 | ~~Webhooks de estado (seguridad completa)~~ |
+| ~~[#14](https://github.com/Sebas-Solver/Res-ex-Machina/issues/14)~~ | ✅ v1.1 | ~~Doble atestación temporal (`pki_timestamp`)~~ |
 | [#15](https://github.com/Sebas-Solver/Res-ex-Machina/issues/15) | v2+ | Investigar verificación del `model_id` declarado |
 | ~~[#16](https://github.com/Sebas-Solver/Res-ex-Machina/issues/16)~~ | ✅ alpha.2 | ~~Health cache + módulos compartidos~~ |
 | ~~[#17](https://github.com/Sebas-Solver/Res-ex-Machina/issues/17)~~ | ✅ alpha.2 | ~~Rate limit con Redis store~~ |
@@ -336,7 +351,7 @@ Esto es deliberado. En un mundo donde la generación por IA es cada vez más ubi
 
 ## 📜 Estado actual
 
-🟢 **v1.0.0-alpha.2-dev** — API desplegada en `https://res-ex-machina-api.onrender.com`. 125 tests en 10 suites, CI/CD. Autenticación por wallet (`GET /records/mine`). Health cache 30s con `Cache-Control`/`X-Cache`. Rate limit con Redis store. Modo degradado (resiliencia Redis/L2). `GET /v1/records` con filtros avanzados. `provenance_metadata` (C2PA/IPTC/XMP). 5 issues abiertas, 20 cerradas.
+🟢 **v1.0.0-alpha.2-dev** — API desplegada en `https://res-ex-machina-api.onrender.com`. 159 tests en 12 suites, CI/CD. Batch endpoint (`POST /v1/records/batch`, hasta 100 records). Webhooks de estado con seguridad SSRF + HMAC-SHA256 + async dispatch BullMQ. Doble atestación temporal (`pki_timestamp`). Autenticación por wallet (EIP-191). Health cache 30s. Rate limit con Redis. Modo degradado. `provenance_metadata` (C2PA/IPTC/XMP). 2 issues abiertas, 23 cerradas.
 
 ---
 

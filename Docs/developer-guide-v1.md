@@ -877,6 +877,172 @@ Not all fields in a PoG bundle carry the same trust level:
 
 ---
 
+## Batch Endpoint (POST /v1/records/batch)
+
+Register up to **100 records** in a single API call. Each record is processed independently — failures in one record don't affect others.
+
+### Request
+
+```typescript
+const response = await fetch('https://api.example.com/v1/records/batch', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    records: [
+      {
+        content_hash: 'sha256:abc123...',
+        pog_bundle: { /* same as POST /v1/records */ },
+        fee_tx_hash: '0x111...',        // Each record needs its own fee
+        content_type: 'text/plain',
+      },
+      {
+        content_hash: 'sha256:def456...',
+        pog_bundle: { /* ... */ },
+        fee_tx_hash: '0x222...',        // Different fee tx
+        content_type: 'image/png',
+      },
+    ],
+  }),
+});
+```
+
+### Response Status Codes
+
+| Code | Meaning |
+|------|---------|
+| `201` | All records created successfully |
+| `207` | Mixed results — some succeeded, some failed |
+| `400` | All records failed (or invalid batch format) |
+
+### Response Body
+
+```json
+{
+  "results": [
+    { "index": 0, "success": true,  "record": { "record_id": "...", "state": "pending_anchor" } },
+    { "index": 1, "success": false, "error": { "code": "duplicate_content_hash", "message": "..." } }
+  ],
+  "summary": { "total": 2, "succeeded": 1, "failed": 1 }
+}
+```
+
+### Rate Limit
+
+**5 requests/minute per wallet** (more restrictive than single record endpoint).
+
+---
+
+## Webhooks — State Change Notifications
+
+Receive HTTP push notifications when a record's state changes (`pending_anchor` → `anchored` or `anchor_failed`).
+
+### Security Model
+
+| Measure | Implementation |
+|---------|---------------|
+| **Authentication** | All webhook endpoints require `walletAuth` (EIP-191 signature) |
+| **SSRF Prevention** | Only HTTPS URLs accepted. DNS resolved, private/localhost/link-local IPs blocked. No redirect following |
+| **Payload Signing** | HMAC-SHA256 in `X-RxM-Signature` header. Secret is server-generated (32 bytes hex) |
+| **Deduplication** | Each delivery includes `delivery_id` (UUID) and `attempt` number |
+| **Async Dispatch** | BullMQ queue — webhook delivery never blocks the anchoring process |
+| **Retries** | 3 attempts with custom backoff: 5s → 30s → 120s |
+| **Timeout** | 5-second timeout per HTTP request |
+| **Limits** | Maximum 5 active webhooks per wallet |
+
+### Register a Webhook
+
+```typescript
+const timestamp = new Date().toISOString();
+const signature = await account.signMessage({ message: `RexAuth:${timestamp}` });
+
+const response = await fetch('https://api.example.com/v1/webhooks', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-Wallet-Address': account.address,
+    'X-Signature': signature,
+    'X-Timestamp': timestamp,
+  },
+  body: JSON.stringify({
+    url: 'https://your-server.com/webhook',
+    events: ['state_changed'],
+  }),
+});
+
+const webhook = await response.json();
+// webhook.secret → "a1b2c3d4..." (SAVE THIS — shown only once!)
+// webhook.webhook_id → UUID
+```
+
+### Webhook Payload
+
+When a record's state changes, you receive:
+
+```json
+{
+  "delivery_id": "550e8400-e29b-41d4-a716-446655440000",
+  "attempt": 1,
+  "event": "state_changed",
+  "timestamp": "2026-02-16T16:00:00.000Z",
+  "data": {
+    "record_id": "01952abc-def0-7890-abcd-ef0123456789",
+    "old_state": "pending_anchor",
+    "new_state": "anchored",
+    "anchor_tx_hash": "0xabc123...",
+    "anchor_block": 12345678,
+    "anchor_chain_id": 84532
+  }
+}
+```
+
+### Verify Webhook Signature
+
+```typescript
+import { createHmac } from 'crypto';
+
+function verifyWebhook(body: string, signature: string, secret: string): boolean {
+  const expected = createHmac('sha256', secret).update(body).digest('hex');
+  return `sha256=${expected}` === signature;
+}
+
+// In your webhook handler:
+app.post('/webhook', (req, res) => {
+  const isValid = verifyWebhook(
+    JSON.stringify(req.body),
+    req.headers['x-rxm-signature'],
+    YOUR_SAVED_SECRET,
+  );
+  if (!isValid) return res.status(401).send('Invalid signature');
+  
+  // Process the webhook...
+  // Use delivery_id for idempotency
+});
+```
+
+### List Webhooks
+
+```typescript
+const response = await fetch('https://api.example.com/v1/webhooks', {
+  headers: {
+    'X-Wallet-Address': account.address,
+    'X-Signature': signature,
+    'X-Timestamp': timestamp,
+  },
+});
+// Returns: { webhooks: [...], total: N }
+// Note: secrets are NEVER returned in list responses
+```
+
+### Delete a Webhook
+
+```
+DELETE /v1/webhooks/{webhook_id}
+```
+
+Soft-deletes the webhook (deactivates it). Only the owner wallet can delete.
+
+---
+
 ## Changelog
 
 See [CHANGELOG.md](../CHANGELOG.md) for the full release history.
@@ -891,3 +1057,4 @@ Current version: **v1.0.0-alpha.2-dev** (2026-02-16)
 - [OpenAPI v1](10-specs/openapi-v1.yaml) — Machine-readable API spec
 - [Runbook](runbook.md) — Operations guide for troubleshooting
 - [Alpha Test Report](alpha-test-report.md) — Test results and regression data
+

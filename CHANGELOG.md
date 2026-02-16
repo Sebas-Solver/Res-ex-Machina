@@ -7,6 +7,50 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [Unreleased] — Para alpha.2
 
+### Batch Endpoint — Issue #12
+
+#### Añadido
+
+- **`POST /v1/records/batch`** — Endpoint para crear hasta 100 records en una sola llamada
+  - Cada record se procesa independientemente (un fallo no afecta a otros)
+  - Status codes: `201` (todo ok), `207` (parcial), `400` (todo falla)
+  - Rate limit más restrictivo: 5 req/min por wallet
+  - Cada record requiere su propio `fee_tx_hash`
+- **`src/routes/schemas/batchRecordSchema.ts`** — Schema Zod para batch (array de 1-100 `createRecordSchema`)
+- **Errores nuevos** — `batch_empty` (400), `batch_too_large` (400), `batch_invalid_payload` (400)
+- **13 tests nuevos** en `tests/records-batch.test.ts` (total: 141)
+
+### Webhooks de Estado — Issue #13
+
+#### Añadido
+
+- **Endpoints webhook** (`POST / GET / DELETE /v1/webhooks`) — Sistema completo de notificaciones push para cambios de estado de records
+  - `POST /v1/webhooks` — Registrar webhook (requiere walletAuth EIP-191)
+  - `GET /v1/webhooks` — Listar webhooks propios (sin devolver secrets)
+  - `DELETE /v1/webhooks/:id` — Desactivar webhook (soft delete)
+- **Seguridad completa** adherida a mejores prácticas:
+  - **SSRF mitigation** — `urlValidator.ts`: solo HTTPS, DNS resolve, bloqueo IPs privadas/localhost/link-local, `redirect: 'error'`
+  - **Secret servidor** — 32 bytes hex generados por servidor, devueltos una sola vez en POST
+  - **HMAC-SHA256** — Header `X-RxM-Signature` con firma del payload para autenticidad
+  - **Deduplicación** — `delivery_id` (UUID) + `attempt` en cada payload
+  - **Async dispatch** — Cola BullMQ `webhook_dispatch` (no bloquea anchoring)
+  - **Retries** — 3 intentos con backoff customizado (5s → 30s → 120s)
+  - **Timeout** — 5s por request HTTP
+  - **Límite** — Máximo 5 webhooks activos por wallet
+- **Tabla DB** — `webhooks` en PostgreSQL (Drizzle ORM) con índices por wallet y active
+- **Errores nuevos** — `webhook_not_found` (404), `webhook_limit_reached` (400), `webhook_invalid_url` (400), `webhook_forbidden` (403)
+- **Integración anchor.ts** — Dispara webhooks después de `anchored` y `anchor_failed` (en try/catch, nunca bloquea)
+- **18 tests nuevos** en `tests/webhooks.test.ts` (total: 159, 12 suites)
+
+### Doble Atestación Temporal — Issue #14
+
+#### Añadido
+
+- **`pki_timestamp`** — Campo opcional ISO-8601 en `provenance_metadata` para doble atestación temporal
+  - Permite vincular timestamp PKI (de estándar de procedencia) con blockchain anchor
+  - `temporal_attestation` en export incluye ambas fuentes: `blockchain_anchor` + `pki_standard`
+- **3 tests nuevos** de validación (total: 128 en ese punto de la sesión)
+
 ### Listado Público de Records — Issue #21
 
 #### Añadido
