@@ -12,13 +12,16 @@ import {
 import { verifyPoGSignature } from '../services/signature.js';
 import { verifyFee } from '../services/fee.js';
 import { waitForAnchor } from '../services/waitForAnchor.js';
+import { batchRequestSchema } from './schemas/batchRecordSchema.js';
 import {
     invalidRecordId,
     recordNotFound,
     invalidContentHash,
     missingAgentWallet,
     invalidQueryParam,
+    batchInvalidPayload,
 } from '../utils/errors.js';
+import { ApiError } from '../utils/errors.js';
 import { listRecordsQuerySchema } from './schemas/listRecordsSchema.js';
 import { getStateInfo } from '../utils/stateInfo.js';
 import { getExplorerTxUrl, getNetworkName } from '../utils/explorer.js';
@@ -170,6 +173,122 @@ export default async function recordRoutes(fastify: FastifyInstance) {
             state_info: getStateInfo(result.state),
         });
     });
+    // --- Batch endpoint (Issue #12) ---
+
+    /**
+     * POST /v1/records/batch
+     *
+     * Registra hasta 100 records en una sola llamada.
+     * Cada record se procesa de forma independiente: si uno falla,
+     * los demás continúan. No hay transacción global.
+     *
+     * Body: { records: CreateRecordInput[] }
+     * Respuesta: { results: [...], summary: { total, succeeded, failed } }
+     */
+    fastify.post('/batch', {
+        config: {
+            rateLimit: {
+                max: 5,
+                timeWindow: '1 minute',
+                keyGenerator: (request: { ip: string; body?: unknown }) => {
+                    // Intentar extraer wallet del primer record del batch
+                    const body = request.body as { records?: Array<{ pog_bundle?: { agent_wallet?: string } }> } | undefined;
+                    const wallet = body?.records?.[0]?.pog_bundle?.agent_wallet;
+                    return wallet ? `batch:${wallet.toLowerCase()}` : `batch:${request.ip}`;
+                },
+            },
+        },
+    }, async (request, reply) => {
+        // 1. Validar estructura del batch con Zod
+        const parsed = batchRequestSchema.safeParse(request.body);
+        if (!parsed.success) {
+            const firstError = parsed.error.issues[0];
+            throw batchInvalidPayload({
+                field: firstError?.path?.join('.') ?? 'records',
+                issue: firstError?.message,
+            });
+        }
+
+        const { records: batchItems } = parsed.data;
+
+        // 2. Procesar cada record de forma independiente
+        type BatchResultSuccess = { index: number; record_id: string; state: string; receipt_hash: string; created_at: string };
+        type BatchResultError = { index: number; error: { code: string; message: string; details?: Record<string, unknown> } };
+        type BatchResult = BatchResultSuccess | BatchResultError;
+
+        const results: BatchResult[] = [];
+        let succeeded = 0;
+        let failed = 0;
+
+        for (let i = 0; i < batchItems.length; i++) {
+            try {
+                const item = batchItems[i];
+                const { pog_bundle } = item;
+
+                // Verificar firma EIP-712
+                await verifyPoGSignature(pog_bundle);
+
+                // Checks de duplicados + fee en paralelo
+                const [, feeVerification] = await Promise.all([
+                    checkDuplicates(
+                        pog_bundle.content_hash,
+                        pog_bundle.agent_wallet,
+                        pog_bundle.nonce,
+                        item.fee_tx_hash,
+                    ),
+                    verifyFee(item.fee_tx_hash),
+                ]);
+
+                // Crear record
+                const result = await createRecord(item, {
+                    feeBlock: Number(feeVerification.blockNumber),
+                    feeConfirmedAt: feeVerification.confirmedAt,
+                });
+
+                results.push({
+                    index: i,
+                    record_id: result.record_id,
+                    state: result.state,
+                    receipt_hash: result.receipt_hash,
+                    created_at: result.created_at,
+                });
+                succeeded++;
+            } catch (err) {
+                failed++;
+                if (err instanceof ApiError) {
+                    results.push({
+                        index: i,
+                        error: {
+                            code: err.code,
+                            message: err.message,
+                            ...(err.details && { details: err.details }),
+                        },
+                    });
+                } else {
+                    results.push({
+                        index: i,
+                        error: {
+                            code: 'internal_error',
+                            message: 'An unexpected error occurred processing this record',
+                        },
+                    });
+                }
+            }
+        }
+
+        // 3. Determinar status code — 207 si hay mezcla, 201 si todo ok, 400 si todo falla
+        const statusCode = failed === 0 ? 201 : succeeded === 0 ? 400 : 207;
+
+        return reply.status(statusCode).send({
+            results,
+            summary: {
+                total: batchItems.length,
+                succeeded,
+                failed,
+            },
+        });
+    });
+
     // --- Endpoint autenticado (Issue #26) ---
 
     /**

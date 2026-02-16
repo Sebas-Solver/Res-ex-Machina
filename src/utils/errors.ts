@@ -100,6 +100,17 @@ export const missingAgentWallet = () =>
 export const invalidQueryParam = (details?: Record<string, unknown>) =>
     new ApiError(400, 'invalid_query_param', 'One or more query parameters are invalid', details);
 
+// --- Factory functions para POST /v1/records/batch (Issue #12) ---
+
+export const batchEmpty = () =>
+    new ApiError(400, 'batch_empty', 'Batch must contain at least 1 record');
+
+export const batchTooLarge = () =>
+    new ApiError(400, 'batch_too_large', 'Batch cannot exceed 100 records');
+
+export const batchInvalidPayload = (details?: Record<string, unknown>) =>
+    new ApiError(400, 'batch_invalid_payload', 'Batch request body is malformed', details);
+
 // --- Factory functions para autenticación de wallet (GET /mine) ---
 
 export const missingAuthHeaders = () =>
