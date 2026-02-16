@@ -1,0 +1,90 @@
+
+🔑 Wallet del agente: 0xDd6894b5447CD6A7103201372041DcAC8b2A0244
+═══════════════════════════════════════════
+  🧪 Test E2E — Res ex Machina Alpha
+═══════════════════════════════════════════
+
+📡 Paso 0: Verificando que la API está online...
+   ✅ API OK (DB: 5ms, Redis: 22ms, Blockchain: 150ms)
+
+📝 Paso 1: Generando contenido de prueba...
+   Contenido: "Este es un contenido de prueba generado por IA. Timestamp: 2..."
+   Hash: sha256:ed31d7fd474a19123ac2ef90b6a8b24103f6e72c50a19a8536f31d73b35f0d00
+
+💰 Paso 2: Verificando balance del agente...
+   Balance: 0.008799 ETH
+   ✅ Balance suficiente
+
+💸 Paso 3: Enviando fee de 0.0002 ETH a 0x13bB040691BBa236a2A2AB83fE904EcC965Ba8a0...
+   📤 Tx enviada: 0x6439aa9c3c12095fda727cf72f8f528f88e3f37b9e8a1354d44141ca3eb79b89
+   ⏳ Esperando confirmación...
+   ✅ Confirmada en bloque 37663890
+   ⏳ Esperando 10s para propagación en la red...
+   ✅ Listo
+
+✍️  Paso 4: Firmando PoG bundle con EIP-712...
+   Signature: 0x0bd56a4104e94b8ea6...
+   Nonce: 74lakkdswl0b2mcibjj6rrihqx1ma3l8
+
+🚀 Paso 5: Enviando record a la API...
+   ✅ Record creado exitosamente!
+   Record ID: 019c5d8d-7b11-7f09-beb6-94dc5ef048df
+   Estado: pending_anchor
+   State info: Record registered. Anchoring in progress. (terminal: false)
+   Receipt hash: sha256:7ec40f885122a3e23dd2ed3ab0f1e9eae2e8b4affb3b3bcbd27916d49ef08649
+
+⚓ Paso 6: Esperando anchoring (puede tardar ~30 seg)...
+   [5s] Estado: anchored
+
+   ✅ ¡ANCLADO EN BLOCKCHAIN!
+   🔗 Tx: https://sepolia.basescan.org/tx/0x1d21e216927dcfad0075a26d207f2ad9da8bffcc4cd1636e7fd69b0e8d7f648f
+   📦 Bloque: 37663897
+   ⛓️  Chain: Base Sepolia (ID: 84532)
+
+🔗 Paso 7: Verificando links auto-generados...
+   ✅ Links presentes en respuesta:
+      self:   https://res-ex-machina-api.onrender.com/v1/records/019c5d8d-7b11-7f09-beb6-94dc5ef048df
+      export: https://res-ex-machina-api.onrender.com/v1/records/019c5d8d-7b11-7f09-beb6-94dc5ef048df/export
+      verify: https://res-ex-machina-api.onrender.com/v1/records/verify?content_hash=sha256:ed31d7fd474a19123ac2ef90b6a8b24103f6e72c50a19a8536f31d73b35f0d00
+   ✅ Link 'self' funciona (200)
+   ✅ Link 'verify' funciona (200)
+
+   💰 Fee block:
+      amount:       0.00020000 ETH
+      network:      Base Sepolia
+      explorer_url: https://sepolia.basescan.org/tx/0x6439aa9c3c12095fda727cf72f8f528f88e3f37b9e8a1354d44141ca3eb79b89
+
+   📊 State info: "Record anchored on-chain. Verification available." (terminal: true, retryable: false)
+
+📋 Paso 8: Exportando receipt verificable...
+   Verificación de estructura del export:
+      ✅ schema
+      ✅ spec_version
+      ✅ eip712_domain
+      ✅ verification
+      ✅ links
+      ✅ fee.explorer_url
+
+   📦 Export compacto:
+      ✅ schema
+      ✅ sin links (ahorro tokens)
+      ✅ sin visibility
+      ✅ pog_bundle.signature
+
+🔍 Paso 9: Verificando por content_hash...
+   ✅ Record encontrado: true
+   Record ID: 019c5d8d-7b11-7f09-beb6-94dc5ef048df
+   Estado: anchored
+   State info: Record anchored on-chain. Verification available.
+
+═══════════════════════════════════════════
+  🎉 TEST COMPLETADO
+═══════════════════════════════════════════
+
+Resumen:
+  📝 Contenido hash: sha256:ed31d7fd474a19123ac2ef90b6a8b24103f6e72c50a19a8536f31d73b35f0d00
+  💸 Fee tx: https://sepolia.basescan.org/tx/0x6439aa9c3c12095fda727cf72f8f528f88e3f37b9e8a1354d44141ca3eb79b89
+  📄 Record: https://res-ex-machina-api.onrender.com/v1/records/019c5d8d-7b11-7f09-beb6-94dc5ef048df
+  📋 Export: https://res-ex-machina-api.onrender.com/v1/records/019c5d8d-7b11-7f09-beb6-94dc5ef048df/export
+  ⛓️  Anchor: https://sepolia.basescan.org/tx/0x1d21e216927dcfad0075a26d207f2ad9da8bffcc4cd1636e7fd69b0e8d7f648f
+
