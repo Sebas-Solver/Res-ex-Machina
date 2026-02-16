@@ -7,6 +7,25 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 
 ## [Unreleased] — Para alpha.2
 
+### Infraestructura y Resiliencia — Issues #16, #17, #22
+
+#### Añadido
+
+- **Health cache 30s** — Cache TTL de 30 segundos en `GET /v1/health` para reducir llamadas a Upstash y RPC (#16)
+  - Headers `Cache-Control: public, max-age=30` y `X-Cache: HIT|MISS`
+  - Header `Retry-After: 30` en respuestas 503 (modo degradado) (#22)
+- **Rate limit con Redis** — Migrado de in-memory a Redis store compartido (#17)
+  - Factory `createRateLimitRedisClient()` en `config/redis.ts`
+  - `skipOnError: true` — si Redis cae, rate limit se desactiva temporalmente (#22)
+  - Namespace `rxm-rl:` para evitar colisiones en Redis compartido
+
+#### Mejorado
+
+- **Modo degradado** — La API sigue funcionando si Redis o L2 no están disponibles (#22):
+  - `enqueueAnchorJob` protegido con try/catch: el record se guarda en DB con `state: pending_anchor`
+  - Worker procesará el jobs pendientes cuando reconecte
+  - Health check usa `Promise.allSettled` → nunca falla completamente
+
 ### Autenticación por Wallet — Listado de Records Propios (Issue #26)
 
 #### Añadido
