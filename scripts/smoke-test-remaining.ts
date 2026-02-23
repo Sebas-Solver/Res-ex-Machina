@@ -194,6 +194,8 @@ async function main() {
         if (!webhookId) throw new Error('No hay webhook_id (paso 9 falló)');
 
         const headers = await getAuthHeaders();
+        // DELETE no tiene body → quitar Content-Type para evitar error de Fastify
+        delete headers['Content-Type'];
         const res = await fetch(`${API}/v1/webhooks/${webhookId}`, {
             method: 'DELETE',
             headers,
