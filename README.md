@@ -397,7 +397,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2-dev** — API deployed at `https://res-ex-machina-api.onrender.com`. 73 tests in 17 suites, CI/CD. SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 3 open issues, 21 closed.
+🟢 **v1.0.0-alpha.2-dev** — API deployed at `https://res-ex-machina-api.onrender.com`. 73 tests in 17 suites, CI/CD. SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 21 closed.
 
 ---
 
