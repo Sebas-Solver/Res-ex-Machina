@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { Sentry } from '../config/monitoring.js';
 
 /**
  * Error estructurado de la API.
@@ -205,6 +206,16 @@ export function apiErrorHandler(
         statusCode: (error as unknown as { statusCode?: number }).statusCode,
         code: (error as unknown as { code?: string }).code,
     }, 'Unhandled error');
+
+    // Issue #19: reportar errores inesperados a Sentry
+    Sentry.captureException(error, {
+        tags: {
+            request_id: _request.id as string,
+            method: _request.method,
+            url: _request.url,
+        },
+    });
+
     return reply.status(500).send({
         error: {
             code: 'internal_error',

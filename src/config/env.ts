@@ -29,6 +29,9 @@ const envSchema = z.object({
 
     // API (opcional — para links auto-generados en respuestas)
     API_BASE_URL: z.string().url().optional(),
+
+    // Sentry (Issue #19 — monitorización de errores)
+    SENTRY_DSN: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -1,3 +1,7 @@
+// Issue #19: Sentry debe inicializarse ANTES que cualquier otro import
+import { initMonitoring } from './config/monitoring.js';
+initMonitoring();
+
 import Fastify from 'fastify';
 import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
