@@ -23,6 +23,11 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 #### Corregido
 
 - **Fix #34: Migración tabla webhooks** — Generada migración `0001_motionless_exodus.sql` con `drizzle-kit` y aplicada a producción con `drizzle-kit push`. También añadidas columnas `provenance_metadata`, `fee_block`, `fee_confirmed_at` a `records`. Smoke test: **5/5 OK**, cobertura API **10/10 endpoints**
+- **Fix #23: Enrich fee data** — Ya estaba implementado. Verificado en producción: `fee.block`, `fee.confirmed_at`, `fee.chain_id`, `fee.to`, `fee.network_name`, `fee.explorer_url` presentes en respuesta API
+
+#### Añadido (Monitorización)
+
+- **Sentry (Issue #19)** — Integración de `@sentry/node` para monitorización de errores y performance. `captureException` en errores 500 con contexto (request_id, method, url). Inicialización condicional via `SENTRY_DSN`. Free tier: 5K errores/mes
 - **TestSprite API testing** — `testsprite_tests/testsprite-mcp-test-report.md`, ejecución de 7 test cases automatizados contra la API:
   - ✅ 2 tests pasados (export endpoints — error handling 400/404 correcto)
   - ❌ 5 tests fallidos (limitación de TestSprite: no puede generar firmas EIP-712 ni transacciones on-chain)
