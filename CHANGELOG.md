@@ -28,6 +28,7 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 #### Añadido (Monitorización)
 
 - **Sentry (Issue #19)** — Integración de `@sentry/node` para monitorización de errores y performance. `captureException` en errores 500 con contexto (request_id, method, url). Inicialización condicional via `SENTRY_DSN`. Free tier: 5K errores/mes
+- **Agent Skill (Issue #29)** — Skill de Antigravity para agentes IA en `skills/custom/res-ex-machina/`: SKILL.md con 7 operaciones SDK, ejemplos TypeScript, referencia API completa. Reemplaza plugins por framework por un enfoque universal
 - **TestSprite API testing** — `testsprite_tests/testsprite-mcp-test-report.md`, ejecución de 7 test cases automatizados contra la API:
   - ✅ 2 tests pasados (export endpoints — error handling 400/404 correcto)
   - ❌ 5 tests fallidos (limitación de TestSprite: no puede generar firmas EIP-712 ni transacciones on-chain)
