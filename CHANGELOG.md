@@ -19,6 +19,10 @@ El formato está basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.
 #### Descubierto
 
 - **🐛 Bug #34: Webhooks HTTP 500** — Los 3 endpoints de webhooks devuelven error 500 en producción. Causa probable: tabla `webhooks` no migrada en la DB de Render
+
+#### Corregido
+
+- **Fix #34: Migración tabla webhooks** — Generada migración `0001_motionless_exodus.sql` con `drizzle-kit` y aplicada a producción con `drizzle-kit push`. También añadidas columnas `provenance_metadata`, `fee_block`, `fee_confirmed_at` a `records`. Smoke test: **5/5 OK**, cobertura API **10/10 endpoints**
 - **TestSprite API testing** — `testsprite_tests/testsprite-mcp-test-report.md`, ejecución de 7 test cases automatizados contra la API:
   - ✅ 2 tests pasados (export endpoints — error handling 400/404 correcto)
   - ❌ 5 tests fallidos (limitación de TestSprite: no puede generar firmas EIP-712 ni transacciones on-chain)
