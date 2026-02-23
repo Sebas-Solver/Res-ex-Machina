@@ -373,7 +373,7 @@ The system has **24 invariants** that are never violated:
 | [#19](https://github.com/Sebas-Solver/Res-ex-Machina/issues/19) | beta | Monitoring and alerts |
 | ~~[#21](https://github.com/Sebas-Solver/Res-ex-Machina/issues/21)~~ | ✅ alpha.2 | ~~List records by wallet (advanced filters)~~ |
 | ~~[#22](https://github.com/Sebas-Solver/Res-ex-Machina/issues/22)~~ | ✅ alpha.2 | ~~Graceful degradation / resilience~~ |
-| [#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23) | beta | Enrich fee data |
+| ~~[#23](https://github.com/Sebas-Solver/Res-ex-Machina/issues/23)~~ | ✅ beta | ~~Enrich fee data~~ |
 | ~~[#27](https://github.com/Sebas-Solver/Res-ex-Machina/issues/27)~~ | ✅ v1.2 | ~~npm SDK `@res-ex-machina/sdk` for humans and agents~~ |
 | ~~[#28](https://github.com/Sebas-Solver/Res-ex-Machina/issues/28)~~ | ✅ v1.2 | ~~Quick Start Guide — "Zero to first record in 5 min"~~ |
 | [#29](https://github.com/Sebas-Solver/Res-ex-Machina/issues/29) | v2+ | Framework plugins (LangChain, AutoGen, CrewAI) |
@@ -397,7 +397,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2-dev** — API deployed at `https://res-ex-machina-api.onrender.com`. 73 tests in 17 suites, CI/CD. SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). E2E smoke test: **10/10 endpoints OK**. 6 open issues, 18 closed.
+🟢 **v1.0.0-alpha.2-dev** — API deployed at `https://res-ex-machina-api.onrender.com`. 73 tests in 17 suites, CI/CD. SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). E2E smoke test: **10/10 endpoints OK**. 5 open issues, 19 closed.
 
 ---
 
