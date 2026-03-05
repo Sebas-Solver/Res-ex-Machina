@@ -138,7 +138,7 @@ export const records = pgTable(
 );
 
 /** Tipo inferido para un record completo (SELECT) */
-export type Record = typeof records.$inferSelect;
+export type DbRecord = typeof records.$inferSelect;
 
 /** Tipo inferido para insertar un nuevo record (INSERT) */
 export type NewRecord = typeof records.$inferInsert;

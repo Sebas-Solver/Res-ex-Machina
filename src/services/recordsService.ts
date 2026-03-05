@@ -164,10 +164,10 @@ export async function createRecord(
     } catch (enqueueError) {
         // No lanzar — el record ya está guardado en DB con state=pending_anchor.
         // El worker procesará el job cuando Redis vuelva.
-        console.error(
-            `⚠️ No se pudo encolar anchor para ${recordId} (Redis down?):`,
-            enqueueError instanceof Error ? enqueueError.message : String(enqueueError),
-        );
+        console.warn('[recordsService] ⚠️ No se pudo encolar anchor (Redis down?)', {
+            recordId,
+            error: enqueueError instanceof Error ? enqueueError.message : String(enqueueError),
+        });
     }
 
     return {

@@ -77,7 +77,13 @@ export async function anchorRecord(
                 { txHash: result.txHash, block: result.block, chainId: result.chainId },
             );
         }
-    } catch { /* webhook dispatch failure must never block anchoring */ }
+    } catch (webhookErr) {
+        /* webhook dispatch failure must never block anchoring */
+        console.warn('[anchor] ⚠️ Webhook dispatch falló (no bloquea)', {
+            recordId,
+            error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr),
+        });
+    }
 
     return result;
 }
@@ -109,5 +115,11 @@ export async function markAnchorFailed(
                 record.agentWallet, recordId, 'pending_anchor', 'anchor_failed',
             );
         }
-    } catch { /* webhook dispatch failure must never block anchoring */ }
+    } catch (webhookErr) {
+        /* webhook dispatch failure must never block anchoring */
+        console.warn('[anchor] ⚠️ Webhook dispatch falló (no bloquea)', {
+            recordId,
+            error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr),
+        });
+    }
 }

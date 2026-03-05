@@ -1,6 +1,6 @@
 {
   "name": "res-ex-machina",
-  "version": "1.0.0",
+  "version": "1.0.0-alpha.2",
   "description": "Registro neutral y automatizado de hechos de generación por IA",
   "type": "module",
   "main": "dist/app.js",
@@ -30,7 +30,7 @@
     "url": "git+https://github.com/Sebas-Solver/Res-ex-Machina.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "Sebas-Solver <sebas.solver@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Sebas-Solver/Res-ex-Machina/issues"
