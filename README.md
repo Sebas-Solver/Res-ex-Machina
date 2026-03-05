@@ -12,6 +12,9 @@
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
 </p>
 
+> [!IMPORTANT]
+> **This project is in early alpha (testing phase).** It runs on **Base Sepolia testnet** — records are not permanent and may be reset. The API, SDK, and data formats may change without notice. Use it to experiment and integrate, but do not rely on it for production workloads yet.
+
 ---
 
 ## 🧬 What is Res ex Machina?
