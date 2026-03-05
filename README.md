@@ -5,8 +5,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-Private%20Alpha-brightgreen" alt="Status: Private Alpha"/>
-  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.2--dev-blue" alt="Version: v1.0.0-alpha.2-dev"/>
-  <img src="https://img.shields.io/badge/tests-73%20passing%20(43%20server%20%2B%2030%20SDK)-brightgreen" alt="Tests: 73 passing (43+30)"/>
+  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.2-blue" alt="Version: v1.0.0-alpha.2"/>
+  <img src="https://img.shields.io/badge/tests-167%20passing%20(13%20suites)-brightgreen" alt="Tests: 167 passing (13 suites)"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
@@ -97,7 +97,7 @@ AI Agent ──────────── REST API ────────�
 | Job Queue | Redis + BullMQ |
 | Blockchain | viem + L2 EVM (Base Sepolia testnet / multi-chain) |
 | Signatures | EIP-712 (verifyTypedData) |
-| Tests | Vitest (73 tests: 43 server + 30 SDK) + v8 coverage |
+| Tests | Vitest (167 tests, 13 suites) + v8 coverage |
 | CI/CD | GitHub Actions (Node 20+22, coverage) |
 | Security | Helmet, CORS, Rate Limit |
 
@@ -133,11 +133,11 @@ AI Agent ──────────── REST API ────────�
 
 ## 🧪 Tests
 
-### Server (43 tests, 13 suites)
+### Server (167 tests, 13 suites)
 ```
  ✓ errors.test.ts         (9)   — ApiError + factories
  ✓ receipt.test.ts        (4)   — SHA-256 receipt hash
- ✓ schemas.test.ts        (26)  — Zod validation (incl. provenance + pki_timestamp)
+ ✓ schemas.test.ts        (29)  — Zod validation (incl. provenance + pki_timestamp)
  ✓ fee.test.ts            (9)   — On-chain fee (5 checks)
  ✓ records-get.test.ts    (18)  — GET /:id, /verify, /export, DX features
  ✓ records-list.test.ts   (11)  — GET /v1/records (filters, pagination, sort)
@@ -209,7 +209,7 @@ cp .env.example .env
 docker compose up -d
 
 # 4. Run migrations
-npm run db:push
+npx drizzle-kit push
 
 # 5. Start API + Worker
 npm run dev              # API at localhost:3000
@@ -221,13 +221,13 @@ npm run worker:anchor    # Anchoring worker
 | Script | Description |
 |---|---|
 | `npm run dev` | Development server (tsx watch) |
-| `npm test` | Run 73 tests |
+| `npm test` | Run 167 tests |
 | `npm run test:coverage` | Tests with coverage report (v8) |
 | `npm run build` | Production build |
-| `npm run db:push` | Apply migrations |
+| `npx drizzle-kit push` | Apply schema to database |
 | `npm run db:generate` | Generate migrations |
 | `npm run worker:anchor` | BullMQ anchoring worker |
-| `npm run check` | Type checking with tsc |
+| `npm run check` | TypeScript + ESLint + Tests (all checks) |
 | `npm run alpha:happy` | Happy path test (Agent A) |
 | `npm run alpha:adversarial` | Adversarial test (Agent D) |
 | `npm run alpha:all` | Both alpha tests |
@@ -397,7 +397,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2-dev** — API deployed at `https://res-ex-machina-api.onrender.com`. 73 tests in 17 suites, CI/CD. SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 21 closed.
+🟢 **v1.0.0-alpha.2** — API deployed at `https://res-ex-machina-api.onrender.com`. **167 tests in 13 suites**, CI/CD (GitHub Actions, Node 20+22). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 22 closed.
 
 ---
 
