@@ -114,7 +114,8 @@ export const records = pgTable(
         unique('uq_wallet_nonce').on(table.agentWallet, table.nonce),
 
         // --- Índices ---
-        index('idx_records_agent').on(table.agentWallet),
+        /** Índice funcional para búsquedas case-insensitive por wallet (listRecords usa lower()) */
+        index('idx_records_agent_lower').using('btree', sql`lower(${table.agentWallet})`),
         index('idx_records_state').on(table.state),
         index('idx_records_created').on(table.createdAt),
         index('idx_records_fee_tx').on(table.feeTxHash),

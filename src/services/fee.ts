@@ -84,7 +84,9 @@ export async function verifyFee(feeTxHash: string): Promise<FeeVerificationResul
     }
 
     // 4. Verificar que la tx es reciente (<=24h)
-    // receipt.blockNumber nos da el bloque; necesitamos el timestamp
+    // Optimización: solo hacemos getBlock si los checks anteriores pasan.
+    // Esto evita una 3ª RPC call innecesaria cuando la tx ya ha fallado
+    // en algún check anterior (monto, recipient, status).
     const block = await l2Client.getBlock({ blockNumber: receipt.blockNumber });
     const txTimestamp = Number(block.timestamp) * 1000;
     const now = Date.now();
