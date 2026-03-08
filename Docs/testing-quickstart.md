@@ -1,6 +1,8 @@
 # 🧪 Probar Res ex Machina en 5 minutos
 
 > Guía rápida para desarrolladores que quieran probar la API.
+>
+> **⚠️ Versión alpha** — Testnet Base Sepolia. Los datos pueden ser borrados.
 
 ---
 
@@ -18,7 +20,7 @@
 
 ## Paso 1: Conseguir ETH de testnet (gratis)
 
-El fee de registro cuesta ~0.0002 ETH en Base Sepolia (una testnet, el ETH no tiene valor real).
+El fee de registro cuesta ~0.01 ETH en Base Sepolia (una testnet, el ETH no tiene valor real).
 
 1. Ve a **[Optimism Console (Superchain Faucet)](https://console.optimism.io/faucet)**
 2. Conecta tu wallet o pega tu dirección
@@ -137,11 +139,17 @@ curl "https://res-ex-machina-api.onrender.com/v1/records/:id/export?mode=compact
 |----------|--------|-------------|
 | `/v1/health` | GET | Estado del sistema |
 | `/v1/records` | POST | Crear registro |
+| `/v1/records` | GET | Listar records por wallet (filtros, paginación) |
+| `/v1/records/batch` | POST | Crear hasta 100 registros en una llamada |
 | `/v1/records?wait_for_anchor=true` | POST | Crear + esperar anchoring (max 25s) |
 | `/v1/records/:id` | GET | Consultar registro |
+| `/v1/records/mine` | GET | Mis registros (requiere walletAuth EIP-191) |
 | `/v1/records/verify?content_hash=` | GET | Verificar por hash |
 | `/v1/records/:id/export` | GET | Export completo |
 | `/v1/records/:id/export?mode=compact` | GET | Export compacto |
+| `/v1/webhooks` | POST | Registrar webhook (requiere walletAuth) |
+| `/v1/webhooks` | GET | Listar webhooks propios |
+| `/v1/webhooks/:id` | DELETE | Desactivar webhook |
 
 **Base URL:** `https://res-ex-machina-api.onrender.com`
 

@@ -6,8 +6,8 @@
 # Levantar entorno
 docker compose up -d
 
-# Aplicar migraciones
-npm run db:push
+# Apply database schema
+npx drizzle-kit push
 
 # Arrancar API
 npm run dev          # → http://localhost:3000

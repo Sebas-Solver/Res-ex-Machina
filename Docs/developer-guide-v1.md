@@ -1,6 +1,8 @@
 # Res ex Machina — Developer Guide (v1.0)
 
 > Technical integration guide for software developers and AI agent builders.
+>
+> **⚠️ This project is in early alpha.** It runs on Base Sepolia testnet. Data may be reset. APIs may change.
 
 ---
 
@@ -59,7 +61,7 @@ Client (AI Agent)
 
 ## API Reference
 
-**Base URL:** `http://localhost:3000/v1` (dev) | `https://api.resexmachina.xyz/v1` (prod, TBD)
+**Base URL:** `http://localhost:3000/v1` (dev) | `https://res-ex-machina-api.onrender.com/v1` (prod)
 
 ### Endpoints
 
@@ -67,11 +69,16 @@ Client (AI Agent)
 |--------|------|------|-------------|
 | `POST` | `/records` | EIP-712 signature | Create a new PoG record |
 | `POST` | `/records?wait_for_anchor=true` | EIP-712 signature | Create + wait for anchoring (max 25s) |
+| `POST` | `/records/batch` | EIP-712 signature | Create up to 100 records in one call |
+| `GET` | `/records` | None | List records by wallet (filters, pagination) |
 | `GET` | `/records/:id` | None | Get record by UUID |
 | `GET` | `/records/verify?content_hash=` | None | Verify record exists by hash |
 | `GET` | `/records/mine` | EIP-191 wallet signature | List agent's own records |
 | `GET` | `/records/:id/export` | None | Export verifiable receipt (JSON) |
 | `GET` | `/records/:id/export?mode=compact` | None | Compact receipt (verification only) |
+| `POST` | `/webhooks` | EIP-191 wallet signature | Register notification webhook |
+| `GET` | `/webhooks` | EIP-191 wallet signature | List own webhooks |
+| `DELETE` | `/webhooks/:id` | EIP-191 wallet signature | Deactivate webhook |
 | `GET` | `/health` | None | System health check (cached 30s) |
 
 ### Rate Limits
@@ -640,7 +647,7 @@ Main table: `records`
 - `UNIQUE(agent_wallet, nonce)` — anti-replay
 - `UNIQUE(content_hash)` — idempotency
 - `UNIQUE(fee_tx_hash)` — fee reuse prevention
-- `INDEX(agent_wallet)` — query by wallet
+- `INDEX(lower(agent_wallet))` — case-insensitive wallet queries (functional index)
 - `INDEX(state)` — worker queries pending_anchor
 - `INDEX(created_at)` — time ordering
 - `INDEX(fee_tx_hash)` — fee lookup
@@ -670,7 +677,7 @@ docker compose up -d
 docker compose ps  # all should be "healthy"
 
 # 4. Apply database schema
-npm run db:push
+npx drizzle-kit push
 
 # 5. Start API server
 npm run dev
@@ -712,9 +719,9 @@ ANCHOR_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae78
 |--------|-------------|
 | `npm run dev` | Start API (dev mode with pino-pretty) |
 | `npm run worker:anchor` | Start anchor worker |
-| `npm run check` | Run tsc type checking |
-| `npm test` | Run vitest (100 tests) |
-| `npm run db:push` | Apply schema to database |
+| `npm run check` | TypeScript + ESLint + Tests (all checks) |
+| `npm test` | Run 167 tests |
+| `npx drizzle-kit push` | Apply schema to database |
 | `npm run alpha:happy` | Run Agent A happy path test |
 | `npm run alpha:adversarial` | Run Agent D adversarial test |
 | `npm run alpha:all` | Run both alpha tests |
@@ -1084,7 +1091,7 @@ For full documentation, see [`packages/sdk/README.md`](../packages/sdk/README.md
 
 See [CHANGELOG.md](../CHANGELOG.md) for the full release history.
 
-Current version: **v1.0.0-alpha.2-dev** (2026-02-16)
+Current version: **v1.0.0-alpha.2** (2026-03-05)
 
 ## Further Reading
 

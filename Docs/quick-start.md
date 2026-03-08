@@ -1,6 +1,8 @@
 # Quick Start — Zero to First Record in 5 Minutes
 
 > From nothing to a verified AI-generated content record on-chain.
+>
+> **⚠️ Alpha version** — Running on Base Sepolia testnet. Records may be reset.
 
 ## Prerequisites
 
