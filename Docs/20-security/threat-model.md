@@ -176,11 +176,11 @@ Res ex Machina es un registro técnico de hechos de generación por IA. Los agen
 - [x] Nonce único (409 en replay)
 
 **Mitigaciones adicionales recomendadas (implementación):**
-- [ ] **Rate limiting en GET** por IP (no requiere wallet)
-- [ ] **Límite de tamaño** del pog_bundle (ej. max 16KB)
-- [ ] **Límite de tags** ya definido (max 10) pero falta enforcement
+- [x] **Rate limiting en GET** por IP — global 100 req/min (rateLimit.ts)
+- [x] **Límite de tamaño** del pog_bundle (max 32KB, refine Zod) — alpha.3
+- [x] **Límite de tags** ya definido (max 10) — enforcement via Zod `.max(10)`
 - [ ] **WAF/Cloudflare** como primera línea de defensa
-- [ ] **Queue sizing** para anchoring (bounded queue, backpressure)
+- [x] **Queue sizing** para anchoring (removeOnComplete: 50, removeOnFail: 200, maxStalledCount: 2) — alpha.3
 
 ---
 
@@ -337,13 +337,13 @@ Estos riesgos son consecuencia directa de los principios fundacionales:
 
 ### Riesgos PENDIENTES de implementación
 
-| Riesgo | Mitigación recomendada | Prioridad |
-|---|---|---|
-| DDoS en GET endpoints | Rate limit por IP | **ALTA** |
-| Payload oversized | Límite de tamaño pog_bundle (16KB) | MEDIA |
-| Clave de anchoring comprometida | HSM / Vault / Multi-sig | MEDIA |
-| Enumeración de UUIDs | Rate limit en GET + monitoring | BAJA |
-| DB accesible directamente | Network isolation + least privilege | **ALTA** |
+| Riesgo | Mitigación recomendada | Prioridad | Estado |
+|---|---|---|---|
+| DDoS en GET endpoints | Rate limit por IP | **ALTA** | ✅ Implementado (rateLimit.ts) |
+| Payload oversized | Límite de tamaño pog_bundle (32KB) | MEDIA | ✅ Implementado (Zod refine) |
+| Clave de anchoring comprometida | HSM / Vault / Multi-sig | MEDIA | ⏳ Pendiente |
+| Enumeración de UUIDs | Rate limit en GET + monitoring | BAJA | ✅ Rate limit en GET |
+| DB accesible directamente | Network isolation + least privilege | **ALTA** | ⏳ Config en hosting |
 
 ---
 

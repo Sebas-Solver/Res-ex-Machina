@@ -16,8 +16,8 @@ export const anchorQueue = new Queue('anchor', {
             type: 'exponential',
             delay: 5000, // 5s, 10s, 20s, 40s, 80s
         },
-        removeOnComplete: 100,
-        removeOnFail: 500,
+        removeOnComplete: 50, // Threat Model — D-01: reducir retención en Redis
+        removeOnFail: 200,
     },
 });
 

@@ -186,6 +186,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
      * Respuesta: { results: [...], summary: { total, succeeded, failed } }
      */
     fastify.post('/batch', {
+        bodyLimit: 256 * 1024, // 256KB — batches de hasta 100 records (Threat Model — D-04)
         config: {
             rateLimit: {
                 max: 5,

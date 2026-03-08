@@ -38,6 +38,7 @@ const worker = new Worker<AnchorJobData>(
     {
         connection: redisConnectionConfig,
         concurrency: 3, // Procesar hasta 3 anchors en paralelo
+        maxStalledCount: 2, // Marcar job como fallido si se detecta stalled 2 veces (Threat Model — D-01)
     },
 );
 

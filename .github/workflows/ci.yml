@@ -55,6 +55,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      - name: Auditar dependencias (seguridad)
+        run: npm audit --audit-level=high
+
       - name: Verificar tipos TypeScript
         run: npx tsc --noEmit
 

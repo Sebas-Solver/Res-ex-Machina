@@ -18,6 +18,9 @@ const generationProcessSchema = z.object({
  * Schema del PoG v1 bundle.
  * Referencia: pog-v1-spec.md sección 2
  */
+// Tamaño máximo del pog_bundle serializado (Threat Model — D-04)
+const POG_BUNDLE_MAX_SIZE = 32_768; // 32KB
+
 export const pogBundleSchema = z.object({
     schema: z.literal('pog.v1'),
     content_hash: z.string().regex(CONTENT_HASH_REGEX, 'Must match sha256:{64hex}'),
@@ -28,7 +31,10 @@ export const pogBundleSchema = z.object({
     timestamp: z.string().datetime({ message: 'Must be ISO-8601 with timezone' }),
     nonce: z.string().min(16, 'Nonce must be at least 16 characters').max(128, 'Nonce must be at most 128 characters'),
     signature: z.string().startsWith('0x').length(132, 'Must be exactly 132 chars (0x + 130 hex)'),
-});
+}).refine(
+    (data) => JSON.stringify(data).length <= POG_BUNDLE_MAX_SIZE,
+    { message: `pog_bundle exceeds maximum size of ${POG_BUNDLE_MAX_SIZE / 1024}KB` },
+);
 
 export type PogBundle = z.infer<typeof pogBundleSchema>;
 

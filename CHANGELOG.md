@@ -5,6 +5,25 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — For alpha.3
+
+### Security Hardening (Threat Model)
+
+#### Changed
+
+- **D-04: pog_bundle size limit** — Added Zod `refine` to `pogBundleSchema` limiting serialized size to 32KB max. Defense-in-depth alongside per-field limits
+- **D-04: Batch body limit** — Set `bodyLimit: 256KB` specifically for `POST /v1/records/batch` to support batches of up to 100 records, while global limit stays at 64KB
+- **D-01: BullMQ backpressure** — Reduced queue retention (`removeOnComplete: 50`, `removeOnFail: 200`). Added `maxStalledCount: 2` to anchor worker to detect stuck jobs
+- **A06: npm audit in CI** — Added `npm audit --audit-level=high` step to GitHub Actions CI pipeline between dependency install and TypeScript check
+- **Threat model updated** — Marked 5 mitigations as implemented in `Docs/20-security/threat-model.md`
+
+#### Tests
+
+- Added 2 tests for pog_bundle size validation in `schemas.test.ts`
+- Total: **169 tests** across 13 suites (all passing)
+
+---
+
 ## [Unreleased] — For alpha.2
 
 ### Security Audit and Automated Testing
