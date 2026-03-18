@@ -56,7 +56,7 @@ NON-CUSTODIAL    → The agent controls its identity (wallet).
 
 ---
 
-> 🚀 **[Quick Start — Zero to first record in 5 minutes →](Docs/quick-start.md)**
+> 🚀 **[Quick Start — Zero to first record in 5 minutes →](Docs/40-guides/quick-start.md)**
 
 ---
 
@@ -189,9 +189,9 @@ const receipt = await rxm.record('AI generated content', {
 
 ## 🧪 Test the API (Testers)
 
-Want to test the API without setting up a dev environment? → **[Testing Quickstart](Docs/testing-quickstart.md)** (5 minutes)
+Want to test the API without setting up a dev environment? → **[Testing Quickstart](Docs/50-testing/testing-quickstart.md)** (5 minutes)
 
-- 📋 **[Postman Collection](Docs/postman-collection.json)** — Import in Postman and test all endpoints
+- 📋 **[Postman Collection](Docs/50-testing/postman-collection.json)** — Import in Postman and test all endpoints
 - 🔧 **[E2E Script](scripts/test-alpha.ts)** — Automated test (register, anchor, verify, export)
 
 ---
@@ -293,9 +293,13 @@ tests/
 ├── wallet-auth.test.ts
 └── webhooks.test.ts
 Docs/
+├── 00-foundation/            # Invariants
 ├── 10-specs/                 # Technical specifications
-├── 20-security/              # Threat model
-└── 30-adr/                   # Architecture Decision Records
+├── 20-security/              # Threat model + audit
+├── 30-adr/                   # Architecture Decision Records
+├── 40-guides/                # Quick start, developer guide, deploy guide
+├── 50-testing/               # Test plans, reports, Postman collection
+└── 60-operations/            # Runbook, scaling guide, cost analysis
 ```
 
 ---
@@ -304,22 +308,26 @@ Docs/
 
 | Document | Description |
 |---|---|
-| [`quick-start.md`](Docs/quick-start.md) | Zero to first record in 5 minutes |
-| [`guia-rxm-v1.md`](Docs/guia-rxm-v1.md) | Guide for non-technical users |
-| [`developer-guide-v1.md`](Docs/developer-guide-v1.md) | Full developer guide |
+| [`quick-start.md`](Docs/40-guides/quick-start.md) | Zero to first record in 5 minutes |
+| [`human-guide-v1.md`](Docs/40-guides/human-guide-v1.md) | Guide for non-technical users |
+| [`developer-guide-v1.md`](Docs/40-guides/developer-guide-v1.md) | Full developer guide |
+| [`deploy-alpha-guide.md`](Docs/40-guides/deploy-alpha-guide.md) | Alpha deployment guide |
+| [`api-examples.md`](Docs/40-guides/api-examples.md) | curl examples for all endpoints |
 | [`prd-v1.md`](Docs/10-specs/prd-v1.md) | Product Requirements Document |
 | [`pog-v1-spec.md`](Docs/10-specs/pog-v1-spec.md) | Proof of Generation v1 specification |
 | [`fee-flow-v1.md`](Docs/10-specs/fee-flow-v1.md) | On-chain fee verification flow |
 | [`openapi-v1.yaml`](Docs/10-specs/openapi-v1.yaml) | OpenAPI (Swagger) specification |
 | [`error-catalog.md`](Docs/10-specs/error-catalog.md) | API error catalog |
+| [`c2pa-interoperability.md`](Docs/10-specs/c2pa-interoperability.md) | Interoperability with C2PA standards |
+| [`receipt-verification-spec.md`](Docs/10-specs/receipt-verification-spec.md) | Receipt verification specification (v1.2) |
 | [`threat-model.md`](Docs/20-security/threat-model.md) | STRIDE Threat Model + Attack Trees |
-| [`audit-report-v1.md`](Docs/audit-report-v1.md) | Code audit report |
-| [`runbook.md`](Docs/runbook.md) | Operations runbook |
-| [`api-examples.md`](Docs/api-examples.md) | curl examples for all endpoints |
-| [`alpha-pilot-plan.md`](Docs/alpha-pilot-plan.md) | Alpha pilot plan |
-| [`c2pa-interoperability.md`](Docs/c2pa-interoperability.md) | Interoperability with C2PA standards |
-| [`receipt-verification-spec.md`](Docs/receipt-verification-spec.md) | Receipt verification specification (v1.2) |
+| [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Code audit report |
 | [`ADR-001-tech-stack.md`](Docs/30-adr/ADR-001-tech-stack.md) | Architecture Decision Record |
+| [`testing-quickstart.md`](Docs/50-testing/testing-quickstart.md) | Testing quickstart guide |
+| [`alpha-pilot-plan.md`](Docs/50-testing/alpha-pilot-plan.md) | Alpha pilot plan |
+| [`runbook.md`](Docs/60-operations/runbook.md) | Operations runbook |
+| [`horizontal-scaling-guide.md`](Docs/60-operations/horizontal-scaling-guide.md) | Horizontal scaling guide (API + Worker separation) |
+| [`production-cost-analysis.md`](Docs/60-operations/production-cost-analysis.md) | Production cost analysis and break-even |
 
 ---
 
@@ -385,6 +393,7 @@ The system has **24 invariants** that are never violated:
 | [#32](https://github.com/Sebas-Solver/Res-ex-Machina/issues/32) | beta | Public status page — Live health dashboard |
 | [#33](https://github.com/Sebas-Solver/Res-ex-Machina/issues/33) | v1.2+ | Write public narrative — Elevator pitch + "Why now?" |
 | ~~[#34](https://github.com/Sebas-Solver/Res-ex-Machina/issues/34)~~ | ✅ alpha.2 | ~~Bug: Webhook endpoints return HTTP 500 — table not migrated~~ |
+| [#35](https://github.com/Sebas-Solver/Res-ex-Machina/issues/35) | v2+ | Horizontal Scaling: Separate API and Anchor Worker |
 
 ---
 

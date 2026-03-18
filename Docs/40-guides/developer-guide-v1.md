@@ -757,7 +757,7 @@ Output:
 
 ### Manual Verification
 
-For full specification see: [Receipt Verification Spec](receipt-verification-spec.md)
+For full specification see: [Receipt Verification Spec](../10-specs/receipt-verification-spec.md)
 
 ```typescript
 import { createHash } from 'node:crypto';
