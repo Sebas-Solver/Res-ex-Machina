@@ -1,17 +1,17 @@
 # PRD v1 — Res ex Machina (Agent-Proof)
 
-> **Versión**: 1.1  
-> **Estado**: Draft (post-review)  
-> **Fecha**: 2026-02-10  
-> **Última revisión**: 2026-02-10 (resolución de gaps de review)  
+> **Version**: 1.1  
+> **Status**: Draft (post-review)  
+> **Date**: 2026-02-10  
+> **Last Review**: 2026-02-10 (resolution of review gaps)  
 
 ---
 
-## A) Objetivo del MVP
+## A) MVP Goal
 
-El objetivo del MVP v1 es permitir a agentes de IA registrar eventos de generación de outputs, dejando una traza verificable (hash + PoG + timestamp) consultable públicamente, sin validación humana ex ante.
+The goal of MVP v1 is to allow AI agents to register output generation events, leaving a verifiable trail (hash + PoG + timestamp) that is publicly queryable, without ex-ante human validation.
 
-Res ex Machina es un **registro de hechos técnicos**, no de derechos. Es **content-agnostic** y **automatizado por defecto**.
+Res ex Machina is a **registry of technical facts**, not rights. It is **content-agnostic** and **automated by default**.
 
 ---
 
@@ -20,47 +20,47 @@ Res ex Machina es un **registro de hechos técnicos**, no de derechos. Es **cont
 ```yaml
 scope_in:
   - register_generation_event       # POST /v1/records
-  - agent_identity_via_wallet       # Auth por firma criptográfica
-  - pog_v1_bundle_signed            # Proof of Generation v1 firmado
-  - immutable_timestamp_anchor      # Ancla temporal verificable
-  - public_verification_by_hash     # Consulta pública por hash
-  - public_verification_by_id       # Consulta pública por record_id
-  - fee_onchain_native_l2           # Fee on-chain en token nativo de la L2
-  - json_receipt_export             # Exportar receipt verificable
-  - rate_limiting_per_wallet        # Control de ráfaga por wallet
-  - idempotency_by_content_hash     # Misma solicitud = mismo record
-  - nonce_anti_replay               # Nonce único por wallet
-  - health_endpoint                 # GET /v1/health (status del sistema)
-  - anchor_failure_handling          # Estado anchor_failed + retries
+  - agent_identity_via_wallet       # Auth via cryptographic signature
+  - pog_v1_bundle_signed            # Signed Proof of Generation v1
+  - immutable_timestamp_anchor      # Verifiable time anchor
+  - public_verification_by_hash     # Public query by hash
+  - public_verification_by_id       # Public query by record_id
+  - fee_onchain_native_l2           # On-chain fee in L2 native token
+  - json_receipt_export             # Export verifiable receipt
+  - rate_limiting_per_wallet        # Burst control per wallet
+  - idempotency_by_content_hash     # Same request = same record
+  - nonce_anti_replay               # Unique nonce per wallet
+  - health_endpoint                 # GET /v1/health (system status)
+  - anchor_failure_handling          # anchor_failed state + retries
 ```
 
 ---
 
-## C) Scope OUT (v1) — CRÍTICO
+## C) Scope OUT (v1) — CRITICAL
 
 ```yaml
 scope_out:
-  - ai_detection                    # NUNCA. No somos detectores
-  - originality_scoring             # NUNCA. No evaluamos calidad
-  - human_validation_flows          # NUNCA en v1. Excepción, no norma
-  - content_moderation              # NUNCA. No somos editores
-  - content_curation                # NUNCA. No somos curadores
-  - semantic_analysis               # NUNCA. No interpretamos significado
-  - copyright_or_ip_claims          # NUNCA. No asignamos derechos
-  - content_storage                 # v2-B. Solo hash en v1
-  - record_versioning               # v2-A. Links y derivaciones
-  - state_machine                   # v2-A. Estados dinámicos
-  - dispute_claims                  # v2-C. Claims y contra-claims
-  - rich_ui_dashboard               # v2+. Solo API en v1
-  - agent_reputation                # v3+. Scoring acumulativo
-  - smart_contracts_execution       # v3+. Licencias y pagos
-  - batch_endpoint                  # v1.1. Útil pero no mínimo
-  - provenance_metadata             # v1.1. C2PA/IPTC/XMP bridge (ver c2pa-interoperability.md)
-  - search_advanced                 # v2+. Búsqueda avanzada
-  - list_records_by_wallet          # v2+. Perfilado controlado (ver sección K)
-  - fee_fiat_gateway                # v2. Fee en fiat
-  - fee_credits_prepaid             # v2. Créditos prepagados
-  - dual_identity                   # v2. Identidad org (X.509) + técnica (wallet)
+  - ai_detection                    # NEVER. We are not detectors
+  - originality_scoring             # NEVER. We do not evaluate quality
+  - human_validation_flows          # NEVER in v1. Exception, not the rule
+  - content_moderation              # NEVER. We are not editors
+  - content_curation                # NEVER. We are not curators
+  - semantic_analysis               # NEVER. We do not interpret meaning
+  - copyright_or_ip_claims          # NEVER. We do not assign rights
+  - content_storage                 # v2-B. Hash only in v1
+  - record_versioning               # v2-A. Links and derivations
+  - state_machine                   # v2-A. Dynamic states
+  - dispute_claims                  # v2-C. Claims and counter-claims
+  - rich_ui_dashboard               # v2+. API only in v1
+  - agent_reputation                # v3+. Cumulative scoring
+  - smart_contracts_execution       # v3+. Licenses and payments
+  - batch_endpoint                  # v1.1. Useful but not MVP
+  - provenance_metadata             # v1.1. C2PA/IPTC/XMP bridge (see c2pa-interoperability.md)
+  - search_advanced                 # v2+. Advanced search
+  - list_records_by_wallet          # v2+. Controlled profiling (see section K)
+  - fee_fiat_gateway                # v2. Fee in fiat
+  - fee_credits_prepaid             # v2. Prepaid credits
+  - dual_identity                   # v2. Org identity (X.509) + technical (wallet)
 ```
 
 ---
@@ -73,7 +73,7 @@ endpoints:
   - method: GET
     path: /v1/health
     auth: none
-    description: Estado del sistema
+    description: System Status
     response:
       status: 200
       body:
@@ -85,62 +85,62 @@ endpoints:
   - method: POST
     path: /v1/records
     auth: wallet_signature (EIP-712)
-    description: Registrar un nuevo evento de generación
+    description: Register a new generation event
     request_body:
       required:
-        - content_hash          # SHA-256 del output (formato: sha256:{64hex})
-        - pog_bundle            # PoG v1 completo y firmado
-        - fee_tx_hash           # Hash de la tx de pago del fee (on-chain L2)
+        - content_hash          # SHA-256 of the output (format: sha256:{64hex})
+        - pog_bundle            # Complete and signed PoG v1
+        - fee_tx_hash           # Payment tx hash for fee (L2 on-chain)
       optional:
-        - content_type          # MIME type del output
-        - tags                  # Etiquetas libres (array, max 10)
+        - content_type          # MIME type of the output
+        - tags                  # Free tags (array, max 10)
         - visibility            # proof_only | input_hash_only | content_optional
-        - external_ref          # URL/pointer a contenido externo
+        - external_ref          # URL/pointer to external content
     response:
       status: 201
       body:
-        - record_id             # UUID v7 (time-ordered, generado en app)
-        - content_hash          # Echo del hash enviado
-        - receipt_hash          # Hash del receipt completo
+        - record_id             # UUID v7 (time-ordered, generated in app)
+        - content_hash          # Echo of the submitted hash
+        - receipt_hash          # Hash of the complete receipt
         - state                 # "pending_anchor"
         - created_at            # ISO-8601
-        - anchor                # null (se actualizará async)
+        - anchor                # null (to be updated async)
     errors:
-      400: invalid_payload (incluye content_hash malformado)
+      400: invalid_payload (includes malformed content_hash)
       401: invalid_signature
-      402: fee_not_verified (fee_tx_hash inválido o no confirmado)
+      402: fee_not_verified (invalid or unconfirmed fee_tx_hash)
       409: duplicate_content_hash | duplicate_nonce
       429: rate_limit_exceeded
 
   - method: GET
     path: /v1/records/{id}
-    auth: none (público)
-    description: Consultar un registro por ID
+    auth: none (public)
+    description: Query a record by ID
     response:
       status: 200
       body:
         - record_id
         - content_hash
-        - pog_bundle            # PoG v1 completo
+        - pog_bundle            # Complete PoG v1
         - state                 # pending_anchor | anchored | anchor_failed
         - created_at
-        - anchor                # tx_hash + block + chain_id (cuando exista)
+        - anchor                # tx_hash + block + chain_id (when available)
         - receipt_hash
-        - anchor_error_reason   # Solo si state == anchor_failed
+        - anchor_error_reason   # Only if state == anchor_failed
     errors:
       404: record_not_found
 
   - method: GET
     path: /v1/records/verify
-    auth: none (público)
-    description: Verificar existencia por hash
+    auth: none (public)
+    description: Verify existence by hash
     query_params:
-      - hash                    # content_hash a buscar
+      - hash                    # content_hash to search for
     response:
       status: 200
       body:
         - found: true/false
-        - record_id             # Si existe
+        - record_id             # If exists
         - state
         - created_at
         - anchor
@@ -149,8 +149,8 @@ endpoints:
 
   - method: GET
     path: /v1/records/{id}/export
-    auth: none (público)
-    description: Exportar receipt verificable (JSON)
+    auth: none (public)
+    description: Export verifiable receipt (JSON)
     response:
       status: 200
       content_type: application/json
@@ -160,14 +160,14 @@ endpoints:
         - pog_bundle
         - receipt_hash
         - anchor
-        - verification_instructions  # Cómo verificar offline
+        - verification_instructions  # How to verify offline
     errors:
       404: record_not_found
 ```
 
 ---
 
-## E) Schemas versionados
+## E) Versioned Schemas
 
 ### Record.v1
 
@@ -178,7 +178,7 @@ endpoints:
   "content_hash": "sha256:abc123...",
   "content_type": "text/plain",
   "visibility": "proof_only",
-  "pog_bundle": { "...ver PoG v1 spec..." },
+  "pog_bundle": { "...see PoG v1 spec..." },
   "state": "pending_anchor",
   "created_at": "2026-02-10T02:00:00Z",
   "anchor": null,
@@ -195,7 +195,7 @@ endpoints:
 
 ### PoGBundle.v1
 
-> Ver documento separado: `pog-v1-spec.md`
+> See separate document: `pog-v1-spec.md`
 
 ### Agent.v1
 
@@ -209,48 +209,48 @@ endpoints:
 }
 ```
 
-> **Nota**: Agent.v1 es un recurso derivado, no un endpoint CRUD.
-> Se construye a partir del historial de registros.
-> No hay endpoint de "crear agente" — el agente existe cuando registra.
+> **Note**: Agent.v1 is a derived resource, not a CRUD endpoint.
+> It breaks down from the history of records.
+> There is no "create agent" endpoint — the agent exists when registering.
 
 ---
 
-## F) UX operativa mínima
+## F) Minimum Operational UX
 
 ```yaml
 ui:
   purpose: operational_review_only
-  target: operadores_y_supervisión_humana
+  target: humans_and_oversight
   
   views:
-    - records_table           # Lista de registros (solo lectura)
-    - record_detail           # Detalle de un registro
-    - verify_by_hash          # Verificar existencia por hash
+    - records_table           # List of records (read-only)
+    - record_detail           # Record details
+    - verify_by_hash          # Verify existence by hash
   
   forbidden_actions:
-    - approve                 # NUNCA. No se aprueba nada
-    - reject                  # NUNCA. No se rechaza nada
-    - edit_metadata           # NUNCA. Lo registrado es inmutable
-    - delete_record           # NUNCA. Nada se borra
-    - assign_authorship       # NUNCA. No se asigna autoría
+    - approve                 # NEVER. Nothing is approved
+    - reject                  # NEVER. Nothing is rejected
+    - edit_metadata           # NEVER. Registered data is immutable
+    - delete_record           # NEVER. Nothing is deleted
+    - assign_authorship       # NEVER. Authorship is not assigned
   
   notes:
-    - "La UI NO es producto en v1"
-    - "Es una herramienta interna de supervisión"
-    - "Los agentes y developers usan la API directamente"
-    - "Si un humano necesita verificar, usa GET /verify"
+    - "The UI is NOT a product in v1"
+    - "It is an internal oversight tool"
+    - "Agents and developers use the API directly"
+    - "If a human needs to verify, they use GET /verify"
 ```
 
 ---
 
-## G) Modelo de datos (Postgres)
+## G) Data Model (Postgres)
 
 ```sql
--- Tabla principal
--- NOTA: record_id es UUID v7 (time-ordered), generado en la aplicación.
--- NO usar gen_random_uuid() que genera UUID v4 (aleatorio).
+-- Main Table
+-- NOTE: record_id is UUID v7 (time-ordered), generated in the application.
+-- DO NOT use gen_random_uuid() which generates UUID v4 (random).
 CREATE TABLE records (
-    record_id         UUID PRIMARY KEY,  -- UUID v7, generado en app
+    record_id         UUID PRIMARY KEY,  -- UUID v7, generated in app
     content_hash      VARCHAR(128) NOT NULL UNIQUE
                       CHECK (content_hash ~ '^sha256:[a-f0-9]{64}$'),
     content_type      VARCHAR(64),
@@ -267,19 +267,19 @@ CREATE TABLE records (
     external_ref      TEXT,
     fee_amount        NUMERIC(18, 8) NOT NULL,
     fee_currency      VARCHAR(8) NOT NULL,
-    fee_tx_hash       VARCHAR(66) NOT NULL UNIQUE, -- 1:1 con record, no reutilizable
+    fee_tx_hash       VARCHAR(66) NOT NULL UNIQUE, -- 1:1 with record, non-reusable
     anchor_tx_hash    VARCHAR(66),
     anchor_block      BIGINT,
     anchor_chain_id   INTEGER,
-    anchor_error_reason TEXT,                -- Motivo del fallo (si anchor_failed)
+    anchor_error_reason TEXT,                -- Reason for failure (if anchor_failed)
     anchor_retries    INTEGER NOT NULL DEFAULT 0,
     anchored_at       TIMESTAMPTZ,
     
-    -- Anti-replay: un nonce no puede reutilizarse por la misma wallet
+    -- Anti-replay: A nonce cannot be reused by the same wallet
     CONSTRAINT uq_wallet_nonce UNIQUE (agent_wallet, nonce)
 );
 
--- Índices
+-- Indexes
 CREATE INDEX idx_records_agent ON records(agent_wallet);
 CREATE INDEX idx_records_state ON records(state);
 CREATE INDEX idx_records_created ON records(created_at DESC);
@@ -288,135 +288,135 @@ CREATE INDEX idx_records_fee_tx ON records(fee_tx_hash);
 
 ---
 
-## H) Flujo principal
+## H) Main Flow
 
 ### H.1 Happy path
 
 ```
-Agente IA                    API Res ex Machina           Blockchain (L2)
+AI Agent                     Res ex Machina API           Blockchain (L2)
     │                              │                            │
-    │  1. Genera output            │                            │
-    │  2. Calcula hash             │                            │
-    │  3. Paga fee on-chain ──────────────────────────────────> │
-    │  4. Obtiene fee_tx_hash      │                            │
-    │  5. Construye PoG bundle     │                            │
-    │  6. Firma (EIP-712)          │                            │
+    │  1. Generates output         │                            │
+    │  2. Calculates hash          │                            │
+    │  3. Pays fee on-chain ──────────────────────────────────> │
+    │  4. Gets fee_tx_hash         │                            │
+    │  5. Builds PoG bundle        │                            │
+    │  6. Signs (EIP-712)          │                            │
     │                              │                            │
     │──POST /v1/records───────────>│                            │
-    │  (incluye fee_tx_hash)       │  7. Valida firma           │
-    │                              │  8. Verifica fee_tx_hash   │
-    │                              │  9. Verifica nonce         │
-    │                              │  10. Verifica idempotencia │
-    │                              │  11. Guarda record         │
-    │                              │  12. Calcula receipt_hash  │
+    │  (includes fee_tx_hash)      │  7. Validates signature    │
+    │                              │  8. Verifies fee_tx_hash   │
+    │                              │  9. Verifies nonce         │
+    │                              │  10. Verifies idempotency  │
+    │                              │  11. Saves record          │
+    │                              │  12. Computes receipt_hash │
     │<──201 { record_id, state:    │                            │
     │       pending_anchor }───────│                            │
     │                              │                            │
-    │                              │  13. Encola anchoring ────>│
+    │                              │  13. Enqueues anchoring ──>│
     │                              │                            │  14. Tx on-chain
-    │                              │<── Tx confirmada ──────────│
-    │                              │  15. Actualiza record      │
+    │                              │<── Tx confirmed ───────────│
+    │                              │  15. Updates record        │
     │                              │      state: "anchored"     │
     │                              │                            │
 ```
 
-### H.2 Unhappy path: fallo de anchoring
+### H.2 Unhappy path: anchor failure
 
 ```
-API Res ex Machina                              Blockchain (L2)
+Res ex Machina API                              Blockchain (L2)
     │                                                │
-    │  13. Encola anchoring ────────────────────────>│
-    │                                                │  Tx falla
-    │<── Error / Timeout ───────────────────────────│
+    │  13. Enqueues anchoring ──────────────────────>│
+    │                                                │  Tx fails
+    │<── Error / Timeout ────────────────────────────│
     │                                                │
     │  14. anchor_retries += 1                       │
-    │  15. Si retries < 3: re-encolar con backoff    │
-    │  16. Si retries >= 3:                          │
+    │  15. If retries < 3: re-enqueue with backoff   │
+    │  16. If retries >= 3:                          │
     │      state = "anchor_failed"                   │
     │      anchor_error_reason = "..."               │
     │                                                │
-    │  ⚠️ El record SIGUE SIENDO VÁLIDO             │
-    │  ⚠️ El PoG y el timestamp son inmutables      │
-    │  ⚠️ Nada se borra, nada se invalida           │
-    │  ⚠️ Un operador puede reintentar manualmente  │
+    │  ⚠️ The record IS STILL VALID                  │
+    │  ⚠️ The PoG and timestamp are immutable        │
+    │  ⚠️ Nothing is deleted, nothing is invalidated │
+    │  ⚠️ An operator can retry manually             │
     │                                                │
 ```
 
 ---
 
-## I) Requisitos no funcionales (resumen v1)
+## I) Non-Functional Requirements (v1 summary)
 
-| Categoría | Objetivo |
+| Category | Goal |
 |---|---|
-| Escala | 100–1.000 reg/día, batch futuro |
-| Latencia soft | < 3 seg (receipt inmediato) |
-| Latencia hard | 1–5 min (anchor on-chain) |
-| SLA | 99.0% mensual |
-| Custodia | NO. Solo verificación de firmas |
-| Anti-spam | Fee on-chain + rate limit + idempotencia + nonce |
-| Fee | On-chain en token nativo L2. Fiat/créditos en v2 |
-| Hosting | EU preferido, arquitectura portable |
+| Scale | 100–1,000 req/day, batch future |
+| Soft latency | < 3 sec (immediate receipt) |
+| Hard latency | 1–5 min (on-chain anchor) |
+| SLA | 99.0% monthly |
+| Custody | NO. Signature verification only |
+| Anti-spam | On-chain fee + rate limit + idempotency + nonce |
+| Fee | On-chain in native L2 token. Fiat/credits in v2 |
+| Hosting | EU preferred, portable architecture |
 | Blockchain | L2 EVM compatible |
 | Infra | Cloud + Postgres + Redis + S3-compatible |
-| Anchoring | Retry automático (3x). Estado anchor_failed si agotado |
+| Anchoring | Auto retry (3x). anchor_failed state if exhausted |
 
 ---
 
-## J) Glosario rápido
+## J) Quick Glossary
 
-| Término | Significado |
+| Term | Meaning |
 |---|---|
-| **Record** | Un registro de hecho de generación |
-| **PoG** | Proof of Generation — bundle probatorio |
-| **Anchor** | Ancla on-chain (tx + block) |
-| **Receipt** | Paquete exportable verificable (JSON) |
-| **Agent** | Entidad técnica (wallet) que genera y firma |
-| **Fee** | Micro-pago on-chain obligatorio por registro |
-| **State** | Estado actual: `pending_anchor`, `anchored`, `anchor_failed` |
-| **Nonce** | Valor único por wallet que previene replay attacks |
+| **Record** | A record of a generation fact |
+| **PoG** | Proof of Generation — probabilistic bundle |
+| **Anchor** | On-chain anchor (tx + block) |
+| **Receipt** | Verifiable exportable package (JSON) |
+| **Agent** | Technical entity (wallet) generating and signing |
+| **Fee** | Mandatory on-chain micro-payment per registration |
+| **State** | Current state: `pending_anchor`, `anchored`, `anchor_failed` |
+| **Nonce** | Unique value per wallet preventing replay attacks |
 
 ---
 
-## K) Principios de perfilado por wallet (diseño anticipado)
+## K) Profiling principles by wallet (forward design)
 
-> **Contexto**: No hay listado público por wallet en v1, pero el sistema se **diseña** para soportar perfilado controlado en versiones futuras.
+> **Context**: There is no public listing by wallet in v1, but the system is **designed** to support controlled profiling in future versions.
 
 ```yaml
 profiling_rules:
   
   public_in_v1:
-    - verification_by_content_hash    # Cualquiera puede verificar un hash
-    - verification_by_record_id       # Cualquiera puede consultar un record
+    - verification_by_content_hash    # Anyone can verify a hash
+    - verification_by_record_id       # Anyone can query a record
   
   NOT_public_in_v1:
-    - list_records_by_wallet          # NO hay listado público por wallet
-    - agent_scoring                   # NO hay scoring
-    - agent_reputation                # NO hay reputación
+    - list_records_by_wallet          # NO public list by wallet
+    - agent_scoring                   # NO scoring
+    - agent_reputation                # NO reputation
   
   future_profiling_service:
     description: |
-      Servicio análogo al Registro Mercantil Español:
-      - El registro base es público
-      - Los informes de análisis son un servicio de pago, contractual
+      Service analogous to a business registry:
+      - The base registry is public
+      - Analysis reports are a paid, contractual service
     
     access_control:
-      - platform_admins               # Administradores de la plataforma
-      - authorized_auditors            # Auditores / validadores / oráculos
-      - enterprise_clients             # Clientes enterprise bajo contrato
+      - platform_admins               # Platform administrators
+      - authorized_auditors            # Auditors / validators / oracles
+      - enterprise_clients             # Enterprise clients under contract
     
-    exposed_data:                      # Solo datos agregados, NUNCA juicios
+    exposed_data:                      # Aggregated data only, NEVER judgments
       - total_records_count
       - temporal_windows
       - state_distribution             # anchored, failed, pending
       - registration_frequency
     
-    FORBIDDEN_always:                  # Prohibido en CUALQUIER versión
+    FORBIDDEN_always:                  # Forbidden in ANY version
       - scoring
       - rankings
       - reliability_labels
       - automatic_conclusions
     
     principle: |
-      "El sistema proporciona datos; la interpretación es
-      responsabilidad del usuario autorizado."
+      "The system provides data; interpretation is
+      the responsibility of the authorized user."
 ```

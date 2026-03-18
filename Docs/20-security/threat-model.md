@@ -1,29 +1,29 @@
 # Threat Model — Res ex Machina v1
 
-> **Versión**: 1.0  
-> **Estado**: Draft  
-> **Fecha**: 2026-02-10  
-> **Metodología**: STRIDE + Attack Trees  
-> **Skills utilizadas**: `threat-modeling-expert`, `stride-analysis-patterns`, `attack-tree-construction`, `api-security-best-practices`
+> **Version**: 1.0  
+> **Status**: Draft  
+> **Date**: 2026-02-10  
+> **Methodology**: STRIDE + Attack Trees  
+> **Skills used**: `threat-modeling-expert`, `stride-analysis-patterns`, `attack-tree-construction`, `api-security-best-practices`
 
 ---
 
-## 1. Alcance del sistema
+## 1. System Scope
 
-### 1.1 Descripción
+### 1.1 Description
 
-Res ex Machina es un registro técnico de hechos de generación por IA. Los agentes de IA (identificados por wallet criptográfica) envían bundles probatorios (PoG) que se almacenan en Postgres y se anclan en una blockchain L2 EVM.
+Res ex Machina is a technical registry of AI generation facts. AI agents (identified by a cryptocurrency wallet) send evidentiary bundles (PoG) which are stored in Postgres and anchored on an EVM L2 blockchain.
 
-### 1.2 Diagrama de flujo de datos (DFD)
+### 1.2 Data Flow Diagram (DFD)
 
 ```
                     ┌─────────────────────────────────────────────┐
                     │              TRUST BOUNDARY 0               │
-                    │              (Internet público)              │
+                    │              (Public Internet)              │
                     │                                             │
                     │  ┌──────────────┐                           │
-                    │  │  Agente IA   │ ──── Entidad externa      │
-                    │  │  (wallet)    │      no confiable         │
+                    │  │   AI Agent   │ ──── Untrusted            │
+                    │  │   (wallet)   │      external entity      │
                     │  └──────┬───────┘                           │
                     │         │                                   │
                     └─────────┼───────────────────────────────────┘
@@ -33,10 +33,10 @@ Res ex Machina es un registro técnico de hechos de generación por IA. Los agen
                               │
                     ┌─────────┼───────────────────────────────────┐
                     │         │    TRUST BOUNDARY 1               │
-                    │         ▼    (API perimetral)               │
+                    │         ▼    (Perimeter API)                │
                     │  ┌──────────────┐                           │
-                    │  │  API Server  │ ──── Proceso principal    │
-                    │  │  (validación)│                           │
+                    │  │  API Server  │ ──── Main process         │
+                    │  │ (validation) │                           │
                     │  └──┬───┬───┬──┘                           │
                     │     │   │   │                               │
                     └─────┼───┼───┼───────────────────────────────┘
@@ -45,346 +45,346 @@ Res ex Machina es un registro técnico de hechos de generación por IA. Los agen
               │               │               │
               ▼               ▼               ▼
     ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-    │  PostgreSQL  │ │  Redis       │ │  Blockchain   │
-    │  (records)   │ │  (rate limit │ │  L2 (anchor   │
-    │              │ │   + queue)   │ │   + fee check)│
+    │  PostgreSQL  │ │  Redis       │ │  Blockchain  │
+    │  (records)   │ │  (rate limit │ │  L2 (anchor  │
+    │              │ │   + queue)   │ │   + fee)     │
     └──────────────┘ └──────────────┘ └──────────────┘
       Data Store       Data Store       External Entity
-      (confiable)      (confiable)      (semi-confiable)
+      (trusted)        (trusted)        (semi-trusted)
 ```
 
-### 1.3 Fronteras de confianza
+### 1.3 Trust Boundaries
 
-| ID | Frontera | De → A | Riesgo |
+| ID | Boundary | From → To | Risk |
 |---|---|---|---|
-| TB-0 | Internet → API | Agente → API Server | **ALTO**: entrada no confiable |
-| TB-1 | API → Base de datos | API Server → Postgres | MEDIO: inyección, escalada |
-| TB-2 | API → Blockchain L2 | API Server → RPC Node | MEDIO: disponibilidad, fiabilidad |
-| TB-3 | API → Redis | API Server → Redis | BAJO: datos efímeros |
+| TB-0 | Internet → API | Agent → API Server | **HIGH**: untrusted input |
+| TB-1 | API → Database | API Server → Postgres | MEDIUM: injection, escalation |
+| TB-2 | API → L2 Blockchain | API Server → RPC Node | MEDIUM: availability, reliability |
+| TB-3 | API → Redis | API Server → Redis | LOW: ephemeral data |
 
 ---
 
-## 2. Activos
+## 2. Assets
 
-| Activo | Sensibilidad | Descripción |
+| Asset | Sensitivity | Description |
 |---|---|---|
-| **Records** | CRÍTICA | Hechos de generación inmutables |
-| **PoG Bundles** | ALTA | Pruebas criptográficas firmadas |
-| **Firmas EIP-712** | ALTA | Identidad criptográfica del agente |
-| **fee_tx_hash** | ALTA | Prueba de pago on-chain |
-| **receipt_hash** | ALTA | Hash de integridad del recibo |
-| **Claves privadas del servidor** | CRÍTICA | Keys para anchoring on-chain |
-| **Claves RPC/API** | ALTA | Acceso al nodo L2 |
-| **Metadata de registros** | MEDIA | Tags, content_type, timestamps |
-| **Config del fee** | MEDIA | fee_receiver_address, monto mínimo |
+| **Records** | CRITICAL | Immutable generation facts |
+| **PoG Bundles** | HIGH | Signed cryptographic proofs |
+| **EIP-712 Signatures**| HIGH | Cryptographic identity of agent |
+| **fee_tx_hash** | HIGH | On-chain payment proof |
+| **receipt_hash** | HIGH | Receipt integrity hash |
+| **Server private keys**| CRITICAL | Keys for on-chain anchoring |
+| **RPC/API Keys** | HIGH | Access to L2 node |
+| **Record metadata** | MEDIUM | Tags, content_type, timestamps |
+| **Fee config** | MEDIUM | fee_receiver_address, minimum amount |
 
 ---
 
-## 3. Análisis STRIDE
+## 3. STRIDE Analysis
 
-### 3.1 Spoofing (Suplantación de identidad)
+### 3.1 Spoofing (Identity spoofing)
 
-| ID | Amenaza | Objetivo | Impacto | Probabilidad | Riesgo |
+| ID | Threat | Target | Impact | Probability | Risk |
 |---|---|---|---|---|---|
-| S-01 | Suplantación de wallet: firmar un PoG con una wallet que no es del agente real | PoG Bundle | ALTO | BAJO | 3 |
-| S-02 | Robo de clave privada del agente y registrar en su nombre | Identidad del agente | CRÍTICO | BAJO | 4 |
-| S-03 | Replay attack: reutilizar un PoG firmado legítimamente | POST /v1/records | ALTO | MEDIO | 6 |
+| S-01 | Wallet spoofing: signing a PoG with a wallet that isn't the real agent's | PoG Bundle | HIGH | LOW | 3 |
+| S-02 | Theft of agent's private key and registering on their behalf | Agent identity | CRITICAL| LOW | 4 |
+| S-03 | Replay attack: reusing a legitimately signed PoG | POST /v1/records | HIGH | MEDIUM | 6 |
 
-**Mitigaciones implementadas:**
-- [x] Verificación de firma EIP-712 (recovered signer == agent_wallet) → INV-009
-- [x] Nonce único por wallet (UNIQUE constraint) → INV-014
-- [x] No custodia de claves privadas → El agente es el único responsable
+**Implemented Mitigations:**
+- [x] EIP-712 signature verification (recovered signer == agent_wallet) → INV-009
+- [x] Unique nonce per wallet (UNIQUE constraint) → INV-014
+- [x] Non-custodial private keys → The agent is solely responsible
 
-**Riesgos residuales:**
-- ⚠️ S-02: Si un agente pierde su clave privada, cualquiera puede registrar en su nombre. **No es responsabilidad de la plataforma** (INV-007). La plataforma registra hechos, no garantiza control de identidad.
+**Residual Risks:**
+- ⚠️ S-02: If an agent loses their private key, anyone can register on their behalf. **It is not the platform's responsibility** (INV-007). The platform registers facts, does not guarantee identity control.
 
 ---
 
-### 3.2 Tampering (Manipulación de datos)
+### 3.2 Tampering (Data manipulation)
 
-| ID | Amenaza | Objetivo | Impacto | Probabilidad | Riesgo |
+| ID | Threat | Target | Impact | Probability | Risk |
 |---|---|---|---|---|---|
-| T-01 | Modificar un record después de crearlo | Tabla `records` | CRÍTICO | MUY BAJO | 4 |
-| T-02 | Inyección SQL a través de campos del PoG bundle (JSONB) | PostgreSQL | CRÍTICO | BAJO | 4 |
-| T-03 | Manipulación del content_hash (enviar hash falso) | Integridad del hash | ALTO | ALTO | 9 |
-| T-04 | Manipulación del timestamp en el PoG | Temporalidad | MEDIO | ALTO | 6 |
+| T-01 | Modifying a record after creation | `records` table | CRITICAL| VERY LOW | 4 |
+| T-02 | SQL injection via PoG bundle fields (JSONB) | PostgreSQL | CRITICAL| LOW | 4 |
+| T-03 | Manipulating the content_hash (sending fake hash) | Hash integrity | HIGH | HIGH | 9 |
+| T-04 | Manipulating the timestamp in the PoG | Temporality | MEDIUM | HIGH | 6 |
 
-**Mitigaciones implementadas:**
-- [x] Records inmutables — no existe UPDATE ni DELETE (INV-001, INV-002, INV-003)
-- [x] CHECK constraint en content_hash (`^sha256:[a-f0-9]{64}$`)
-- [x] CHECK constraint en state (solo valores permitidos)
-- [x] Queries parametrizadas (requisito de implementación)
-- [x] Anchoring on-chain (inmutabilidad criptográfica)
+**Implemented Mitigations:**
+- [x] Immutable records — no UPDATE or DELETE exist (INV-001, INV-002, INV-003)
+- [x] CHECK constraint on content_hash (`^sha256:[a-f0-9]{64}$`)
+- [x] CHECK constraint on state (only allowed values)
+- [x] Parameterized queries (implementation requirement)
+- [x] On-chain anchoring (cryptographic immutability)
 
-**Riesgos residuales:**
-- ⚠️ T-03: La plataforma **no puede verificar que el hash corresponda a un contenido real**. Esto es by design — el sistema registra hechos declarados, no verifica contenido (INV-005, INV-006).
-- ⚠️ T-04: El timestamp lo declara el agente. La plataforma añade `created_at` (hora del servidor) pero **no puede validar que el timestamp del agente sea verdadero**. Esto es explícito en PoG v1 Spec.
+**Residual Risks:**
+- ⚠️ T-03: The platform **cannot verify that the hash corresponds to real content**. This is by design — the system registers declared facts, does not verify content (INV-005, INV-006).
+- ⚠️ T-04: Timestamp is declared by the agent. The platform adds `created_at` (server time) but **cannot validate the agent's timestamp is true**. This is explicit in PoG v1 Spec.
 
 ---
 
-### 3.3 Repudiation (Repudio / Negación)
+### 3.3 Repudiation (Denial)
 
-| ID | Amenaza | Objetivo | Impacto | Probabilidad | Riesgo |
+| ID | Threat | Target | Impact | Probability | Risk |
 |---|---|---|---|---|---|
-| R-01 | Agente niega haber registrado un PoG | Trazabilidad | MEDIO | BAJO | 2 |
-| R-02 | Plataforma niega haber recibido un registro | Confianza | ALTO | MUY BAJO | 3 |
+| R-01 | Agent denies having registered a PoG | Traceability | MEDIUM | LOW | 2 |
+| R-02 | Platform denies having received a registration | Trust | HIGH | VERY LOW | 3 |
 
-**Mitigaciones implementadas:**
-- [x] Firma EIP-712 criptográficamente vinculada al agente → no repudio por diseño
-- [x] receipt_hash devuelto al agente como prueba de recepción
-- [x] Anchoring on-chain → registro inmutable y verificable por terceros
-- [x] Logs de auditoría (requisito de implementación)
+**Implemented Mitigations:**
+- [x] EIP-712 signature cryptographically tied to agent → non-repudiation by design
+- [x] receipt_hash returned to agent as proof of receipt
+- [x] On-chain anchoring → immutable record verifiable by third parties
+- [x] Audit logs (implementation requirement)
 
-**Riesgos residuales:**
-- ✅ Riesgo mínimo. La firma criptográfica y el anchoring on-chain hacen que el repudio sea prácticamente imposible.
+**Residual Risks:**
+- ✅ Minimal risk. Cryptographic signature and on-chain anchoring make repudiation practically impossible.
 
 ---
 
-### 3.4 Information Disclosure (Divulgación de información)
+### 3.4 Information Disclosure
 
-| ID | Amenaza | Objetivo | Impacto | Probabilidad | Riesgo |
+| ID | Threat | Target | Impact | Probability | Risk |
 |---|---|---|---|---|---|
-| I-01 | Enumerar registros de una wallet específica | Privacidad de agentes | MEDIO | MEDIO | 4 |
-| I-02 | Fugas en mensajes de error (stack traces, rutas internas) | Info del sistema | BAJO | MEDIO | 2 |
-| I-03 | Exposición de la clave privada del servidor de anchoring | Claves del sistema | CRÍTICO | BAJO | 4 |
+| I-01 | Enumerate records of a specific wallet | Agent privacy | MEDIUM | MEDIUM | 4 |
+| I-02 | Leaks in error messages (stack traces, internal routes)| System info | LOW | MEDIUM | 2 |
+| I-03 | Exposure of anchor server's private key | System keys | CRITICAL| LOW | 4 |
 
-**Mitigaciones implementadas:**
-- [x] No existe endpoint de listado por wallet en v1 (INV-021)
-- [x] Prohibido scoring/rankings/conclusiones automáticas (INV-022, INV-023, INV-024)
-- [x] Mensajes de error genéricos (requisito de implementación)
-- [x] Secrets management para claves (requisito de deployment)
+**Implemented Mitigations:**
+- [x] No list by wallet endpoint in v1 (INV-021)
+- [x] Prohibited scoring/rankings/automatic conclusions (INV-022, INV-023, INV-024)
+- [x] Generic error messages (implementation requirement)
+- [x] Secrets management for keys (deployment requirement)
 
-**Riesgos residuales:**
-- ⚠️ I-01: Los records individuales **son públicos por diseño** (GET por hash o por ID). Un atacante persistente podría intentar enumerar UUIDs (v7 es time-ordered). Mitigación: rate limiting en GET.
-- ⚠️ I-03: Compromiso de la clave de anchoring permitiría crear transacciones fraudulentas. Mitigación: HSM o vault en producción + rotación de claves.
+**Residual Risks:**
+- ⚠️ I-01: Individual records **are public by design** (GET by hash or by ID). A persistent attacker could attempt to enumerate UUIDs (v7 is time-ordered). Mitigation: rate limiting on GET.
+- ⚠️ I-03: Compromise of anchoring key would allow creating fraudulent transactions. Mitigation: HSM or vault in production + key rotation.
 
 ---
 
-### 3.5 Denial of Service (Denegación de servicio)
+### 3.5 Denial of Service (DoS)
 
-| ID | Amenaza | Objetivo | Impacto | Probabilidad | Riesgo |
+| ID | Threat | Target | Impact | Probability | Risk |
 |---|---|---|---|---|---|
-| D-01 | Spam masivo de registros con fees mínimos | API + DB + Chain | ALTO | MEDIO | 6 |
-| D-02 | Agotamiento de recursos de la blockchain (gas wars) | Anchoring | ALTO | BAJO | 3 |
-| D-03 | Flood de requests GET (sin autenticación) | API Server | MEDIO | ALTO | 6 |
-| D-04 | Payload oversized en pog_bundle (JSONB muy grande) | API + DB | MEDIO | MEDIO | 4 |
+| D-01 | Massive record spam with minimum fees | API + DB + Chain| HIGH | MEDIUM | 6 |
+| D-02 | Blockchain resources exhaustion (gas wars) | Anchoring | HIGH | LOW | 3 |
+| D-03 | Request flood on GET (without authentication) | API Server | MEDIUM | HIGH | 6 |
+| D-04 | Oversized payload in pog_bundle (huge JSONB) | API + DB | MEDIUM | MEDIUM | 4 |
 
-**Mitigaciones implementadas:**
-- [x] Fee obligatorio por registro → coste económico del spam (INV-012)
-- [x] Rate limiting por wallet (429 Too Many Requests)
-- [x] Idempotencia por content_hash (409 en duplicados)
-- [x] Nonce único (409 en replay)
+**Implemented Mitigations:**
+- [x] Mandatory fee per registration → economic cost to spam (INV-012)
+- [x] Rate limiting per wallet (429 Too Many Requests)
+- [x] Idempotency per content_hash (409 on duplicates)
+- [x] Unique nonce (409 on replay)
 
-**Mitigaciones adicionales recomendadas (implementación):**
-- [x] **Rate limiting en GET** por IP — global 100 req/min (rateLimit.ts)
-- [x] **Límite de tamaño** del pog_bundle (max 32KB, refine Zod) — alpha.3
-- [x] **Límite de tags** ya definido (max 10) — enforcement via Zod `.max(10)`
-- [ ] **WAF/Cloudflare** como primera línea de defensa
-- [x] **Queue sizing** para anchoring (removeOnComplete: 50, removeOnFail: 200, maxStalledCount: 2) — alpha.3
+**Additional Recommended Mitigations (implementation):**
+- [x] **Rate limiting on GET** by IP — global 100 req/min (rateLimit.ts)
+- [x] **Size limit** on pog_bundle (max 32KB, refine Zod) — alpha.3
+- [x] **Tags limit** already defined (max 10) — enforcement via Zod `.max(10)`
+- [ ] **WAF/Cloudflare** as first line of defense
+- [x] **Queue sizing** for anchoring (removeOnComplete: 50, removeOnFail: 200, maxStalledCount: 2) — alpha.3
 
 ---
 
-### 3.6 Elevation of Privilege (Escalada de privilegios)
+### 3.6 Elevation of Privilege
 
-| ID | Amenaza | Objetivo | Impacto | Probabilidad | Riesgo |
+| ID | Threat | Target | Impact | Probability | Risk |
 |---|---|---|---|---|---|
-| E-01 | Acceso admin a operaciones de anchoring | Anchor worker | CRÍTICO | BAJO | 4 |
-| E-02 | Manipulación de fee_receiver_address | Configuración del fee | CRÍTICO | MUY BAJO | 4 |
-| E-03 | Acceso a la base de datos directamente (bypass API) | PostgreSQL | CRÍTICO | BAJO | 4 |
+| E-01 | Admin access to anchoring operations | Anchor worker| CRITICAL| LOW | 4 |
+| E-02 | Manipulation of fee_receiver_address | Fee config | CRITICAL| VERY LOW | 4 |
+| E-03 | Direct database access (bypass API) | PostgreSQL | CRITICAL| LOW | 4 |
 
-**Mitigaciones implementadas:**
-- [x] No existen roles de usuario en v1 — toda wallet es equivalente (INV-007)
-- [x] No existen endpoints de admin expuestos en la API pública
+**Implemented Mitigations:**
+- [x] No user roles in v1 — all wallets are equivalent (INV-007)
+- [x] No admin endpoints exposed in public API
 
-**Mitigaciones adicionales recomendadas (implementación):**
-- [ ] **Network isolation** — DB solo accesible desde API server
-- [ ] **Principio de least privilege** — DB user de la API con permisos mínimos
-- [ ] **Separación de claves** — clave de anchoring != clave de API
-- [ ] **Audit log** de cambios de configuración
-
----
-
-## 4. Attack Trees (amenazas críticas)
-
-### 4.1 🌳 Registrar un PoG fraudulento
-
-```
-ROOT: Registrar PoG fraudulento (contenido que no generé)
-├── [OR] Obtener firma válida
-│   ├── [AND] Robar clave privada del agente víctima
-│   │   ├── Phishing (social engineering)        [Coste: BAJO, Detección: MEDIA]
-│   │   ├── Compromiso del servidor del agente   [Coste: ALTO, Detección: MEDIA]
-│   │   └── Malware en entorno de ejecución      [Coste: MEDIO, Detección: BAJA]
-│   └── [AND] Generar firma propia (wallet nueva)
-│       └── Firmar PoG con wallet propia ← SIEMPRE POSIBLE
-│           └── ⚠️ Riesgo aceptado: la plataforma NO verifica autoría,
-│               solo registra la declaración del agente
-│
-├── [OR] Reutilizar PoG legítimo
-│   ├── Replay con mismo nonce → BLOQUEADO (UNIQUE constraint)
-│   └── Modificar nonce y re-firmar → Requiere clave privada original
-│
-└── [OR] Manipular datos post-registro
-    ├── UPDATE en DB → BLOQUEADO (no existe UPDATE, INV-002)
-    ├── DELETE en DB → BLOQUEADO (no existe DELETE, INV-001)
-    └── Alterar anchoring → BLOQUEADO (blockchain inmutable)
-```
-
-**Conclusión**: La única vía posible es firmar con wallet propia un contenido que no generaste. Esto **no es un bug, es el diseño**: la plataforma registra declaraciones, no verifica generación real.
+**Additional Recommended Mitigations (implementation):**
+- [ ] **Network isolation** — DB only accessible from API server
+- [ ] **Principio de least privilege** — API DB user with minimum permissions
+- [ ] **Key separation** — anchoring key != API key
+- [ ] **Audit log** of config changes
 
 ---
 
-### 4.2 🌳 Hacer spam económicamente viable
+## 4. Attack Trees (critical threats)
+
+### 4.1 🌳 Register a fraudulent PoG
 
 ```
-ROOT: Llenar la DB con registros basura sin coste significativo
-├── [OR] Evitar el fee
-│   ├── POST sin fee_tx_hash → BLOQUEADO (402 fee_not_verified)
-│   ├── fee_tx_hash falso → BLOQUEADO (verificación on-chain)
-│   └── Reutilizar fee_tx_hash → BLOQUEADO (UNIQUE constraint)
+ROOT: Register fraudulent PoG (content I didn't generate)
+├── [OR] Obtain valid signature
+│   ├── [AND] Steal victim agent's private key
+│   │   ├── Phishing (social engineering)        [Cost: LOW, Detection: MEDIUM]
+│   │   ├── Agent server compromise              [Cost: HIGH, Detection: MEDIUM]
+│   │   └── Malware in execution environment     [Cost: MEDIUM, Detection: LOW]
+│   └── [AND] Generate own signature (new wallet)
+│       └── Sign PoG with own wallet ← ALWAYS POSSIBLE
+│           └── ⚠️ Accepted risk: platform DOES NOT verify authorship,
+│               only registers agent's declaration
 │
-├── [OR] Fee muy barato → enviar miles
-│   └── El fee mínimo DEBE calibrarse para que el coste de spam
-│       supere el beneficio. Si fee = $0.01 y envío 1M registros:
-│       → Coste: $10.000 + gas fees
-│       → ¿Beneficio del atacante? Ninguno directo.
-│       → ⚠️ Riesgo: contaminación de la DB con datos basura.
-│       → Mitigación: rate limit por wallet + fee calibrado
+├── [OR] Reuse legitimate PoG
+│   ├── Replay with same nonce → BLOCKED (UNIQUE constraint)
+│   └── Modify nonce and re-sign → Requires original private key
 │
-└── [OR] DDoS en endpoints GET (sin fee)
-    ├── Flood de GET /v1/records/{id} → Rate limit por IP
-    ├── Flood de GET /v1/records/verify → Rate limit por IP
-    └── ⚠️ Mitigación: WAF + CDN + response caching
+└── [OR] Manipulate post-registration data
+    ├── UPDATE in DB → BLOCKED (no UPDATE exists, INV-002)
+    ├── DELETE in DB → BLOCKED (no DELETE exists, INV-001)
+    └── Alter anchoring → BLOCKED (immutable blockchain)
 ```
+
+**Conclusion**: The only possible path is to sign content you didn't generate with your own wallet. This **is not a bug, it's the design**: the platform registers declarations, does not verify actual generation.
 
 ---
 
-### 4.3 🌳 Comprometer la integridad del anchoring
+### 4.2 🌳 Make spam economically viable
 
 ```
-ROOT: Crear anclas fraudulentas en la blockchain
-├── [OR] Obtener la clave privada del anchor worker
-│   ├── Acceso al servidor → MITIGACIÓN: hardened infra + vault
-│   ├── Leak de variables de entorno → MITIGACIÓN: secrets management
-│   └── Insider attack → MITIGACIÓN: multi-sig para anchoring (v2+)
+ROOT: Fill DB with garbage records without significant cost
+├── [OR] Avoid the fee
+│   ├── POST without fee_tx_hash → BLOCKED (402 fee_not_verified)
+│   ├── Fake fee_tx_hash → BLOCKED (on-chain verification)
+│   └── Reuse fee_tx_hash → BLOCKED (UNIQUE constraint)
 │
-├── [OR] Manipular el RPC node
-│   ├── MITM en la conexión API → RPC node → MITIGACIÓN: TLS + trusted RPC
-│   ├── RPC node comprometido → MITIGACIÓN: múltiples proveedores (failover)
-│   └── Censura selectiva de transacciones → BAJO riesgo en L2 descentralizadas
+├── [OR] Very cheap fee → send thousands
+│   └── Minimum fee MUST be calibrated so spam cost
+│       exceeds benefit. If fee = $0.01 and I send 1M records:
+│       → Cost: $10,000 + gas fees
+│       → Attacker's benefit? None direct.
+│       → ⚠️ Risk: polluting DB with garbage data.
+│       → Mitigation: rate limit per wallet + calibrated fee
 │
-└── [OR] Reorg attack en la L2
-    └── 51% attack → EXTREMADAMENTE BAJO en L2 con finality rápida
-        (protegida por la seguridad de L1)
+└── [OR] DDoS on GET endpoints (no fee)
+    ├── Flood of GET /v1/records/{id} → IP Rate limit
+    ├── Flood of GET /v1/records/verify → IP Rate limit
+    └── ⚠️ Mitigation: WAF + CDN + response caching
 ```
 
 ---
 
-## 5. Matriz de riesgo priorizada
+### 4.3 🌳 Compromise anchoring integrity
 
 ```
-                    IMPACTO
-            Bajo   Medio   Alto   Crítico
+ROOT: Create fraudulent anchors on the blockchain
+├── [OR] Obtain anchor worker's private key
+│   ├── Server access → MITIGATION: hardened infra + vault
+│   ├── Environment variable leak → MITIGATION: secrets management
+│   └── Insider attack → MITIGATION: multi-sig for anchoring (v2+)
+│
+├── [OR] Manipulate the RPC node
+│   ├── MITM in API conn → RPC node → MITIGATION: TLS + trusted RPC
+│   ├── Compromised RPC node → MITIGATION: multiple providers (failover)
+│   └── Selective transaction censorship → LOW risk on decentralized L2s
+│
+└── [OR] Reorg attack on L2
+    └── 51% attack → EXTREMELY LOW on fast finality L2s
+        (protected by L1 security)
+```
+
+---
+
+## 5. Prioritized Risk Matrix
+
+```
+                      IMPACT
+             Low   Medium   High  Critical
            ┌──────┬──────┬──────┬──────┐
-  Bajo     │      │ R-01 │ S-01 │ S-02 │
+   Low     │      │ R-01 │ S-01 │ S-02 │
            │      │  (2) │  (3) │  (4) │
            ├──────┼──────┼──────┼──────┤
-  Medio    │ I-02 │ I-01 │ S-03 │      │
+   Medium  │ I-02 │ I-01 │ S-03 │      │
 PROB.      │  (2) │  (4) │ D-01 │      │
            │      │      │  (6) │      │
            ├──────┼──────┼──────┼──────┤
-  Alto     │      │ D-04 │ D-03 │ T-03 │
+   High    │      │ D-04 │ D-03 │ T-03 │
            │      │  (4) │  (6) │  (9) │
            ├──────┼──────┼──────┼──────┤
-  Crítico  │      │      │      │      │
+  Critical │      │      │      │      │
            │      │      │      │      │
            └──────┴──────┴──────┴──────┘
 ```
 
-### Top 5 riesgos
+### Top 5 Risks
 
-| Rank | ID | Amenaza | Score | Estado |
+| Rank | ID | Threat | Score | Status |
 |---|---|---|---|---|
-| 1 | **T-03** | Hash falso (contenido inexistente) | 9 | **Aceptado** (by design) |
-| 2 | **S-03** | Replay attack | 6 | **Mitigado** (nonce UNIQUE) |
-| 3 | **D-01** | Spam con fees mínimos | 6 | **Parcialmente mitigado** |
-| 4 | **D-03** | DDoS en endpoints GET | 6 | **Pendiente** (rate limit IP) |
-| 5 | **T-04** | Timestamp manipulado | 6 | **Aceptado** (by design) |
+| 1 | **T-03** | Fake hash (non-existent content) | 9 | **Accepted** (by design) |
+| 2 | **S-03** | Replay attack | 6 | **Mitigated** (UNIQUE nonce) |
+| 3 | **D-01** | Spam with minimum fees | 6 | **Partially mitigated** |
+| 4 | **D-03** | DDoS on GET endpoints | 6 | **Pending** (IP rate limit) |
+| 5 | **T-04** | Manipulated timestamp | 6 | **Accepted** (by design) |
 
 ---
 
-## 6. Decisiones de seguridad
+## 6. Security Decisions
 
-### Riesgos ACEPTADOS (by design)
+### ACCEPTED Risks (by design)
 
-Estos riesgos son consecuencia directa de los principios fundacionales:
+These risks are a direct consequence of the foundational principles:
 
-| Riesgo | Por qué se acepta |
+| Risk | Why it is accepted |
 |---|---|
-| Hash de contenido inexistente | La plataforma es **content-agnostic** (INV-005). No verifica contenido. |
-| Timestamp declarado falso | La plataforma registra **declaraciones**, no hechos verificables. `created_at` del servidor es el ancla real. |
-| Wallet robada usada para registrar | La plataforma **no custodia claves** (INV-007). La seguridad de la wallet es responsabilidad del agente. |
+| Fake hash of non-existent content | The platform is **content-agnostic** (INV-005). Does not verify content. |
+| Fake declared timestamp | Platform registers **declarations**, not verifiable facts. Server `created_at` is the real anchor. |
+| Stolen wallet used to register | Platform **does not custody keys** (INV-007). Wallet security is agent's responsibility. |
 
-### Riesgos MITIGADOS
+### MITIGATED Risks
 
-| Riesgo | Mitigación |
+| Risk | Mitigation |
 |---|---|
-| Replay attack | Nonce UNIQUE por wallet |
-| Suplantación de wallet | Verificación EIP-712 |
-| Modificación post-registro | Inmutabilidad + anchoring |
-| Spam | Fee on-chain + rate limit + idempotencia |
-| Repudio | Firma criptográfica + receipt_hash + anchor on-chain |
+| Replay attack | UNIQUE Nonce per wallet |
+| Wallet spoofing | EIP-712 verification |
+| Post-registration modification | Immutability + anchoring |
+| Spam | On-chain fee + rate limit + idempotency |
+| Repudiation | Cryptographic signature + receipt_hash + on-chain anchor |
 
-### Riesgos PENDIENTES de implementación
+### PENDING Implementation Risks
 
-| Riesgo | Mitigación recomendada | Prioridad | Estado |
+| Risk | Recommended Mitigation | Priority | Status |
 |---|---|---|---|
-| DDoS en GET endpoints | Rate limit por IP | **ALTA** | ✅ Implementado (rateLimit.ts) |
-| Payload oversized | Límite de tamaño pog_bundle (32KB) | MEDIA | ✅ Implementado (Zod refine) |
-| Clave de anchoring comprometida | HSM / Vault / Multi-sig | MEDIA | ⏳ Pendiente |
-| Enumeración de UUIDs | Rate limit en GET + monitoring | BAJA | ✅ Rate limit en GET |
-| DB accesible directamente | Network isolation + least privilege | **ALTA** | ⏳ Config en hosting |
+| DDoS on GET endpoints | IP Rate limit | **HIGH** | ✅ Implemented (rateLimit.ts) |
+| Oversized payload | Size limit pog_bundle (32KB) | MEDIUM | ✅ Implemented (Zod refine) |
+| Compromised anchoring key | HSM / Vault / Multi-sig | MEDIUM | ⏳ Pending |
+| UUID enumeration | Rate limit on GET + monitoring | LOW | ✅ Rate limit on GET |
+| Direct DB access | Network isolation + least privilege | **HIGH** | ⏳ Hosting config |
 
 ---
 
-## 7. Recomendaciones de implementación
+## 7. Implementation Recommendations
 
-### Inmediatas (antes de producción)
+### Immediate (before production)
 
-1. **Rate limiting por IP** en todos los endpoints GET
-2. **Límite de tamaño** del cuerpo de request (ej. 64KB max total, 16KB max pog_bundle)
-3. **TLS 1.3** obligatorio en todas las conexiones
-4. **Sanitización de errores** — nunca devolver stack traces ni rutas internas
-5. **Network isolation** — PostgreSQL y Redis solo accesibles desde API
+1. **IP rate limiting** on all GET endpoints
+2. **Body size limit** for requests (e.g. 64KB max total, 16KB max pog_bundle)
+3. **Mandatory TLS 1.3** on all connections
+4. **Error sanitization** — never return stack traces or internal routes
+5. **Network isolation** — PostgreSQL and Redis only accessible from API
 
-### Corto plazo (30 días post-launch)
+### Short term (30 days post-launch)
 
-1. **WAF** con reglas OWASP
-2. **Secrets management** (Vault o equivalente) para claves de anchoring y RPC
-3. **Audit logging** centralizado e inmutable
-4. **Monitoring de anomalías** — picos de registros, wallets sospechosas
+1. **WAF** with OWASP rules
+2. **Secrets management** (Vault or equiv) for anchoring and RPC keys
+3. **Centralized audit logging** immutable
+4. **Anomaly monitoring** — registration spikes, suspicious wallets
 
-### Largo plazo (v2+)
+### Long term (v2+)
 
-1. **Multi-sig para anchoring** — require 2/3 firmas para anclar
-2. **Múltiples RPC providers** — failover automático
-3. **Bug bounty program** — incentivos para reportar vulnerabilidades
-4. **Penetration testing** periódico
+1. **Multi-sig for anchoring** — require 2/3 signatures to anchor
+2. **Multiple RPC providers** — automatic failover
+3. **Bug bounty program** — incentives for reporting vulnerabilities
+4. **Periodic penetration testing**
 
 ---
 
-## 8. Inventario de invariantes de seguridad
+## 8. Security Invariants Inventory
 
-| Invariante | Categoría STRIDE | Amenaza que mitiga |
+| Invariant | STRIDE Category | Threat mitigated |
 |---|---|---|
 | INV-001 (records_are_permanent) | Tampering | T-01 |
 | INV-002 (no_update_fields) | Tampering | T-01 |
 | INV-003 (no_delete_records) | Tampering | T-01 |
-| INV-007 (no_custody) | Spoofing | S-02 (responsabilidad del agente) |
+| INV-007 (no_custody) | Spoofing | S-02 (agent responsibility) |
 | INV-009 (pog_must_be_signed) | Spoofing | S-01 |
 | INV-012 (fee_always_required) | DoS | D-01 |
 | INV-014 (nonce_uniqueness) | Spoofing | S-03 |
-| INV-019 (anchor_failed_valid) | Tampering | Integridad del record |
+| INV-019 (anchor_failed_valid) | Tampering | Record integrity |
 | INV-020 (fee_must_be_onchain) | DoS | D-01 |
 | INV-021 (no_public_listing) | Info Disclosure | I-01 |
 | INV-022 (no_scoring) | Info Disclosure | I-01 |

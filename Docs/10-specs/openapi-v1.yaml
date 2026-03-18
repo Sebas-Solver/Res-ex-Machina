@@ -3,9 +3,9 @@ info:
   title: Res ex Machina API
   version: "1.0.0"
   description: |
-    API de registro técnico de hechos de generación por IA.
-    Registra Proof of Generation (PoG) bundles firmados criptográficamente
-    y los ancla en una blockchain L2 EVM.
+    Technical registry API of AI generation facts.
+    Registers cryptographically signed Proof of Generation (PoG) bundles
+    and anchors them on an EVM L2 blockchain.
   contact:
     name: Res ex Machina
     email: sebas.solver@gmail.com
@@ -15,24 +15,24 @@ info:
 
 servers:
   - url: https://api.resexmachina.xyz/v1
-    description: Producción (TBD)
+    description: Production (TBD)
 
 tags:
   - name: health
-    description: Estado del sistema
+    description: System status
   - name: records
-    description: Registro y consulta de hechos de generación
+    description: Registration and query of generation facts
 
 paths:
   /health:
     get:
       tags: [health]
-      summary: Estado del sistema
+      summary: System status
       operationId: getHealth
       security: []
       responses:
         "200":
-          description: Estado del sistema
+          description: System status
           content:
             application/json:
               schema:
@@ -41,13 +41,13 @@ paths:
   /records:
     post:
       tags: [records]
-      summary: Registrar un nuevo evento de generación
+      summary: Register a new generation event
       operationId: createRecord
       description: |
-        Registra un nuevo PoG bundle firmado. Requiere:
-        - Firma EIP-712 válida del agente
-        - fee_tx_hash de la transacción de pago verificable on-chain
-        - Nonce único por wallet
+        Registers a new signed PoG bundle. Requires:
+        - Valid agent's EIP-712 signature
+        - fee_tx_hash of verifiable on-chain payment transaction
+        - Unique nonce per wallet
       security:
         - walletSignature: []
       requestBody:
@@ -58,7 +58,7 @@ paths:
               $ref: "#/components/schemas/CreateRecordRequest"
       responses:
         "201":
-          description: Record creado exitosamente
+          description: Record successfully created
           content:
             application/json:
               schema:
@@ -77,7 +77,7 @@ paths:
   /records/{id}:
     get:
       tags: [records]
-      summary: Consultar un registro por ID
+      summary: Query a record by ID
       operationId: getRecord
       security: []
       parameters:
@@ -87,10 +87,10 @@ paths:
           schema:
             type: string
             format: uuid
-          description: UUID v7 del record
+          description: Record's v7 UUID
       responses:
         "200":
-          description: Record encontrado
+          description: Record found
           content:
             application/json:
               schema:
@@ -101,7 +101,7 @@ paths:
   /records/verify:
     get:
       tags: [records]
-      summary: Verificar existencia por content_hash
+      summary: Verify existence by content_hash
       operationId: verifyRecord
       security: []
       parameters:
@@ -111,10 +111,10 @@ paths:
           schema:
             type: string
             pattern: "^sha256:[a-f0-9]{64}$"
-          description: "Hash SHA-256 en formato sha256:{64hex}"
+          description: "SHA-256 hash in format sha256:{64hex}"
       responses:
         "200":
-          description: Record encontrado
+          description: Record found
           content:
             application/json:
               schema:
@@ -127,7 +127,7 @@ paths:
   /records/{id}/export:
     get:
       tags: [records]
-      summary: Exportar receipt verificable (JSON)
+      summary: Export verifiable receipt (JSON)
       operationId: exportRecord
       security: []
       parameters:
@@ -139,7 +139,7 @@ paths:
             format: uuid
       responses:
         "200":
-          description: Receipt exportable
+          description: Exportable receipt
           content:
             application/json:
               schema:
@@ -154,8 +154,8 @@ components:
       in: header
       name: X-Signature
       description: |
-        Firma EIP-712 del PoG bundle. El header debe contener los bytes
-        de la firma (65 bytes, hex-encoded con prefijo 0x).
+        EIP-712 signature of the PoG bundle. The header must contain the
+        signature bytes (65 bytes, hex-encoded with 0x prefix).
 
   schemas:
     HealthResponse:
@@ -182,14 +182,14 @@ components:
         content_hash:
           type: string
           pattern: "^sha256:[a-f0-9]{64}$"
-          description: "SHA-256 del output generado"
+          description: "SHA-256 of generated output"
           example: "sha256:a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
         pog_bundle:
           $ref: "#/components/schemas/PoGBundleV1"
         fee_tx_hash:
           type: string
           pattern: "^0x[a-fA-F0-9]{64}$"
-          description: "Hash de la transacción de pago del fee on-chain"
+          description: "Payment transaction hash for on-chain fee"
         content_type:
           type: string
           maxLength: 64
@@ -207,7 +207,7 @@ components:
         external_ref:
           type: string
           format: uri
-          description: "URL o pointer a contenido externo (IPFS, S3, etc.)"
+          description: "URL or pointer to external content (IPFS, S3, etc.)"
 
     PoGBundleV1:
       type: object
@@ -235,7 +235,7 @@ components:
         nonce:
           type: string
           maxLength: 64
-          description: "Único por wallet. Previene replay attacks."
+          description: "Unique per wallet. Prevents replay attacks."
         generation_process:
           $ref: "#/components/schemas/GenerationProcess"
         model:
@@ -250,7 +250,7 @@ components:
           pattern: "^sha256:[a-f0-9]{64}$"
         signature:
           type: string
-          description: "Firma EIP-712 del bundle (hex, 0x-prefixed)"
+          description: "EIP-712 bundle signature (hex, 0x-prefixed)"
 
     GenerationProcess:
       type: object
@@ -291,7 +291,7 @@ components:
           $ref: "#/components/schemas/AnchorInfo"
         anchor_error_reason:
           type: string
-          description: "Solo presente si state == anchor_failed"
+          description: "Only present if state == anchor_failed"
 
     AnchorInfo:
       type: object
@@ -331,7 +331,7 @@ components:
         verification_url:
           type: string
           format: uri
-          description: "URL para verificar este receipt"
+          description: "URL to verify this receipt"
 
     ErrorResponse:
       type: object
@@ -353,37 +353,37 @@ components:
 
   responses:
     BadRequest:
-      description: Solicitud inválida
+      description: Invalid request
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
-      description: Firma inválida
+      description: Invalid signature
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     PaymentRequired:
-      description: Fee no verificado
+      description: Unverified fee
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     NotFound:
-      description: Record no encontrado
+      description: Record not found
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     Conflict:
-      description: Duplicado (content_hash o nonce)
+      description: Duplicate (content_hash or nonce)
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     TooManyRequests:
-      description: Rate limit excedido
+      description: Rate limit exceeded
       content:
         application/json:
           schema:

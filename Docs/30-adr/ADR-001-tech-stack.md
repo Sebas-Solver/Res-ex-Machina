@@ -1,70 +1,70 @@
-# ADR-001: Stack técnico v1
+# ADR-001: Tech Stack v1
 
-> **Estado**: Aprobado  
-> **Fecha**: 2026-02-10  
-> **Contexto**: Decisiones de implementación para el MVP v1  
+> **Status**: Approved  
+> **Date**: 2026-02-10  
+> **Context**: Implementation decisions for the MVP v1  
 
 ---
 
-## Decisión
+## Decision
 
-| Capa | Tecnología | Versión mínima |
+| Layer | Technology | Minimum Version |
 |---|---|---|
-| Lenguaje | TypeScript | 5.x |
+| Language | TypeScript | 5.x |
 | Runtime | Node.js | 22 LTS |
-| Framework API | Fastify | 5.x |
+| API Framework | Fastify | 5.x |
 | ORM | Drizzle ORM | 0.38+ |
-| Base de datos | PostgreSQL | 16 |
-| Cola de tareas | BullMQ | 5.x |
+| Database | PostgreSQL | 16 |
+| Task Queue | BullMQ | 5.x |
 | Cache / Queue backend | Redis | 7.x |
 | Crypto / Blockchain | viem | 2.x |
-| UUID | uuidv7 (paquete npm) | — |
+| UUID | uuidv7 (npm package) | — |
 | Testing | Vitest | 3.x |
-| Contenedores | Docker Compose | — |
-| Validación | Zod + JSON Schema (Fastify) | — |
+| Containers | Docker Compose | — |
+| Validation | Zod + JSON Schema (Fastify) | — |
 
 ---
 
-## Justificación
+## Justification
 
 ### TypeScript + Node.js
-- El ecosistema Ethereum (firmas EIP-712, RPC) es nativo en JS/TS.
-- BullMQ es una librería Node.js.
-- TypeScript añade seguridad de tipos, crítica para integridad de datos.
+- The Ethereum ecosystem (EIP-712 signatures, RPC) is native in JS/TS.
+- BullMQ is a Node.js library.
+- TypeScript adds type safety, critical for data integrity.
 
-### Fastify (no Express, no NestJS)
-- Validación integrada con JSON Schema (reutiliza nuestro OpenAPI spec).
-- Mejor rendimiento que Express.
-- Más ligero que NestJS para un MVP.
+### Fastify (not Express, not NestJS)
+- Built-in validation with JSON Schema (reuses our OpenAPI spec).
+- Better performance than Express.
+- Lighter than NestJS for an MVP.
 
-### Drizzle ORM (no Prisma, no raw SQL)
-- Cerca de SQL real: permite definir CHECK constraints y UNIQUEs complejos.
-- Type-safe con TypeScript.
-- Migraciones automáticas.
-- Más ligero que Prisma.
+### Drizzle ORM (not Prisma, not raw SQL)
+- Close to real SQL: allows defining complex CHECK constraints and UNIQUEs.
+- Type-safe with TypeScript.
+- Automatic migrations.
+- Lighter than Prisma.
 
-### viem (no ethers.js)
-- Soporte nativo de primera clase para EIP-712.
-- Diseñado para TypeScript desde cero.
-- API moderna y ligera.
+### viem (not ethers.js)
+- First-class native support for EIP-712.
+- Designed for TypeScript from scratch.
+- Modern and lightweight API.
 
-### Validación dual: Zod + JSON Schema
-- **Zod**: validación programática en lógica de negocio (content_hash format, PoG schema).
-- **JSON Schema (Fastify built-in)**: validación automática de payloads HTTP a nivel de framework.
-- Ambos son complementarios y cubren capas distintas.
+### Dual validation: Zod + JSON Schema
+- **Zod**: programmatic validation in business logic (content_hash format, PoG schema).
+- **JSON Schema (Fastify built-in)**: automatic HTTP payload validation at the framework level.
+- Both are complementary and cover different layers.
 
 ---
 
-## Matices obligatorios (aprobados por el fundador)
+## Mandatory nuances (approved by the founder)
 
-### 1. UUID v7 generado en aplicación
+### 1. UUID v7 generated in the application
 ```
-- SÍ: import { uuidv7 } from 'uuidv7'; → record_id = uuidv7()
-- NO: gen_random_uuid() en PostgreSQL
-- Razón: time-ordered, controlado por app, sin dependencia de DB
+- YES: import { uuidv7 } from 'uuidv7'; → record_id = uuidv7()
+- NO: gen_random_uuid() in PostgreSQL
+- Reason: time-ordered, controlled by app, no DB dependency
 ```
 
-### 2. BullMQ con retries/backoff + anchor_failed
+### 2. BullMQ with retries/backoff + anchor_failed
 ```yaml
 anchor_worker:
   retries: 3
@@ -74,56 +74,56 @@ anchor_worker:
   on_max_retries:
     state: anchor_failed
     anchor_error_reason: "max retries exceeded"
-  idempotent: true    # re-procesar un job no duplica tx
+  idempotent: true    # reprocessing a job does not duplicate tx
 ```
-- El worker debe ser **idempotente**: si re-procesa un job, verifica primero si la tx ya fue enviada.
-- Un record con `anchor_failed` sigue siendo válido (INV-019).
+- The worker must be **idempotent**: if it reprocesses a job, it first checks if the tx has already been sent.
+- A record with `anchor_failed` is still valid (INV-019).
 
-### 3. Validación estricta de payloads
+### 3. Strict payload validation
 ```
-Capa 1 (Fastify):  JSON Schema automático → rechaza payloads malformados
-Capa 2 (Zod):      Validación de negocio → content_hash regex, PoG schema
-Capa 3 (DB):       CHECK constraints → última línea de defensa
+Layer 1 (Fastify):  Automatic JSON Schema → rejects malformed payloads
+Layer 2 (Zod):      Business validation → content_hash regex, PoG schema
+Layer 3 (DB):       CHECK constraints → last line of defense
 ```
-- Ningún dato inválido llega a la base de datos.
+- No invalid data reaches the database.
 
 ---
 
-## Estructura de carpetas prevista
+## Planned folder structure
 
 ```
 src/
-├── config/           # Variables de entorno, constants
+├── config/           # Environment variables, constants
 ├── db/
-│   ├── schema.ts     # Drizzle schema (tabla records)
-│   └── migrations/   # Migraciones SQL generadas
+│   ├── schema.ts     # Drizzle schema (records table)
+│   └── migrations/   # Generated SQL migrations
 ├── routes/
 │   ├── health.ts     # GET /v1/health
 │   ├── records.ts    # POST + GET /v1/records
-│   └── schemas/      # JSON Schemas para Fastify
+│   └── schemas/      # JSON Schemas for Fastify
 ├── services/
-│   ├── signature.ts  # Verificación EIP-712 (viem)
-│   ├── fee.ts        # Verificación fee on-chain
-│   ├── receipt.ts    # Cálculo de receipt_hash
-│   └── anchor.ts     # Lógica de anchoring
+│   ├── signature.ts  # EIP-712 verification (viem)
+│   ├── fee.ts        # On-chain fee verification
+│   ├── receipt.ts    # receipt_hash calculation
+│   └── anchor.ts     # Anchoring logic
 ├── workers/
 │   └── anchor.worker.ts  # BullMQ worker
 ├── middleware/
 │   └── rateLimit.ts  # Rate limiting
 ├── utils/
 │   └── uuid.ts       # UUID v7 generation
-└── app.ts            # Entry point Fastify
+└── app.ts            # Fastify entry point
 ```
 
 ---
 
-## Alternativas descartadas
+## Discarded alternatives
 
-| Alternativa | Por qué no |
+| Alternative | Why not |
 |---|---|
-| Python / FastAPI | Ecosistema crypto menos maduro, BullMQ no disponible |
-| Express | Sin validación integrada, más lento |
-| NestJS | Demasiado pesado para MVP |
-| Prisma | Difícil definir CHECK constraints complejos |
-| ethers.js | API menos moderna, peor soporte EIP-712 nativo |
-| gen_random_uuid() | No es time-ordered, no controlado por app |
+| Python / FastAPI | Less mature crypto ecosystem, BullMQ not available |
+| Express | No built-in validation, slower |
+| NestJS | Too heavy for MVP |
+| Prisma | Difficult to define complex CHECK constraints |
+| ethers.js | Less modern API, worse native EIP-712 support |
+| gen_random_uuid() | Not time-ordered, not controlled by app |

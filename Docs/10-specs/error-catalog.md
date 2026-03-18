@@ -1,134 +1,134 @@
 # Error Catalog — Res ex Machina API v1
 
-> **Versión**: 1.0  
-> **Fecha**: 2026-02-10  
+> **Version**: 1.0  
+> **Date**: 2026-02-10  
 
 ---
 
-## Formato de error
+## Error Format
 
-Todos los errores siguen este formato JSON:
+All errors follow this JSON format:
 
 ```json
 {
   "error": {
     "code": "ERROR_CODE",
-    "message": "Descripción legible del error",
+    "message": "Human-readable description of the error",
     "details": {}
   }
 }
 ```
 
-- `code`: Código de error único (snake_case, en inglés)
-- `message`: Descripción humana (en inglés)
-- `details`: Objeto opcional con contexto adicional (nunca contiene datos sensibles)
+- `code`: Unique error code (snake_case, in English)
+- `message`: Human description (in English)
+- `details`: Optional object with additional context (never contains sensitive data)
 
 ---
 
-## Errores por endpoint
+## Errors by endpoint
 
 ### POST /v1/records
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 400 | `invalid_payload` | Request body malformado o incompleto | Falta campo required, JSON inválido |
-| 400 | `invalid_content_hash` | content_hash no cumple formato `sha256:{64hex}` | Formato incorrecto |
-| 400 | `invalid_pog_schema` | pog_bundle no cumple schema PoG v1 | Campos faltantes, tipos incorrectos |
-| 400 | `invalid_pog_version` | schema_version del PoG no es "pog-v1" | Versión no soportada |
-| 400 | `invalid_tags` | Tags inválidos (más de 10, vacíos, o tipo incorrecto) | Array malformado |
-| 400 | `invalid_visibility` | Valor no permitido para visibility | No es proof_only / input_hash_only / content_optional |
-| 400 | `payload_too_large` | Request body excede límite de tamaño | Body > 64KB o pog_bundle > 16KB |
-| 401 | `invalid_signature` | Firma EIP-712 inválida o no verificable | Firma malformada o corrupt |
-| 401 | `signer_mismatch` | Signer recuperado ≠ agent_wallet del PoG | Wallet del firmante no coincide |
-| 402 | `fee_not_verified` | fee_tx_hash no verificado on-chain | Tx no encontrada o no confirmada |
-| 402 | `fee_insufficient` | Monto del fee insuficiente | value < fee mínimo |
-| 402 | `fee_wrong_recipient` | Destinatario del fee incorrecto | to ≠ fee_receiver_address |
-| 402 | `fee_tx_expired` | Transacción de fee demasiado antigua | Tx > 24h |
-| 409 | `fee_tx_reused` | fee_tx_hash ya usado en otro record | Reutilización de pago |
-| 409 | `duplicate_content_hash` | Ya existe un record con este content_hash | Idempotencia |
-| 409 | `duplicate_nonce` | Este nonce ya fue usado por esta wallet | Anti-replay |
-| 429 | `rate_limit_exceeded` | Demasiadas solicitudes por esta wallet | Superado el límite por ventana |
+| 400 | `invalid_payload` | Malformed or incomplete request body | Missing required field, invalid JSON |
+| 400 | `invalid_content_hash` | content_hash does not match `sha256:{64hex}` format | Incorrect format |
+| 400 | `invalid_pog_schema` | pog_bundle does not match PoG v1 schema | Missing fields, wrong types |
+| 400 | `invalid_pog_version` | schema_version of PoG is not "pog-v1" | Unsupported version |
+| 400 | `invalid_tags` | Invalid tags (more than 10, empty, or wrong type) | Malformed array |
+| 400 | `invalid_visibility` | Unallowed value for visibility | Not proof_only / input_hash_only / content_optional |
+| 400 | `payload_too_large` | Request body exceeds size limit | Body > 64KB or pog_bundle > 16KB |
+| 401 | `invalid_signature` | Invalid or unverifiable EIP-712 signature | Malformed or corrupted signature |
+| 401 | `signer_mismatch` | Recovered signer ≠ agent_wallet of PoG | Signer's wallet does not match |
+| 402 | `fee_not_verified` | fee_tx_hash not verified on-chain | Tx not found or unconfirmed |
+| 402 | `fee_insufficient` | Insufficient fee amount | value < minimum fee |
+| 402 | `fee_wrong_recipient` | Incorrect fee recipient | to ≠ fee_receiver_address |
+| 402 | `fee_tx_expired` | Fee transaction too old | Tx > 24h |
+| 409 | `fee_tx_reused` | fee_tx_hash already used in another record | Payment reuse |
+| 409 | `duplicate_content_hash` | A record with this content_hash already exists | Idempotency |
+| 409 | `duplicate_nonce` | This nonce was already used by this wallet | Anti-replay |
+| 429 | `rate_limit_exceeded` | Too many requests from this wallet | Rate limit per window exceeded |
 
 ### GET /v1/records/mine
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 401 | `missing_auth_headers` | Faltan headers de autenticación | No se envían X-Wallet-Address, X-Signature o X-Timestamp |
-| 401 | `invalid_wallet_address` | Dirección de wallet inválida | X-Wallet-Address no cumple formato 0x + 40 hex |
-| 401 | `auth_timestamp_expired` | Timestamp fuera de ventana | X-Timestamp inválido o fuera de la ventana de 5 minutos |
-| 401 | `auth_signature_invalid` | Firma de wallet inválida | La firma EIP-191 no corresponde a la wallet declarada |
+| 401 | `missing_auth_headers` | Missing authentication headers | X-Wallet-Address, X-Signature or X-Timestamp not sent |
+| 401 | `invalid_wallet_address` | Invalid wallet address | X-Wallet-Address does not match 0x + 40 hex format |
+| 401 | `auth_timestamp_expired` | Timestamp out of window | Invalid X-Timestamp or outside 5 minute window |
+| 401 | `auth_signature_invalid` | Invalid wallet signature | EIP-191 signature does not match declared wallet |
 
 ### GET /v1/records/{id}
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 400 | `invalid_record_id` | ID no es un UUID válido | Formato incorrecto |
-| 404 | `record_not_found` | No existe un record con este ID | UUID válido pero inexistente |
+| 400 | `invalid_record_id` | ID is not a valid UUID | Incorrect format |
+| 404 | `record_not_found` | No record exists with this ID | Valid UUID but non-existent |
 
 ### GET /v1/records/verify?content_hash={hash}
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 400 | `invalid_content_hash` | Hash no cumple formato requerido | Formato incorrecto |
-| 404 | `record_not_found` | No existe un record con este hash | Hash válido pero no registrado |
+| 400 | `invalid_content_hash` | Hash does not match required format | Incorrect format |
+| 404 | `record_not_found` | No record exists with this hash | Valid hash but not registered |
 
 ### GET /v1/records/{id}/export
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 400 | `invalid_record_id` | ID no es un UUID válido | Formato incorrecto |
-| 404 | `record_not_found` | No existe un record con este ID | UUID válido pero inexistente |
+| 400 | `invalid_record_id` | ID is not a valid UUID | Incorrect format |
+| 404 | `record_not_found` | No record exists with this ID | Valid UUID but non-existent |
 
 ### GET /v1/health
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| — | — | Este endpoint siempre devuelve 200 | Nunca falla (devuelve status: degraded si hay problemas) |
+| — | — | This endpoint always returns 200 | Never fails (returns status: degraded if issues) |
 ### POST /v1/records/batch
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 400 | `batch_empty` | El batch no contiene records | Array `records` vacío |
-| 400 | `batch_too_large` | El batch excede el límite de 100 records | Más de 100 records en el array |
-| 400 | `batch_invalid_payload` | Request body del batch malformado | JSON inválido o schema no válido |
-| 201 | — | Todos los records creados correctamente | Todos los items procesados con éxito |
-| 207 | — | Respuesta mixta (éxitos y fallos) | Algunos items fallaron, otros ok |
+| 400 | `batch_empty` | Batch contains no records | Empty `records` array |
+| 400 | `batch_too_large` | Batch exceeds limit of 100 records | Over 100 records in array |
+| 400 | `batch_invalid_payload` | Batch request body malformed | Invalid JSON or invalid schema |
+| 201 | — | All records created successfully | All items processed successfully |
+| 207 | — | Mixed response (successes and failures) | Some items failed, others ok |
 
-> **Nota**: Cada record individual puede devolver los mismos errores que `POST /v1/records` (invalid_payload, fee_*, duplicate_*, etc.) dentro del array `results`.
+> **Note**: Each individual record can return the same errors as `POST /v1/records` (invalid_payload, fee_*, duplicate_*, etc.) within the `results` array.
 
 ### POST /v1/webhooks
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 400 | `webhook_invalid_url` | URL no permitida (protección SSRF) | URL HTTP, IP privada, localhost |
-| 400 | `webhook_limit_reached` | Límite de 5 webhooks por wallet alcanzado | Ya hay 5 webhooks activos |
-| 401 | `missing_auth_headers` | Faltan headers de autenticación | No se envían headers walletAuth |
-| 401 | `auth_signature_invalid` | Firma de wallet inválida | EIP-191 no corresponde a la wallet |
+| 400 | `webhook_invalid_url` | Not allowed URL (SSRF protection) | HTTP URL, private IP, localhost |
+| 400 | `webhook_limit_reached` | Limit of 5 webhooks per wallet reached | Already 5 active webhooks |
+| 401 | `missing_auth_headers` | Missing authentication headers | walletAuth headers not sent |
+| 401 | `auth_signature_invalid` | Invalid wallet signature | EIP-191 does not match wallet |
 
 ### DELETE /v1/webhooks/{id}
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 403 | `webhook_forbidden` | Solo el owner puede gestionar su webhook | Wallet autenticada ≠ owner del webhook |
-| 404 | `webhook_not_found` | Webhook no encontrado | ID inexistente o no pertenece a la wallet |
+| 403 | `webhook_forbidden` | Only owner can manage webhook | Authenticated wallet ≠ webhook owner |
+| 404 | `webhook_not_found` | Webhook not found | Non-existent ID or not belonging to wallet |
 
 ---
 
-## Errores globales
+## Global Errors
 
-| HTTP | Código | Descripción | Cuándo |
+| HTTP | Code | Description | When |
 |---|---|---|---|
-| 405 | `method_not_allowed` | Método HTTP no soportado | DELETE en cualquier endpoint, PUT en records |
-| 415 | `unsupported_media_type` | Content-Type no es application/json | Header incorrecto |
-| 500 | `internal_error` | Error interno del servidor | Error no esperado (nunca expone detalles) |
-| 503 | `service_unavailable` | Servicio temporalmente no disponible | Mantenimiento o fallo de dependencias |
+| 405 | `method_not_allowed` | HTTP method not supported | DELETE on any endpoint, PUT on records |
+| 415 | `unsupported_media_type` | Content-Type is not application/json | Incorrect header |
+| 500 | `internal_error` | Internal server error | Unexpected error (never exposes details) |
+| 503 | `service_unavailable` | Service temporarily unavailable | Maintenance or dependency failure |
 
 ---
 
-## Principios de errores
+## Error Principles
 
-1. **Nunca exponer detalles técnicos** — No revelar stack traces, rutas, queries SQL, ni nombres de tablas.
-2. **Códigos únicos y estables** — Un mismo código siempre significa lo mismo. Una vez publicado, no cambia.
-3. **Mensajes en inglés** — Los mensajes son para desarrolladores, no para usuarios finales.
-4. **Details opcionales** — Solo incluir contexto útil para debugging (ej: `{"field": "content_hash", "expected": "sha256:{64hex}"}`).
-5. **Errores inmutables** — Añadir nuevos códigos es OK. Cambiar el significado de uno existente, NUNCA.
+1. **Never expose technical details** — Do not reveal stack traces, routes, SQL queries, or table names.
+2. **Unique and stable codes** — The same code always means the same thing. Once published, it does not change.
+3. **English messages** — Messages are for developers, not end users.
+4. **Optional details** — Only include useful debugging context (e.g. `{"field": "content_hash", "expected": "sha256:{64hex}"}`).
+5. **Immutable errors** — Adding new codes is OK. Changing the meaning of an existing one, NEVER.

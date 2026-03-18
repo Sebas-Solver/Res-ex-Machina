@@ -1,124 +1,124 @@
 # =============================================================================
-# INVARIANTES DEL SISTEMA — Res ex Machina
+# SYSTEM INVARIANTS — Res ex Machina
 # =============================================================================
-# Estas son reglas ABSOLUTAS que nunca pueden romperse.
-# No definen features. Definen límites que el sistema no puede cruzar.
+# These are ABSOLUTE rules that can never be broken.
+# They don't define features. They define limits the system cannot cross.
 #
-# Uso:
-#   - Tests automatizados
-#   - Validaciones en código
-#   - Revisiones de PR
-#   - Reasoning de agentes IA que trabajen en el código
+# Usage:
+#   - Automated tests
+#   - Code validations
+#   - PR reviews
+#   - Reasoning by AI agents working on the codebase
 #
-# Versión: 1.0
-# Fecha: 2026-02-10
+# Version: 1.0
+# Date: 2026-02-10
 # =============================================================================
 
 invariants:
 
   # ---------------------------------------------------------------------------
-  # INMUTABILIDAD
+  # IMMUTABILITY
   # ---------------------------------------------------------------------------
   
   - id: INV-001
     name: records_are_permanent
-    rule: "Un record, una vez creado, NUNCA puede ser eliminado"
+    rule: "A record, once created, can NEVER be deleted"
     enforcement: database_constraint + api_validation
     test: "DELETE /v1/records/{id} → 405 Method Not Allowed"
 
   - id: INV-002
     name: hash_is_immutable
-    rule: "El content_hash de un record NUNCA puede ser modificado después de la creación"
+    rule: "The content_hash of a record can NEVER be modified after creation"
     enforcement: database_constraint (no UPDATE on content_hash)
     test: "UPDATE records SET content_hash = 'x' → constraint violation"
 
   - id: INV-003
     name: pog_is_immutable
-    rule: "El pog_bundle de un record NUNCA puede ser modificado después de la creación"
+    rule: "The pog_bundle of a record can NEVER be modified after creation"
     enforcement: database_constraint (no UPDATE on pog_bundle)
     test: "UPDATE records SET pog_bundle = '{}' → constraint violation"
 
   - id: INV-004
     name: timestamp_is_immutable
-    rule: "El created_at de un record NUNCA puede ser modificado"
+    rule: "The created_at of a record can NEVER be modified"
     enforcement: database_constraint
     test: "UPDATE records SET created_at = NOW() → constraint violation"
 
   # ---------------------------------------------------------------------------
-  # NEUTRALIDAD
+  # NEUTRALITY
   # ---------------------------------------------------------------------------
 
   - id: INV-005
     name: no_human_validation
-    rule: "Ninguna acción humana puede marcar un record como 'válido' o 'inválido'"
-    enforcement: api_design (no existe endpoint de approve/reject)
-    test: "No existe ruta POST /v1/records/{id}/approve ni /reject"
+    rule: "No human action can mark a record as 'valid' or 'invalid'"
+    enforcement: api_design (no approve/reject endpoint exists)
+    test: "No route POST /v1/records/{id}/approve or /reject exists"
 
   - id: INV-006
     name: no_authorship_assignment
-    rule: "La plataforma NUNCA asigna autoría, titularidad ni propiedad a ningún record"
+    rule: "The platform NEVER assigns authorship, ownership or property rights to any record"
     enforcement: schema_design + api_design
-    test: "Record schema no contiene campos 'author', 'owner', 'copyright'"
+    test: "Record schema does not contain fields 'author', 'owner', 'copyright'"
 
   - id: INV-007
     name: no_quality_judgment
-    rule: "La plataforma NUNCA evalúa, puntúa ni califica la calidad de un output registrado"
+    rule: "The platform NEVER evaluates, scores or rates the quality of a registered output"
     enforcement: api_design
-    test: "No existe campo 'score', 'quality', 'originality' en Record schema"
+    test: "No field 'score', 'quality', 'originality' exists in Record schema"
 
   - id: INV-008
     name: no_content_modification
-    rule: "La plataforma NUNCA edita, mejora ni modifica el contenido registrado"
-    enforcement: architecture (la API no procesa contenido, solo hashes)
-    test: "No existe endpoint que acepte contenido para modificación"
+    rule: "The platform NEVER edits, enhances or modifies registered content"
+    enforcement: architecture (the API does not process content, only hashes)
+    test: "No endpoint that accepts content for modification exists"
 
   # ---------------------------------------------------------------------------
-  # IDENTIDAD Y FIRMAS
+  # IDENTITY AND SIGNATURES
   # ---------------------------------------------------------------------------
 
   - id: INV-009
     name: pog_must_be_signed
-    rule: "Un PoG bundle SIEMPRE debe estar firmado por la identidad del agente declarado"
-    enforcement: api_validation (verificar firma antes de guardar)
-    test: "POST con firma inválida → 401; recovered signer ≠ agent_wallet → 401"
+    rule: "A PoG bundle MUST ALWAYS be signed by the identity of the declared agent"
+    enforcement: api_validation (verify signature before saving)
+    test: "POST with invalid signature → 401; recovered signer ≠ agent_wallet → 401"
 
   - id: INV-010
     name: no_key_custody
-    rule: "La plataforma NUNCA almacena, gestiona ni tiene acceso a claves privadas de agentes"
-    enforcement: architecture (solo se reciben firmas, nunca claves)
-    test: "No existe tabla ni campo que almacene private_key"
+    rule: "The platform NEVER stores, manages or has access to agent private keys"
+    enforcement: architecture (only signatures are received, never keys)
+    test: "No table or field storing private_key exists"
 
   - id: INV-011
     name: identity_is_technical
-    rule: "La identidad del agente (wallet) es técnica, NUNCA se infiere personalidad jurídica"
+    rule: "The agent identity (wallet) is technical, legal personality is NEVER inferred"
     enforcement: documentation + api_design
-    test: "API responses no contienen campos 'legal_entity', 'person', 'company'"
+    test: "API responses do not contain fields 'legal_entity', 'person', 'company'"
 
   # ---------------------------------------------------------------------------
-  # ECONÓMICOS
+  # ECONOMIC
   # ---------------------------------------------------------------------------
 
   - id: INV-012
     name: fee_always_required
-    rule: "Ningún record puede existir sin que se haya pagado un fee"
-    enforcement: api_validation (verificar fee antes de crear record)
-    test: "POST sin fee verificable → 402 Payment Required"
+    rule: "No record can exist without a fee having been paid"
+    enforcement: api_validation (verify fee before creating record)
+    test: "POST without verifiable fee → 402 Payment Required"
 
   # ---------------------------------------------------------------------------
-  # CONSISTENCIA
+  # CONSISTENCY
   # ---------------------------------------------------------------------------
 
   - id: INV-013
     name: idempotency
-    rule: "El mismo content_hash desde la misma wallet produce el mismo record_id (idempotencia)"
+    rule: "The same content_hash from the same wallet produces the same record_id (idempotency)"
     enforcement: database_constraint (UNIQUE on content_hash)
-    test: "POST duplicado → 409 Conflict con record_id existente"
+    test: "Duplicate POST → 409 Conflict with existing record_id"
 
   - id: INV-014
     name: nonce_uniqueness
-    rule: "Un nonce no puede reutilizarse por la misma wallet"
+    rule: "A nonce cannot be reused by the same wallet"
     enforcement: database_constraint + api_validation
-    test: "POST con nonce ya usado por esa wallet → 409 Conflict"
+    test: "POST with nonce already used by that wallet → 409 Conflict"
 
   # ---------------------------------------------------------------------------
   # ANCHORING
@@ -126,72 +126,72 @@ invariants:
 
   - id: INV-015
     name: anchor_is_additive
-    rule: "El anchoring solo AÑADE información (tx_hash, block, chain_id); nunca modifica el record original"
-    enforcement: api_design (anchoring es un UPDATE parcial, solo campos anchor_*)
-    test: "Anchoring solo modifica anchor_tx_hash, anchor_block, anchor_chain_id, anchored_at, state"
+    rule: "Anchoring only ADDS information (tx_hash, block, chain_id); it never modifies the original record"
+    enforcement: api_design (anchoring is a partial UPDATE, only anchor_* fields)
+    test: "Anchoring only modifies anchor_tx_hash, anchor_block, anchor_chain_id, anchored_at, state"
 
   - id: INV-016
     name: receipt_before_anchor
-    rule: "El agente SIEMPRE recibe un receipt inmediato, aunque el anchoring esté pendiente"
-    enforcement: api_design (201 con state: pending_anchor)
-    test: "POST exitoso → 201 con receipt_hash, sin esperar anchor"
+    rule: "The agent ALWAYS receives an immediate receipt, even if anchoring is pending"
+    enforcement: api_design (201 with state: pending_anchor)
+    test: "Successful POST → 201 with receipt_hash, without waiting for anchor"
 
   # ---------------------------------------------------------------------------
-  # TRANSPARENCIA
+  # TRANSPARENCY
   # ---------------------------------------------------------------------------
 
   - id: INV-017
     name: records_are_publicly_verifiable
-    rule: "Cualquier persona puede verificar la existencia y el estado de un record sin autenticación"
-    enforcement: api_design (GET endpoints sin auth)
-    test: "GET /v1/records/{id} y GET /v1/records/verify sin auth → 200"
+    rule: "Anyone can verify the existence and state of a record without authentication"
+    enforcement: api_design (GET endpoints without auth)
+    test: "GET /v1/records/{id} and GET /v1/records/verify without auth → 200"
 
   - id: INV-018
     name: rules_are_public
-    rule: "Todas las reglas del sistema son públicas y documentadas"
-    enforcement: documentation (este archivo)
-    test: "invariants.yml está en el repositorio público"
+    rule: "All system rules are public and documented"
+    enforcement: documentation (this file)
+    test: "invariants.yml is in the public repository"
 
   # ---------------------------------------------------------------------------
-  # RESILIENCIA
+  # RESILIENCE
   # ---------------------------------------------------------------------------
 
   - id: INV-019
     name: anchor_failed_does_not_invalidate
-    rule: "Un record con state 'anchor_failed' sigue siendo un hecho válido. El PoG, timestamp y receipt son inmutables"
+    rule: "A record with state 'anchor_failed' is still a valid fact. The PoG, timestamp and receipt are immutable"
     enforcement: api_design + documentation
-    test: "GET record con state=anchor_failed → devuelve todos los campos normalmente"
+    test: "GET record with state=anchor_failed → returns all fields normally"
 
   - id: INV-020
     name: fee_must_be_onchain
-    rule: "El fee se verifica contra una transacción on-chain real (fee_tx_hash). No se aceptan pagos no verificables"
-    enforcement: api_validation (verificar fee_tx_hash antes de crear record)
-    test: "POST con fee_tx_hash inexistente o no confirmado → 402"
+    rule: "The fee is verified against a real on-chain transaction (fee_tx_hash). Non-verifiable payments are not accepted"
+    enforcement: api_validation (verify fee_tx_hash before creating record)
+    test: "POST with non-existent or unconfirmed fee_tx_hash → 402"
 
   # ---------------------------------------------------------------------------
-  # PERFILADO Y PRIVACIDAD
+  # PROFILING AND PRIVACY
   # ---------------------------------------------------------------------------
 
   - id: INV-021
     name: no_public_wallet_listing
-    rule: "No existe listado público de records por wallet en v1. La verificación es individual (por hash o por record_id)"
-    enforcement: api_design (no existe endpoint de listado por wallet)
-    test: "No existe ruta GET /v1/records?wallet= ni GET /v1/agents/{wallet}/records"
+    rule: "No public listing of records by wallet exists in v1. Verification is individual (by hash or record_id)"
+    enforcement: api_design (no wallet listing endpoint exists)
+    test: "No route GET /v1/records?wallet= or GET /v1/agents/{wallet}/records exists"
 
   - id: INV-022
     name: no_scoring_no_rankings
-    rule: "La plataforma NUNCA genera scoring, rankings ni etiquetas de fiabilidad sobre agentes o records"
+    rule: "The platform NEVER generates scoring, rankings or reliability labels for agents or records"
     enforcement: api_design + schema_design
-    test: "No existe campo 'score', 'rank', 'reliability', 'trust_level' en ningún schema"
+    test: "No field 'score', 'rank', 'reliability', 'trust_level' exists in any schema"
 
   - id: INV-023
     name: no_automatic_conclusions
-    rule: "La plataforma NUNCA emite conclusiones automáticas sobre los datos registrados"
+    rule: "The platform NEVER issues automatic conclusions about registered data"
     enforcement: documentation + api_design
-    test: "Ningún endpoint devuelve campos interpretativos (solo datos factuales)"
+    test: "No endpoint returns interpretive fields (only factual data)"
 
   - id: INV-024
     name: profiling_data_without_judgment
-    rule: "Cualquier servicio futuro de perfilado expone datos agregados NUNCA juicios. El sistema proporciona datos, la interpretación es responsabilidad del usuario autorizado"
+    rule: "Any future profiling service exposes aggregated data, NEVER judgments. The system provides data, interpretation is the responsibility of the authorized user"
     enforcement: documentation + architecture
-    test: "Documentación de futuros endpoints de perfilado no contiene campos interpretativos"
+    test: "Documentation of future profiling endpoints does not contain interpretive fields"

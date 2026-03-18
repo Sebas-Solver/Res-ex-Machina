@@ -1,16 +1,16 @@
-# Cómo verificar un PoG offline
+# How to verify a PoG offline
 
-Este documento explica cómo verificar que un Proof of Generation (PoG) es auténtico **sin depender del servidor de Res ex Machina**.
+This document explains how to verify that a Proof of Generation (PoG) is authentic **without relying on the Res ex Machina server**.
 
 ---
 
-## 1. Obtener el receipt
+## 1. Get the receipt
 
 ```bash
 curl https://api.resexmachina.io/v1/records/{record_id}/export > receipt.json
 ```
 
-Obtendrás un JSON como este:
+You will get a JSON like this:
 
 ```json
 {
@@ -44,11 +44,11 @@ Obtendrás un JSON como este:
 
 ---
 
-## 2. Verificar la firma EIP-712
+## 2. Verify the EIP-712 Signature
 
-La firma demuestra que el `agent_wallet` declarado realmente firmó este PoG.
+The signature proves that the declared `agent_wallet` actually signed this PoG.
 
-### Con viem (JavaScript/TypeScript)
+### With viem (JavaScript/TypeScript)
 
 ```typescript
 import { verifyTypedData } from 'viem';
@@ -98,24 +98,24 @@ const isValid = await verifyTypedData({
   signature: pog.signature,
 });
 
-console.log('Firma válida:', isValid); // true
+console.log('Valid signature:', isValid); // true
 ```
 
-### Con ethers.js
+### With ethers.js
 
 ```typescript
 import { ethers } from 'ethers';
 
 const recoveredAddress = ethers.verifyTypedData(domain, types, message, pog.signature);
 const isValid = recoveredAddress.toLowerCase() === pog.agent_wallet.toLowerCase();
-console.log('Firma válida:', isValid);
+console.log('Valid signature:', isValid);
 ```
 
 ---
 
-## 3. Verificar el receipt_hash
+## 3. Verify the receipt_hash
 
-El `receipt_hash` vincula de forma determinista todos los datos del registro.
+The `receipt_hash` deterministically links all record data.
 
 ```typescript
 import { createHash } from 'crypto';
@@ -131,21 +131,21 @@ const canonical = [
 const hash = createHash('sha256').update(canonical).digest('hex');
 const expected = `sha256:${hash}`;
 
-console.log('Receipt hash válido:', expected === receipt.receipt_hash); // true
+console.log('Valid receipt hash:', expected === receipt.receipt_hash); // true
 ```
 
 ---
 
-## 4. Verificar el anchor on-chain
+## 4. Verify the on-chain anchor
 
-Si el record está anclado (`state: anchored`), puedes verificar que el `receipt_hash` fue grabado en la blockchain.
+If the record is anchored (`state: anchored`), you can verify that the `receipt_hash` was written to the blockchain.
 
-### Con un explorador
+### With an explorer
 
-1. Ve a [Polygonscan](https://polygonscan.com/tx/{anchor.tx_hash})
-2. En "Input Data", decodifica y verifica que contiene el `receipt_hash`
+1. Go to [Polygonscan](https://polygonscan.com/tx/{anchor.tx_hash})
+2. In "Input Data", decode and verify it contains the `receipt_hash`
 
-### Con viem (programático)
+### With viem (programmatic)
 
 ```typescript
 import { createPublicClient, http } from 'viem';
@@ -157,40 +157,40 @@ const client = createPublicClient({
 });
 
 const tx = await client.getTransaction({ hash: receipt.anchor.tx_hash });
-// El input data contiene el receipt_hash
-console.log('Anchor tx encontrada en bloque:', tx.blockNumber);
+// Input data contains the receipt_hash
+console.log('Anchor tx found in block:', tx.blockNumber);
 ```
 
 ---
 
-## 5. Verificar tu contenido contra el hash
+## 5. Verify your content against the hash
 
-Si tienes el contenido original, calcula su SHA-256 y compara:
+If you have the original content, calculate its SHA-256 and compare:
 
 ```bash
 # Linux/Mac
-sha256sum mi_archivo.txt
-# Output: a1b2c3d4e5f6... mi_archivo.txt
+sha256sum my_file.txt
+# Output: a1b2c3d4e5f6... my_file.txt
 
-# Comparar con receipt.content_hash (sin el prefijo "sha256:")
+# Compare with receipt.content_hash (without "sha256:" prefix)
 ```
 
 ```typescript
 import { createHash } from 'crypto';
 import fs from 'fs';
 
-const content = fs.readFileSync('mi_archivo.txt');
+const content = fs.readFileSync('my_file.txt');
 const hash = `sha256:${createHash('sha256').update(content).digest('hex')}`;
 console.log('Content hash match:', hash === receipt.content_hash);
 ```
 
 ---
 
-## Resumen de verificación
+## Verification Summary
 
-| Check | Qué demuestra | Herramienta |
+| Check | What it proves | Tool |
 |---|---|---|
-| Firma EIP-712 | El agent_wallet firmó este PoG | viem / ethers.js |
-| Receipt hash | Los datos no fueron alterados | SHA-256 |
-| Anchor on-chain | El registro existía en esa fecha | Polygonscan / viem |
-| Content hash | Tu contenido coincide con lo registrado | sha256sum |
+| EIP-712 Signature | The agent_wallet signed this PoG | viem / ethers.js |
+| Receipt hash | The data was not altered | SHA-256 |
+| On-chain Anchor | The record existed on that date | Polygonscan / viem |
+| Content hash | Your content matches what is registered | sha256sum |

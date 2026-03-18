@@ -1,18 +1,18 @@
-# Ejemplos de uso de la API — Res ex Machina
+# API Usage Examples — Res ex Machina
 
-## Requisitos previos
+## Prerequisites
 
 ```bash
-# Levantar entorno
+# Start environment
 docker compose up -d
 
 # Apply database schema
 npx drizzle-kit push
 
-# Arrancar API
+# Start API
 npm run dev          # → http://localhost:3000
 
-# Arrancar worker (otra terminal)
+# Start worker (another terminal)
 npm run worker:anchor
 ```
 
@@ -24,7 +24,7 @@ npm run worker:anchor
 curl -s http://localhost:3000/v1/health | jq
 ```
 
-Respuesta esperada:
+Expected response:
 ```json
 {
   "status": "healthy",
@@ -39,7 +39,7 @@ Respuesta esperada:
 
 ---
 
-## 2. Registrar un hecho de generación (POST /records)
+## 2. Register a generation fact (POST /records)
 
 ```bash
 curl -X POST http://localhost:3000/v1/records \
@@ -58,18 +58,18 @@ curl -X POST http://localhost:3000/v1/records \
       },
       "timestamp": "2026-02-10T19:00:00.000Z",
       "nonce": "unique-nonce-1234567890",
-      "signature": "0x<firma EIP-712 de 130 hex chars>"
+      "signature": "0x<EIP-712 signature of 130 hex chars>"
     },
     "content_type": "text/plain",
     "visibility": "proof_only",
     "tags": ["generated", "text"],
     "fee_amount": 0.01,
     "fee_currency": "MATIC",
-    "fee_tx_hash": "0x<hash de la tx de pago de fee en L2>"
+    "fee_tx_hash": "0x<fee payment tx hash on L2>"
   }' | jq
 ```
 
-Respuesta (201 Created):
+Response (201 Created):
 ```json
 {
   "record_id": "01936d8a-1234-7000-8000-000000000001",
@@ -81,7 +81,7 @@ Respuesta (201 Created):
 
 ---
 
-## 3. Consultar un record por ID
+## 3. Query a record by ID
 
 ```bash
 curl -s http://localhost:3000/v1/records/01936d8a-1234-7000-8000-000000000001 | jq
@@ -89,13 +89,13 @@ curl -s http://localhost:3000/v1/records/01936d8a-1234-7000-8000-000000000001 | 
 
 ---
 
-## 4. Verificar existencia por content_hash
+## 4. Verify existence by content_hash
 
 ```bash
 curl -s "http://localhost:3000/v1/records/verify?content_hash=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" | jq
 ```
 
-Respuesta (200):
+Response (200):
 ```json
 {
   "exists": true,
@@ -108,23 +108,23 @@ Respuesta (200):
 
 ---
 
-## 5. Exportar receipt verificable
+## 5. Export verifiable receipt
 
 ```bash
 curl -s http://localhost:3000/v1/records/01936d8a-1234-7000-8000-000000000001/export | jq
 ```
 
-Respuesta: receipt completo con anchor data (ver `verify-pog-offline.md`).
+Response: complete receipt with anchor data (see `verify-pog-offline.md`).
 
 ---
 
-## 6. Intentar DELETE (debe fallar)
+## 6. Attempt DELETE (should fail)
 
 ```bash
 curl -X DELETE http://localhost:3000/v1/records/01936d8a-1234-7000-8000-000000000001 | jq
 ```
 
-Respuesta (405):
+Response (405):
 ```json
 {
   "error": {
@@ -136,28 +136,28 @@ Respuesta (405):
 
 ---
 
-## Códigos de error comunes
+## Common Error Codes
 
-| Status | Código | Causa |
+| Status | Code | Cause |
 |---|---|---|
-| 400 | `invalid_payload` | Body malformado |
-| 400 | `invalid_pog_schema` | PoG bundle no válido |
-| 400 | `invalid_content_hash` | Hash no es sha256:{64hex} |
-| 401 | `invalid_signature` | Firma EIP-712 inválida |
+| 400 | `invalid_payload` | Malformed body |
+| 400 | `invalid_pog_schema` | Invalid PoG bundle |
+| 400 | `invalid_content_hash` | Hash is not sha256:{64hex} |
+| 401 | `invalid_signature` | Invalid EIP-712 signature |
 | 401 | `signer_mismatch` | Signer ≠ agent_wallet |
-| 402 | `fee_not_verified` | Fee tx no encontrada |
-| 402 | `fee_insufficient` | Pago insuficiente |
-| 402 | `fee_wrong_recipient` | Destinatario incorrecto |
+| 402 | `fee_not_verified` | Fee tx not found |
+| 402 | `fee_insufficient` | Insufficient payment |
+| 402 | `fee_wrong_recipient` | Incorrect recipient |
 | 402 | `fee_tx_expired` | Tx > 24h |
-| 404 | `record_not_found` | Record no existe |
-| 405 | `method_not_allowed` | DELETE prohibido |
-| 409 | `duplicate_content_hash` | Hash ya registrado |
-| 409 | `duplicate_nonce` | Nonce reusado |
-| 429 | `rate_limit_exceeded` | Demasiadas peticiones |
+| 404 | `record_not_found` | Record does not exist |
+| 405 | `method_not_allowed` | DELETE forbidden |
+| 409 | `duplicate_content_hash` | Hash already registered |
+| 409 | `duplicate_nonce` | Reused nonce |
+| 429 | `rate_limit_exceeded` | Too many requests |
 
 ---
 
-## Cómo generar una firma EIP-712 (para testing)
+## How to generate an EIP-712 signature (for testing)
 
 ```typescript
 import { privateKeyToAccount } from 'viem/accounts';
