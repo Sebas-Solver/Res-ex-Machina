@@ -3,10 +3,10 @@ import type { Address } from 'viem';
 /**
  * EIP-712 Domain — off-chain (chainId: 0, sin contrato).
  *
- * Fuente única de verdad: servidor y SDK importan de aquí.
- * Referencia: pog-v1-spec.md sección 4.1
+ * Single source of truth: server and SDK import from here.
+ * Reference: pog-v1-spec.md section 4.1
  *
- * ⚠️  Modificar estos valores romperá TODAS las firmas existentes.
+ * ⚠️  Modifying these values will break ALL existing signatures.
  *     Si necesitas versionarlos, crea un nuevo archivo (eip712-v2.ts).
  */
 export const EIP712_DOMAIN = {
@@ -18,7 +18,7 @@ export const EIP712_DOMAIN = {
 
 /**
  * EIP-712 Types — estructura PoGBundle.
- * Referencia: pog-v1-spec.md sección 4.2
+ * Reference: pog-v1-spec.md section 4.2
  */
 export const EIP712_TYPES = {
     PoGBundle: [

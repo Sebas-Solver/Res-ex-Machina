@@ -10,7 +10,7 @@ import { EIP712_DOMAIN, EIP712_TYPES } from '../constants/eip712.js';
  * 2. Recupera el signer de la firma
  * 3. Compara con agent_wallet
  *
- * @throws ApiError 401 invalid_signature si la firma es inválida
+ * @throws ApiError 401 invalid_signature if the signature is invalid
  * @throws ApiError 401 signer_mismatch si el signer ≠ agent_wallet
  */
 export async function verifyPoGSignature(bundle: PogBundle): Promise<void> {

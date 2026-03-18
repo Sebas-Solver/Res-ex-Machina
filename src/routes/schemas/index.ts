@@ -6,7 +6,7 @@ const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
 const TX_HASH_REGEX = /^0x[a-fA-F0-9]{64}$/;
 
 /**
- * Schema del proceso de generación dentro del PoG.
+ * Schema for the generation process within the PoG.
  */
 const generationProcessSchema = z.object({
     process_type: z.enum(['direct', 'pipeline', 'iterative', 'autonomous']),
@@ -15,10 +15,10 @@ const generationProcessSchema = z.object({
 });
 
 /**
- * Schema del PoG v1 bundle.
- * Referencia: pog-v1-spec.md sección 2
+ * Schema for the PoG v1 bundle.
+ * Reference: pog-v1-spec.md section 2
  */
-// Tamaño máximo del pog_bundle serializado (Threat Model — D-04)
+// Maximum size of serialized pog_bundle (Threat Model — D-04)
 const POG_BUNDLE_MAX_SIZE = 32_768; // 32KB
 
 export const pogBundleSchema = z.object({
@@ -39,15 +39,15 @@ export const pogBundleSchema = z.object({
 export type PogBundle = z.infer<typeof pogBundleSchema>;
 
 /**
- * Schema de metadatos de procedencia (Issues #11, #14).
+ * Provenance metadata schema (Issues #11, #14).
  *
- * Permite vincular un record de RxM con estándares de procedencia
- * embebida: C2PA, IPTC, XMP, Schema.org, o custom.
+ * Allows linking an RxM record with embedded provenance standards:
+ * C2PA, IPTC, XMP, Schema.org, or custom.
  *
- * pki_timestamp: timestamp PKI opcional del estándar de procedencia
- * para doble atestación temporal (blockchain + PKI). Issue #14.
+ * pki_timestamp: optional PKI timestamp from the provenance standard
+ * for dual temporal attestation (blockchain + PKI). Issue #14.
  *
- * Referencia: Docs/c2pa-interoperability.md, OP-14
+ * Reference: Docs/c2pa-interoperability.md, OP-14
  */
 export const provenanceMetadataSchema = z.object({
     standard: z.enum(['c2pa', 'iptc', 'xmp', 'schema_org', 'custom']),
@@ -62,7 +62,7 @@ export const provenanceMetadataSchema = z.object({
 export type ProvenanceMetadata = z.infer<typeof provenanceMetadataSchema>;
 
 /**
- * Schema del body completo del POST /v1/records.
+ * Schema for the full POST /v1/records request body.
  */
 export const createRecordSchema = z.object({
     pog_bundle: pogBundleSchema,

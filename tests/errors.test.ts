@@ -19,7 +19,7 @@ describe('ApiError', () => {
         expect(err.name).toBe('ApiError');
     });
 
-    it('toJSON devuelve formato estándar', () => {
+    it('toJSON returns standard format', () => {
         const err = new ApiError(400, 'test', 'msg');
         expect(err.toJSON()).toEqual({
             error: {
@@ -29,7 +29,7 @@ describe('ApiError', () => {
         });
     });
 
-    it('toJSON incluye details si están presentes', () => {
+    it('toJSON includes details if present', () => {
         const err = new ApiError(400, 'test', 'msg', { key: 'value' });
         expect(err.toJSON()).toEqual({
             error: {

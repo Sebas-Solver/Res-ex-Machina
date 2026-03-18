@@ -9,7 +9,7 @@ import { batchRequestSchema } from '../src/routes/schemas/batchRecordSchema.js';
  * 2. Error factory tests
  */
 
-// --- Fixture: record válido completo ---
+// --- Fixture: complete valid record ---
 const validRecord = {
     content_type: 'text/plain',
     visibility: 'proof_only',
@@ -40,14 +40,14 @@ const validRecord = {
 
 describe('batchRequestSchema (Issue #12)', () => {
 
-    it('acepta batch con 1 record válido', () => {
+    it('accepts batch with 1 valid record', () => {
         const result = batchRequestSchema.safeParse({
             records: [validRecord],
         });
         expect(result.success).toBe(true);
     });
 
-    it('acepta batch con 3 records válidos', () => {
+    it('accepts batch with 3 valid records', () => {
         const records = [
             validRecord,
             {
@@ -76,7 +76,7 @@ describe('batchRequestSchema (Issue #12)', () => {
         }
     });
 
-    it('rechaza batch vacío (0 records)', () => {
+    it('rejects empty batch (0 records)', () => {
         const result = batchRequestSchema.safeParse({
             records: [],
         });
@@ -86,7 +86,7 @@ describe('batchRequestSchema (Issue #12)', () => {
         }
     });
 
-    it('rechaza batch con más de 100 records', () => {
+    it('rejects batch with more than 100 records', () => {
         const records = Array.from({ length: 101 }, (_, i) => ({
             ...validRecord,
             fee_tx_hash: '0x' + i.toString(16).padStart(64, '0'),
@@ -116,7 +116,7 @@ describe('batchRequestSchema (Issue #12)', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rechaza si un record individual tiene pog_bundle inválido', () => {
+    it('rejects if an individual record has invalid pog_bundle', () => {
         const result = batchRequestSchema.safeParse({
             records: [{
                 ...validRecord,
@@ -177,14 +177,14 @@ describe('batchRequestSchema (Issue #12)', () => {
 // =============================================
 
 describe('Batch error factories (Issue #12)', () => {
-    it('batchEmpty devuelve 400 con código correcto', async () => {
+    it('batchEmpty returns 400 with correct code', async () => {
         const { batchEmpty } = await import('../src/utils/errors.js');
         const err = batchEmpty();
         expect(err.statusCode).toBe(400);
         expect(err.code).toBe('batch_empty');
     });
 
-    it('batchTooLarge devuelve 400 con código correcto', async () => {
+    it('batchTooLarge returns 400 with correct code', async () => {
         const { batchTooLarge } = await import('../src/utils/errors.js');
         const err = batchTooLarge();
         expect(err.statusCode).toBe(400);

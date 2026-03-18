@@ -2,13 +2,13 @@ import { env } from './env.js';
 import { Redis } from 'ioredis';
 
 /**
- * Configuración Redis compartida.
+ * Shared Redis configuration.
  *
- * Parsea REDIS_URL una sola vez y exporta:
- * - `redisConnectionConfig` — para BullMQ (Queue + Worker)
- * - `createHealthRedisClient()` — para health check (ioredis con lazyConnect)
+ * Parses REDIS_URL once and exports:
+ * - `redisConnectionConfig` — for BullMQ (Queue + Worker)
+ * - `createHealthRedisClient()` — for health check (ioredis with lazyConnect)
  *
- * Archivos que consumen:
+ * Consumers:
  * - src/services/queue.ts       (BullMQ Queue)
  * - src/workers/anchor.worker.ts (BullMQ Worker)
  * - src/routes/health.ts        (ioredis PING)
@@ -17,8 +17,8 @@ import { Redis } from 'ioredis';
 const redisUrl = new URL(env.REDIS_URL);
 
 /**
- * Objeto de conexión para BullMQ (Queue y Worker).
- * `maxRetriesPerRequest: null` es requerido por BullMQ.
+ * Connection object for BullMQ (Queue and Worker).
+ * `maxRetriesPerRequest: null` is required by BullMQ.
  */
 export const redisConnectionConfig = {
     host: redisUrl.hostname,
@@ -29,11 +29,11 @@ export const redisConnectionConfig = {
 };
 
 /**
- * Factory para crear un cliente ioredis para el health check.
+ * Factory to create an ioredis client for the health check.
  *
- * Usa lazyConnect para no conectar hasta el primer PING.
- * connectTimeout de 3s para no bloquear el health check.
- * maxRetriesPerRequest: 1 para fallar rápido si Redis no responde.
+ * Uses lazyConnect to avoid connecting until the first PING.
+ * connectTimeout of 3s to avoid blocking the health check.
+ * maxRetriesPerRequest: 1 to fail fast if Redis is unresponsive.
  */
 export function createHealthRedisClient(): Redis {
     const client = new Redis({
@@ -50,11 +50,11 @@ export function createHealthRedisClient(): Redis {
 }
 
 /**
- * Factory para crear un cliente ioredis para rate limiting (Issue #17).
+ * Factory to create an ioredis client for rate limiting (Issue #17).
  *
- * Usa lazyConnect y connectTimeout corto para no bloquear el startup.
- * Si Redis no está disponible, @fastify/rate-limit con skipOnError
- * hace fallback a in-memory automáticamente (Issue #22).
+ * Uses lazyConnect and short connectTimeout to avoid blocking startup.
+ * If Redis is unavailable, @fastify/rate-limit with skipOnError
+ * falls back to in-memory automatically (Issue #22).
  */
 export function createRateLimitRedisClient(): Redis {
     const client = new Redis({

@@ -2,13 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ApiError } from '../src/utils/errors.js';
 
 /**
- * Tests unitarios para el servicio de verificación de fee on-chain.
+ * Unit tests for the on-chain fee verification service.
  *
  * Mockeamos viem (createPublicClient) para simular respuestas de la blockchain
  * sin necesitar un nodo real.
  */
 
-// --- Mocks hoisted para evitar problemas de inicialización ---
+// --- Hoisted mocks to avoid initialization issues ---
 const mockGetTransaction = vi.fn();
 const mockGetTransactionReceipt = vi.fn();
 const mockGetBlock = vi.fn();
@@ -35,10 +35,10 @@ vi.mock('../src/config/env.js', () => ({
     },
 }));
 
-// Import DESPUÉS de los mocks
+// Import AFTER the mocks
 const { verifyFee } = await import('../src/services/fee.js');
 
-// --- Fixture: tx válida ---
+// --- Fixture: valid tx ---
 const VALID_TX = {
     hash: '0x' + 'aa'.repeat(32),
     blockNumber: 100n,
@@ -52,7 +52,7 @@ const VALID_RECEIPT = {
 };
 
 const RECENT_BLOCK = {
-    timestamp: BigInt(Math.floor(Date.now() / 1000) - 3600), // 1 hora atrás
+    timestamp: BigInt(Math.floor(Date.now() / 1000) - 3600), // 1 hour ago
 };
 
 beforeEach(() => {
@@ -60,7 +60,7 @@ beforeEach(() => {
 });
 
 describe('verifyFee', () => {
-    it('verifica un fee válido correctamente', async () => {
+    it('verifies a valid fee correctly', async () => {
         mockGetTransaction.mockResolvedValue(VALID_TX);
         mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);
@@ -100,7 +100,7 @@ describe('verifyFee', () => {
         }
     });
 
-    it('lanza fee_not_verified si la tx no está confirmada (receipt failed)', async () => {
+    it('throws fee_not_verified if tx is not confirmed (receipt failed)', async () => {
         mockGetTransaction.mockResolvedValue(VALID_TX);
         mockGetTransactionReceipt.mockResolvedValue({ ...VALID_RECEIPT, status: 'reverted' });
 
@@ -112,7 +112,7 @@ describe('verifyFee', () => {
         }
     });
 
-    it('lanza fee_insufficient si el monto es menor al mínimo', async () => {
+    it('throws fee_insufficient if amount is less than minimum', async () => {
         mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e14) }); // 0.0001 ETH
         mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
 
@@ -142,7 +142,7 @@ describe('verifyFee', () => {
         }
     });
 
-    it('lanza fee_tx_expired si la tx tiene más de 24h', async () => {
+    it('throws fee_tx_expired if tx is older than 24h', async () => {
         const oldBlock = {
             timestamp: BigInt(Math.floor(Date.now() / 1000) - 25 * 3600),
         };
@@ -159,7 +159,7 @@ describe('verifyFee', () => {
         }
     });
 
-    it('acepta un fee justo en el límite mínimo (0.01 ETH)', async () => {
+    it('accepts a fee exactly at the minimum limit (0.01 ETH)', async () => {
         mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e16) });
         mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);
@@ -168,7 +168,7 @@ describe('verifyFee', () => {
         expect(result.verified).toBe(true);
     });
 
-    it('acepta un fee mayor al mínimo (1 ETH)', async () => {
+    it('accepts a fee greater than the minimum (1 ETH)', async () => {
         mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e18) });
         mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
         mockGetBlock.mockResolvedValue(RECENT_BLOCK);

@@ -4,20 +4,20 @@ import { env } from '../config/env.js';
 import * as schema from './schema.js';
 
 /**
- * Cliente de conexión a PostgreSQL.
- * En producción: pool de conexiones.
- * En test: conexión única.
+ * PostgreSQL connection client.
+ * In production: connection pool.
+ * In test: single connection.
  */
 export const client = postgres(env.DATABASE_URL, {
     max: env.NODE_ENV === 'test' ? 1 : 10,
 });
 
 /**
- * Instancia de Drizzle con el schema cargado.
- * Esto permite hacer queries type-safe:
+ * Drizzle instance with loaded schema.
+ * Enables type-safe queries:
  *   db.select().from(schema.records)...
  */
 export const db = drizzle(client, { schema });
 
-// Re-exportar schema para acceso directo
+// Re-export schema for direct access
 export { schema };

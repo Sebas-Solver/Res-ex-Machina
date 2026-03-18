@@ -2,8 +2,8 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Sentry } from '../config/monitoring.js';
 
 /**
- * Error estructurado de la API.
- * Sigue el formato definido en error-catalog.md:
+ * Structured API error.
+ * Follows the format defined in error-catalog.md:
  * { error: { code, message, details? } }
  */
 export class ApiError extends Error {
@@ -28,7 +28,7 @@ export class ApiError extends Error {
     }
 }
 
-// --- Factory functions para errores del POST /v1/records ---
+// --- Factory functions for POST /v1/records errors ---
 
 export const invalidPayload = (details?: Record<string, unknown>) =>
     new ApiError(400, 'invalid_payload', 'Request body is malformed or incomplete', details);
@@ -85,7 +85,7 @@ export const duplicateContentHash = () =>
 export const duplicateNonce = () =>
     new ApiError(409, 'duplicate_nonce', 'This nonce has already been used by this wallet');
 
-// --- Factory functions para errores de GET /v1/records ---
+// --- Factory functions for GET /v1/records errors ---
 
 export const invalidRecordId = () =>
     new ApiError(400, 'invalid_record_id', 'Record ID is not a valid UUID');
@@ -93,7 +93,7 @@ export const invalidRecordId = () =>
 export const recordNotFound = () =>
     new ApiError(404, 'record_not_found', 'No record found with the given identifier');
 
-// --- Factory functions para GET /v1/records (Issue #21) ---
+// --- Factory functions for GET /v1/records (Issue #21) ---
 
 export const missingAgentWallet = () =>
     new ApiError(400, 'missing_agent_wallet', 'Query parameter agent_wallet is required and must be a valid Ethereum address');
@@ -101,7 +101,7 @@ export const missingAgentWallet = () =>
 export const invalidQueryParam = (details?: Record<string, unknown>) =>
     new ApiError(400, 'invalid_query_param', 'One or more query parameters are invalid', details);
 
-// --- Factory functions para POST /v1/records/batch (Issue #12) ---
+// --- Factory functions for POST /v1/records/batch (Issue #12) ---
 
 export const batchEmpty = () =>
     new ApiError(400, 'batch_empty', 'Batch must contain at least 1 record');
@@ -112,7 +112,7 @@ export const batchTooLarge = () =>
 export const batchInvalidPayload = (details?: Record<string, unknown>) =>
     new ApiError(400, 'batch_invalid_payload', 'Batch request body is malformed', details);
 
-// --- Factory functions para webhooks (Issue #13) ---
+// --- Factory functions for webhooks (Issue #13) ---
 
 export const webhookNotFound = () =>
     new ApiError(404, 'webhook_not_found', 'Webhook not found or does not belong to this wallet');
@@ -126,7 +126,7 @@ export const webhookInvalidUrl = (details?: Record<string, unknown>) =>
 export const webhookForbidden = () =>
     new ApiError(403, 'webhook_forbidden', 'You can only manage your own webhooks');
 
-// --- Factory functions para autenticación de wallet (GET /mine) ---
+// --- Factory functions for wallet authentication (GET /mine) ---
 
 export const missingAuthHeaders = () =>
     new ApiError(401, 'missing_auth_headers', 'Wallet authentication requires X-Wallet-Address, X-Signature, and X-Timestamp headers');
@@ -141,8 +141,8 @@ export const authSignatureInvalid = () =>
     new ApiError(401, 'auth_signature_invalid', 'Wallet signature verification failed. Ensure the message "RexAuth:{timestamp}" is signed correctly');
 
 /**
- * Error handler global para Fastify.
- * Intercepta ApiError y devuelve el formato estándar.
+ * Global error handler for Fastify.
+ * Intercepts ApiError and returns the standard format.
  */
 export function apiErrorHandler(
     error: Error,
@@ -153,12 +153,12 @@ export function apiErrorHandler(
         return reply.status(error.statusCode).send(error.toJSON());
     }
 
-    // Errores de Fastify (validación, content-type, rate-limit, body-limit, etc.)
+    // Fastify errors (validation, content-type, rate-limit, body-limit, etc.)
     const fastifyError = error as Error & { statusCode?: number };
     if (typeof fastifyError.statusCode === 'number') {
         const statusCode = fastifyError.statusCode;
 
-        // Rate limit: devolver 429 con formato consistente
+        // Rate limit: return 429 with consistent format
         if (statusCode === 429) {
             return reply.status(429).send({
                 error: {
@@ -200,14 +200,14 @@ export function apiErrorHandler(
         return reply.status(429).send(plainObj);
     }
 
-    // Error no esperado — nunca exponer detalles técnicos
+    // Unexpected error — never expose technical details
     _request.log.error({
         err: error,
         statusCode: (error as unknown as { statusCode?: number }).statusCode,
         code: (error as unknown as { code?: string }).code,
     }, 'Unhandled error');
 
-    // Issue #19: reportar errores inesperados a Sentry
+    // Issue #19: report unexpected errors to Sentry
     Sentry.captureException(error, {
         tags: {
             request_id: _request.id as string,

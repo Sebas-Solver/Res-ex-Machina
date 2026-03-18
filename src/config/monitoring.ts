@@ -2,9 +2,9 @@ import * as Sentry from '@sentry/node';
 import { env } from './env.js';
 
 /**
- * Inicializa Sentry para monitorización de errores y performance.
+ * Initializes Sentry for error and performance monitoring.
  *
- * Solo se activa si SENTRY_DSN está definido (producción).
+ * Only activates if SENTRY_DSN is defined (production).
  * En desarrollo/test funciona como noop.
  *
  * Issue #19 — Hallazgo H-7 del code review alpha.1

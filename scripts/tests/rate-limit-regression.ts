@@ -1,5 +1,5 @@
 /**
- * Test de regresión: Rate Limit devuelve 429 (no 500).
+ * Regression test: Rate Limit returns 429 (not 500).
  *
  * Este test verifica que cuando se excede el rate limit de POST /v1/records,
  * la API devuelve:
@@ -8,7 +8,7 @@
  *   - Headers: x-ratelimit-limit, x-ratelimit-remaining, x-ratelimit-reset
  *
  * Bug original: el apiErrorHandler no manejaba el statusCode 429 del plugin
- * @fastify/rate-limit, y caía al catch-all genérico devolviendo 500.
+ * @fastify/rate-limit, and fell to the generic catch-all returning 500.
  *
  * Ejecutar:
  *   npx tsx scripts/tests/rate-limit-regression.ts
@@ -35,9 +35,9 @@ function assert(name: string, condition: boolean, detail: string) {
 }
 
 /**
- * Envía un POST mínimo a /v1/records.
- * No necesita ser válido — solo necesita pasar el body parser para que
- * el rate limit lo cuente. Un body mínimo (sin firma válida) será rechazado
+ * Sends a minimal POST to /v1/records.
+ * Does not need to be valid — just needs to pass the body parser so that
+ * the rate limit counts it. A minimal body (without valid signature) will be rejected
  * con 400/401, pero el rate limiter lo cuenta igualmente.
  */
 async function sendRequest(): Promise<Response> {
@@ -70,16 +70,16 @@ async function sendRequest(): Promise<Response> {
 }
 
 async function main() {
-    console.log('\n🛡️  Test de regresión: Rate Limit 429\n');
+    console.log('\n🛡️  Regression test: Rate Limit 429\n');
     console.log(`   API: ${API_URL}`);
-    console.log(`   Límite POST /v1/records: 10 req/min por wallet\n`);
+    console.log(`   Limit POST /v1/records: 10 req/min per wallet\n`);
 
     // El rate limit de la ruta POST /v1/records es 10/min por wallet.
-    // Enviamos 15 requests rápidas para superar el límite.
-    // Las primeras ~10 serán 400/401 (body inválido) pero contarán para el rate limit.
-    // Las últimas deberían devolver 429.
+    // We send 15 rapid requests to exceed the limit.
+    // The first ~10 will be 400/401 (invalid body) but will count toward the rate limit.
+    // The last ones should return 429.
 
-    console.log('  Enviando 15 requests rápidas para exceder rate limit...\n');
+    console.log('  Sending 15 rapid requests to exceed rate limit...\n');
 
     const responses: { status: number; body: string; headers: Headers }[] = [];
 
@@ -104,15 +104,15 @@ async function main() {
     assert(
         'Rate limit devuelve 429',
         got429,
-        got429 ? 'Se recibió al menos un 429' : 'NINGUNA respuesta fue 429',
+        got429 ? 'At least one 429 received' : 'NO response was 429',
     );
 
-    // 2. NUNCA se devolvió 500
+    // 2. NEVER returned 500
     const got500 = responses.some(r => r.status === 500);
     assert(
         'NUNCA devuelve 500 por rate limit',
         !got500,
-        got500 ? `SE RECIBIÓ 500 — BUG PRESENTE` : 'Ningún 500 detectado',
+        got500 ? `GOT 500 — BUG PRESENT` : 'No 500 detected',
     );
 
     // 3. Body del 429 tiene el formato correcto
@@ -130,12 +130,12 @@ async function main() {
             );
 
             assert(
-                'Body 429 tiene message (string no vacío)',
+                'Body 429 has message (non-empty string)',
                 hasMessage,
-                hasMessage ? `message: "${body.error.message}"` : 'message falta o vacío',
+                hasMessage ? `message: "${body.error.message}"` : 'message missing or empty',
             );
         } catch {
-            assert('Body 429 es JSON válido', false, 'No se pudo parsear el body');
+            assert('Body 429 is valid JSON', false, 'Could not parse the body');
         }
 
         // 4. Headers de rate limit presentes
@@ -146,23 +146,23 @@ async function main() {
         assert(
             'Header x-ratelimit-limit presente',
             hasLimitHeader,
-            hasLimitHeader ? `valor: ${first429.headers.get('x-ratelimit-limit')}` : 'FALTA',
+            hasLimitHeader ? `value: ${first429.headers.get('x-ratelimit-limit')}` : 'FALTA',
         );
 
         assert(
             'Header x-ratelimit-remaining presente',
             hasRemainingHeader,
-            hasRemainingHeader ? `valor: ${first429.headers.get('x-ratelimit-remaining')}` : 'FALTA',
+            hasRemainingHeader ? `value: ${first429.headers.get('x-ratelimit-remaining')}` : 'FALTA',
         );
 
         assert(
             'Header x-ratelimit-reset presente',
             hasResetHeader,
-            hasResetHeader ? `valor: ${first429.headers.get('x-ratelimit-reset')}` : 'FALTA',
+            hasResetHeader ? `value: ${first429.headers.get('x-ratelimit-reset')}` : 'FALTA',
         );
     } else {
-        assert('Body 429 tiene formato correcto', false, 'No se recibió ningún 429 para verificar');
-        assert('Headers rate limit presentes', false, 'No se recibió ningún 429 para verificar');
+        assert('Body 429 has correct format', false, 'No 429 received to verify');
+        assert('Rate limit headers present', false, 'No 429 received to verify');
     }
 
     // --- Resumen ---
@@ -181,7 +181,7 @@ async function main() {
         }
         process.exit(1);
     } else {
-        console.log('\n  ✅ Rate limit funciona correctamente. Bug inmortalizado. Nunca más vuelve.\n');
+        console.log('\n  ✅ Rate limit works correctly. Bug immortalized. Never returns.\n');
         process.exit(0);
     }
 }

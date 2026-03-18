@@ -18,20 +18,20 @@ import { sql } from 'drizzle-orm';
 /**
  * Tabla principal: records
  *
- * Almacena cada hecho de generación registrado por un agente de IA.
- * Referencia: PRD v1.1 sección G (Modelo de datos)
+ * Stores each generation fact registered by an AI agent.
+ * Reference: PRD v1.1 section G (Data model)
  *
  * Invariantes relacionados:
  * - INV-001: Records permanentes (no DELETE)
- * - INV-002: No UPDATE de campos post-creación
+ * - INV-002: No UPDATE of post-creation fields
  * - INV-014: Nonce uniqueness por wallet
  * - INV-012: No hay registro sin fee pagado
  */
 export const records = pgTable(
     'records',
     {
-        // --- Identificación ---
-        /** UUID v7, generado en la aplicación (NO gen_random_uuid()) */
+        // --- Identification ---
+        /** UUID v7, generated in the application (NOT gen_random_uuid()) */
         recordId: uuid('record_id').primaryKey(),
 
         /** SHA-256 del output generado. Formato: sha256:{64hex} */
@@ -44,20 +44,20 @@ export const records = pgTable(
         visibility: varchar('visibility', { length: 32 }).notNull().default('proof_only'),
 
         // --- Proof of Generation ---
-        /** PoG v1 bundle completo (schema, firma, metadata de generación) */
+        /** Complete PoG v1 bundle (schema, signature, generation metadata) */
         pogBundle: jsonb('pog_bundle').notNull(),
 
-        /** Nonce único por wallet — previene replay attacks */
+        /** Unique nonce per wallet — prevents replay attacks */
         nonce: varchar('nonce', { length: 64 }).notNull(),
 
-        /** Dirección de la wallet del agente que firma */
+        /** Address of the signing agent wallet */
         agentWallet: varchar('agent_wallet', { length: 42 }).notNull(),
 
         // --- Estado ---
         /** Estado del anchoring: pending_anchor → anchored | anchor_failed */
         state: varchar('state', { length: 32 }).notNull().default('pending_anchor'),
 
-        /** Timestamp de creación del registro */
+        /** Record creation timestamp */
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 
         /** Hash del receipt completo */
@@ -80,20 +80,20 @@ export const records = pgTable(
         /** Moneda del fee (ej: "MATIC", "ETH") */
         feeCurrency: varchar('fee_currency', { length: 8 }).notNull(),
 
-        /** Hash de la transacción de pago del fee — 1:1 con record, no reutilizable */
+        /** Fee payment transaction hash — 1:1 with record, non-reusable */
         feeTxHash: varchar('fee_tx_hash', { length: 66 }).notNull().unique(),
 
-        /** Número de bloque donde se confirmó el fee (Issue #23) */
+        /** Block number where the fee was confirmed (Issue #23) */
         feeBlock: bigint('fee_block', { mode: 'number' }),
 
-        /** Timestamp de confirmación del fee on-chain (Issue #23) */
+        /** Fee on-chain confirmation timestamp (Issue #23) */
         feeConfirmedAt: timestamp('fee_confirmed_at', { withTimezone: true }),
 
         // --- Anchoring ---
-        /** Hash de la transacción de anchoring on-chain */
+        /** On-chain anchoring transaction hash */
         anchorTxHash: varchar('anchor_tx_hash', { length: 66 }),
 
-        /** Número de bloque del anchoring */
+        /** Anchoring block number */
         anchorBlock: bigint('anchor_block', { mode: 'number' }),
 
         /** Chain ID de la blockchain de anchoring */
@@ -102,7 +102,7 @@ export const records = pgTable(
         /** Motivo del fallo de anchoring (si state == anchor_failed) */
         anchorErrorReason: text('anchor_error_reason'),
 
-        /** Número de reintentos de anchoring */
+        /** Number of anchoring retries */
         anchorRetries: integer('anchor_retries').notNull().default(0),
 
         /** Timestamp del anchoring exitoso */
@@ -113,8 +113,8 @@ export const records = pgTable(
         /** Anti-replay: un nonce no puede reutilizarse por la misma wallet */
         unique('uq_wallet_nonce').on(table.agentWallet, table.nonce),
 
-        // --- Índices ---
-        /** Índice funcional para búsquedas case-insensitive por wallet (listRecords usa lower()) */
+        // --- Indexes ---
+        /** Functional index for case-insensitive wallet lookups (listRecords uses lower()) */
         index('idx_records_agent_lower').using('btree', sql`lower(${table.agentWallet})`),
         index('idx_records_state').on(table.state),
         index('idx_records_created').on(table.createdAt),
@@ -154,12 +154,12 @@ export type NewRecord = typeof records.$inferInsert;
  * Seguridad:
  * - URL solo HTTPS (validado en app layer)
  * - Secret generado por servidor (32 bytes hex)
- * - Máximo 5 webhooks activos por wallet (app layer)
+ * - Maximum 5 active webhooks per wallet (app layer)
  */
 export const webhooks = pgTable(
     'webhooks',
     {
-        /** UUID v7, generado en la aplicación */
+        /** UUID v7, generated in the application */
         webhookId: uuid('webhook_id').primaryKey(),
 
         /** Wallet del agente propietario */
@@ -174,10 +174,10 @@ export const webhooks = pgTable(
         /** Eventos suscritos */
         events: text('events').array().notNull().default(sql`ARRAY['state_changed']::text[]`),
 
-        /** Si el webhook está activo */
+        /** Whether the webhook is active */
         active: boolean('active').notNull().default(true),
 
-        /** Timestamp de creación */
+        /** Creation timestamp */
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     },
     (table) => [

@@ -70,7 +70,7 @@ export async function checkDuplicates(
     nonce: string,
     feeTxHash: string,
 ) {
-    // Paralelizar los 3 checks — son independientes entre sí.
+    // Parallelize the 3 checks — they are independent of each other.
     // Race conditions protegidas por UNIQUE constraints en DB.
     const [existingByHash, existingByNonce, existingByFee] = await Promise.all([
         db.select({ recordId: records.recordId })
@@ -151,19 +151,19 @@ export async function createRecord(
             if (detail.includes('content_hash')) throw duplicateContentHash();
             if (detail.includes('wallet_nonce') || detail.includes('uq_wallet_nonce')) throw duplicateNonce();
             if (detail.includes('fee_tx_hash')) throw feeTxReused();
-            throw duplicateContentHash(); // UNIQUE desconocido → genérico
+            throw duplicateContentHash(); // Unknown UNIQUE → generic
         }
         throw dbError;
     }
 
-    // Encolar anchor job (Issue #22: si Redis no está disponible,
+    // Enqueue anchor job (Issue #22: if Redis is not available,
     // el record se guarda igualmente y el anchoring se reintenta
     // cuando el worker se reconecte)
     try {
         await enqueueAnchorJob(recordId, receiptHash);
     } catch (enqueueError) {
-        // No lanzar — el record ya está guardado en DB con state=pending_anchor.
-        // El worker procesará el job cuando Redis vuelva.
+        // Do not throw — the record is already saved in DB with state=pending_anchor.
+        // The worker will process the job when Redis comes back.
         console.warn('[recordsService] ⚠️ No se pudo encolar anchor (Redis down?)', {
             recordId,
             error: enqueueError instanceof Error ? enqueueError.message : String(enqueueError),
@@ -179,7 +179,7 @@ export async function createRecord(
 }
 
 // -------------------------------------------------------------------
-// 4. Listar records con filtros y paginación (Issue #21)
+// 4. List records with filters and pagination (Issue #21)
 // -------------------------------------------------------------------
 
 /**
@@ -187,7 +187,7 @@ export async function createRecord(
  * Devuelve los records paginados + total para la respuesta.
  */
 export async function listRecords(params: ListRecordsQuery) {
-    // --- Construir condiciones dinámicas ---
+    // --- Build dynamic conditions ---
     const conditions = [
         sql`lower(${records.agentWallet}) = ${params.agent_wallet.toLowerCase()}`,
     ];

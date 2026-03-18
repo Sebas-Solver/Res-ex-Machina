@@ -6,15 +6,15 @@ import { webhooks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 
 /**
- * Webhook Dispatcher — Servicio asíncrono de entrega de webhooks (Issue #13).
+ * Webhook Dispatcher — Asynchronous webhook delivery service (Issue #13).
  *
- * Diseño:
- * - Cola BullMQ `webhook_dispatch` (no bloquea el anchoring)
- * - HMAC-SHA256 para autenticación del payload
- * - 3 retries con backoff: 5s → 30s → 120s
- * - Timeout 5s por request HTTP
- * - No seguir redirects (mitigación SSRF)
- * - delivery_id + attempt para deduplicación
+ * Design:
+ * - BullMQ queue `webhook_dispatch` (doesn't block anchoring)
+ * - HMAC-SHA256 for payload authentication
+ * - 3 retries with backoff: 5s → 30s → 120s
+ * - 5s timeout per HTTP request
+ * - No redirect following (SSRF mitigation)
+ * - delivery_id + attempt for deduplication
  */
 
 // --- Cola BullMQ ---
@@ -31,7 +31,7 @@ export const webhookQueue = new Queue('webhook_dispatch', {
     },
 });
 
-/** Datos del job de webhook */
+/** Webhook job data */
 export interface WebhookJobData {
     webhookId: string;
     url: string;
@@ -40,7 +40,7 @@ export interface WebhookJobData {
     payload: WebhookPayload;
 }
 
-/** Payload del webhook */
+/** Webhook payload */
 export interface WebhookPayload {
     delivery_id: string;
     attempt: number;
@@ -57,9 +57,9 @@ export interface WebhookPayload {
 }
 
 /**
- * Encola jobs de webhook para todas las suscripciones activas de la wallet.
- * Se llama desde anchor.ts después de cambiar el estado del record.
- * Es async y no bloquea el flujo de anchoring.
+ * Enqueues webhook jobs for all active subscriptions of the wallet.
+ * Called from anchor.ts after changing the record state.
+ * Is async and does not block the anchoring flow.
  */
 export async function enqueueWebhookDispatch(
     agentWallet: string,
@@ -68,7 +68,7 @@ export async function enqueueWebhookDispatch(
     newState: string,
     anchorData?: { txHash?: string; block?: number; chainId?: number },
 ): Promise<void> {
-    // Buscar webhooks activos de esta wallet
+    // Find active webhooks for this wallet
     const activeWebhooks = await db
         .select()
         .from(webhooks)
@@ -114,20 +114,20 @@ export async function enqueueWebhookDispatch(
 }
 
 /**
- * Genera firma HMAC-SHA256 del payload.
+ * Generates HMAC-SHA256 signature of the payload.
  */
 export function signPayload(secret: string, body: string): string {
     return createHmac('sha256', secret).update(body).digest('hex');
 }
 
 /**
- * Ejecuta la entrega de un webhook.
- * Fetch HTTPS con timeout 5s, sin redirects.
+ * Executes a webhook delivery.
+ * HTTPS fetch with 5s timeout, no redirects.
  */
 export async function executeWebhookDelivery(job: Job<WebhookJobData>): Promise<void> {
     const { url, secret, payload } = job.data;
 
-    // Actualizar attempt en el payload
+    // Update attempt in the payload
     const currentPayload = { ...payload, attempt: job.attemptsMade + 1 };
     const body = JSON.stringify(currentPayload);
     const signature = signPayload(secret, body);
@@ -146,7 +146,7 @@ export async function executeWebhookDelivery(job: Job<WebhookJobData>): Promise<
             },
             body,
             signal: controller.signal,
-            redirect: 'error', // No seguir redirects (SSRF)
+            redirect: 'error', // Don't follow redirects (SSRF)
         });
 
         if (!response.ok) {
@@ -158,7 +158,7 @@ export async function executeWebhookDelivery(job: Job<WebhookJobData>): Promise<
 }
 
 /**
- * Calcula el backoff personalizado para retries: 5s → 30s → 120s.
+ * Calculates custom backoff for retries: 5s → 30s → 120s.
  */
 function customBackoff(attemptsMade: number): number {
     const delays = [5000, 30000, 120000];
@@ -166,8 +166,8 @@ function customBackoff(attemptsMade: number): number {
 }
 
 /**
- * Worker de webhook dispatch.
- * Se importa dinámicamente en producción (igual que el anchor worker).
+ * Webhook dispatch worker.
+ * Dynamically imported in production (same as the anchor worker).
  */
 export function createWebhookWorker(): Worker<WebhookJobData> {
     return new Worker<WebhookJobData>(

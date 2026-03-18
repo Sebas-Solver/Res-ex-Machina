@@ -3,7 +3,7 @@ import { resolve4 } from 'node:dns/promises';
 /**
  * Validador de URLs para webhooks (Issue #13).
  *
- * Mitigación SSRF:
+ * SSRF Mitigation:
  * 1. Solo acepta HTTPS
  * 2. Resuelve DNS y bloquea IPs privadas, localhost, link-local
  * 3. No seguir redirects (configurado en el fetch del dispatcher)
@@ -59,10 +59,10 @@ export async function validateWebhookUrl(url: string): Promise<void> {
         if (err instanceof Error && err.message.includes('blocked range')) {
             throw err;
         }
-        // DNS no resolvió — para IPs directas, comprobar el hostname literal
+        // DNS did not resolve — for direct IPs, check the hostname literal
         if (BLOCKED_IP_RANGES.some((regex) => regex.test(hostname))) {
             throw new Error(`IP ${hostname} is in a blocked range`);
         }
-        // Si el DNS falla de verdad, dejar pasar (se hará error en el fetch)
+        // If DNS truly fails, let it pass (will error on fetch)
     }
 }

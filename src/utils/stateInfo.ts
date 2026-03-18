@@ -1,16 +1,16 @@
 /**
- * Metadata estructurada para cada estado de un record.
+ * Structured metadata for each record state.
  *
- * Permite a agentes y bots actuar programáticamente sin
- * tener que interpretar el string de estado.
+ * Allows agents and bots to act programmatically without
+ * having to interpret the state string.
  */
 
 export interface StateInfo {
-    /** true si el estado es final (no cambiará más) */
+    /** true if the state is final (will not change anymore) */
     terminal: boolean;
-    /** true si el sistema puede reintentar automáticamente */
+    /** true if the system can retry automatically */
     retryable: boolean;
-    /** Descripción legible del estado */
+    /** Human-readable state description */
     description: string;
 }
 
@@ -33,8 +33,8 @@ const STATE_MAP: Record<string, StateInfo> = {
 };
 
 /**
- * Devuelve la metadata estructurada para un estado dado.
- * Si el estado es desconocido, devuelve un objeto genérico.
+ * Returns structured metadata for a given state.
+ * If the state is unknown, returns a generic object.
  */
 export function getStateInfo(state: string): StateInfo {
     return STATE_MAP[state] ?? {

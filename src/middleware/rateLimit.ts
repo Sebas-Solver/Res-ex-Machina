@@ -3,11 +3,11 @@ import type { FastifyInstance } from 'fastify';
 import { createRateLimitRedisClient } from '../config/redis.js';
 
 /**
- * Configura rate limiting en la aplicación.
+ * Configures rate limiting in the application.
  *
  * Dos niveles:
  * 1. Global: 100 req/min por IP (todos los endpoints)
- * 2. POST /records: 10 req/min por IP (más estricto, ruta-level)
+ * 2. POST /records: 10 req/min per IP (stricter, route-level)
  *
  * Store: Redis compartido (Issue #17).
  * Resiliencia: skipOnError = true → si Redis cae, rate limit se
@@ -62,15 +62,15 @@ export async function registerRateLimit(app: FastifyInstance): Promise<void> {
 }
 
 /**
- * Rate limit específico para POST /v1/records.
+ * Route-specific rate limit for POST /v1/records.
  * 10 req/min por IP + wallet (si disponible en body).
  *
- * Uso: aplicar como config en la declaración de la ruta POST.
+ * Usage: apply as config in the POST route declaration.
  *
  * NOTA: El keyGenerator intenta leer wallet del body. Fastify garantiza
- * que el body está parseado antes de ejecutar el rate limit cuando se usa
+ * that the body is parsed before executing the rate limit when using
  * como route-level config (no como onRequest hook). Si el body no se ha
- * parseado aún (ej. req malformada), el fallback a IP asegura protección.
+ * parsed yet (e.g. malformed req), the IP fallback ensures protection.
  */
 export const postRecordsRateConfig = {
     config: {
@@ -78,8 +78,8 @@ export const postRecordsRateConfig = {
             max: 10,
             timeWindow: '1 minute',
             keyGenerator: (request: { ip: string; body?: Record<string, unknown> }) => {
-                // Intentar extraer wallet para rate limit más granular.
-                // Fallback a IP si el body no está disponible o no tiene wallet.
+                // Try to extract wallet for more granular rate limiting.
+                // Fallback to IP if body is not available or has no wallet.
                 try {
                     const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
                     const wallet = body?.pog_bundle?.agent_wallet;

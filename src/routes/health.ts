@@ -12,7 +12,7 @@ import { publicClient as l2HealthClient } from '../config/blockchain.js';
  * - Redis (PING via ioredis)
  * - L2 blockchain (getBlockNumber)
  *
- * Devuelve status por componente para diagnóstico rápido.
+ * Returns status per component for quick diagnostics.
  *
  * Redis usa factory de config/redis.ts, blockchain usa publicClient
  * compartido de config/blockchain.ts (Issue #16).
@@ -26,7 +26,7 @@ function getRedisClient() {
     if (!redisClient) {
         redisClient = createHealthRedisClient();
 
-        // Si la conexión se pierde, invalidar para recrear en el próximo check
+        // If the connection is lost, invalidate to recreate on the next check
         redisClient.on('error', () => {
             redisClient?.disconnect();
             redisClient = null;
@@ -37,7 +37,7 @@ function getRedisClient() {
 
 // --- Health cache (Issue #16) ---
 // Cachea el resultado del health check 30 segundos para reducir
-// llamadas a Upstash (free tier: 10K cmd/día) y RPC blockchain.
+// calls to Upstash (free tier: 10K cmd/day) and blockchain RPC.
 
 const HEALTH_CACHE_TTL_MS = 30_000;
 let cachedHealth: { body: Record<string, unknown>; statusCode: number } | null = null;
@@ -48,7 +48,7 @@ let cachedAt = 0;
 
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
     app.get('/health', async (_request, reply) => {
-        // Devolver cache si es válido
+        // Return cache if valid
         const now = Date.now();
         if (cachedHealth && (now - cachedAt) < HEALTH_CACHE_TTL_MS) {
             return reply
@@ -92,7 +92,7 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
             'X-Cache': 'MISS',
         };
 
-        // Issue #22: Retry-After cuando hay degradación
+        // Issue #22: Retry-After when there is degradation
         if (statusCode === 503) {
             headers['Retry-After'] = '30';
         }

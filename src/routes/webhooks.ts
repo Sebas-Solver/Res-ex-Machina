@@ -17,23 +17,23 @@ import { ApiError } from '../utils/errors.js';
 /**
  * Webhook Routes — Issue #13
  *
- * Endpoints para gestionar webhooks de notificación de cambios de estado.
- * Todos los endpoints requieren autenticación por firma EIP-191 (walletAuth).
+ * Endpoints to manage state change notification webhooks.
+ * All endpoints require EIP-191 signature authentication (walletAuth).
  *
- * Seguridad:
- * - Solo HTTPS (SSRF mitigation)
- * - Secret generado por servidor (32 bytes hex)
- * - Máximo 5 webhooks por wallet
- * - Autenticación real por firma
+ * Security:
+ * - HTTPS only (SSRF mitigation)
+ * - Server-generated secret (32 bytes hex)
+ * - Maximum 5 webhooks per wallet
+ * - Real signature authentication
  */
 
-/** Máximo de webhooks activos por wallet */
+/** Maximum active webhooks per wallet */
 const MAX_WEBHOOKS_PER_WALLET = 5;
 
 export default async function webhookRoutes(fastify: FastifyInstance): Promise<void> {
 
     // =============================================
-    // POST /v1/webhooks — Registrar webhook
+    // POST /v1/webhooks — Register webhook
     // =============================================
 
     fastify.post('/', {
@@ -41,7 +41,7 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
     }, async (request, reply) => {
         const wallet = request.authenticatedWallet!;
 
-        // 1. Validar body con Zod
+        // 1. Validate body with Zod
         const parsed = createWebhookSchema.safeParse(request.body);
         if (!parsed.success) {
             throw new ApiError(400, 'invalid_webhook_payload', parsed.error.issues[0]?.message ?? 'Invalid webhook payload');
@@ -49,7 +49,7 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
 
         const { url, events } = parsed.data;
 
-        // 2. Validar URL contra SSRF
+        // 2. Validate URL against SSRF
         try {
             await validateWebhookUrl(url);
         } catch (err) {
@@ -58,7 +58,7 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
             });
         }
 
-        // 3. Comprobar límite de webhooks por wallet
+        // 3. Check webhook limit per wallet
         const [countResult] = await db
             .select({ count: count() })
             .from(webhooks)
@@ -71,10 +71,10 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
             throw webhookLimitReached();
         }
 
-        // 4. Generar secret (32 bytes hex = 64 chars)
+        // 4. Generate secret (32 bytes hex = 64 chars)
         const secret = randomBytes(32).toString('hex');
 
-        // 5. Crear webhook
+        // 5. Create webhook
         const webhookId = randomUUID();
 
         await db.insert(webhooks).values({
@@ -86,20 +86,20 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
             active: true,
         });
 
-        // 6. Devolver webhook CON secret (única vez)
+        // 6. Return webhook WITH secret (only time it's shown)
         return reply.status(201).send({
             webhook_id: webhookId,
             url,
             events,
             active: true,
-            secret, // ⚠️ Solo se muestra esta vez
+            secret, // ⚠️ Only shown this one time
             created_at: new Date().toISOString(),
             _warning: 'Save the secret now. It will not be shown again.',
         });
     });
 
     // =============================================
-    // GET /v1/webhooks — Listar webhooks propios
+    // GET /v1/webhooks — List own webhooks
     // =============================================
 
     fastify.get('/', {
@@ -125,14 +125,14 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
                 events: w.events,
                 active: w.active,
                 created_at: w.createdAt?.toISOString(),
-                // ⚠️ NO se devuelve el secret
+                // ⚠️ Secret is NOT returned
             })),
             total: results.length,
         };
     });
 
     // =============================================
-    // DELETE /v1/webhooks/:id — Eliminar webhook
+    // DELETE /v1/webhooks/:id — Delete webhook
     // =============================================
 
     fastify.delete<{ Params: { id: string } }>('/:id', {
@@ -141,7 +141,7 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
         const wallet = request.authenticatedWallet!;
         const { id } = request.params;
 
-        // Buscar webhook
+        // Find webhook
         const [webhook] = await db
             .select()
             .from(webhooks)
@@ -152,12 +152,12 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
             throw webhookNotFound();
         }
 
-        // Solo el owner puede borrar
+        // Only the owner can delete
         if (webhook.agentWallet.toLowerCase() !== wallet) {
             throw webhookForbidden();
         }
 
-        // Desactivar (soft delete para auditoría)
+        // Deactivate (soft delete for audit trail)
         await db
             .update(webhooks)
             .set({ active: false })

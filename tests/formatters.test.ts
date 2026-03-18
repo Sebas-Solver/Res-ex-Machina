@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
  * Tests para src/utils/formatters.ts
  *
  * Verifica que las funciones de formateo generan la estructura correcta
- * y que buildLinks produce URLs auto-generadas válidas (Issue #20).
+ * and that buildLinks produces valid auto-generated URLs (Issue #20).
  */
 
 // Mock env antes de importar formatters
@@ -100,13 +100,13 @@ describe('buildFeeBlock', () => {
         expect(fee.explorer_url).toContain('sepolia.basescan.org/tx/');
     });
 
-    it('incluye block y confirmed_at cuando están disponibles (Issue #23)', () => {
+    it('includes block and confirmed_at when available (Issue #23)', () => {
         const fee = buildFeeBlock(MOCK_RECORD);
         expect(fee.block).toBe(37655640);
         expect(fee.confirmed_at).toBe('2026-01-01T00:00:30.000Z');
     });
 
-    it('devuelve null para block y confirmed_at si no están disponibles', () => {
+    it('returns null for block and confirmed_at if not available', () => {
         const recordSinFeeBlock = { ...MOCK_RECORD, feeBlock: null, feeConfirmedAt: null } as any;
         const fee = buildFeeBlock(recordSinFeeBlock);
         expect(fee.block).toBeNull();
@@ -132,7 +132,7 @@ describe('buildLinks', () => {
         );
     });
 
-    it('usa localhost:PORT si API_BASE_URL no está definida', async () => {
+    it('uses localhost:PORT if API_BASE_URL is not defined', async () => {
         // Importar de nuevo con mock sin API_BASE_URL
         const { env } = await import('../src/config/env.js');
         const origUrl = env.API_BASE_URL;
@@ -191,7 +191,7 @@ describe('formatFullExport', () => {
 // formatCompactExport
 // ============================================================
 describe('formatCompactExport', () => {
-    it('no incluye links (optimización de tokens)', () => {
+    it('does not include links (token optimization)', () => {
         const compact = formatCompactExport(MOCK_RECORD);
 
         expect(compact.schema).toBe('rex.receipt.v1');

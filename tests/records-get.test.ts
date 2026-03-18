@@ -4,14 +4,14 @@ import recordRoutes from '../src/routes/records.js';
 import { apiErrorHandler } from '../src/utils/errors.js';
 
 /**
- * Tests de integración para los endpoints GET de /v1/records.
+ * Integration tests for the GET endpoints of /v1/records.
  *
  * Skills aplicadas:
  * - javascript-testing-patterns: vi.mock, inject pattern
  * - web3-testing: fixtures de datos, edge cases
  *
  * Estrategia: Mockeamos la capa de DB (drizzle) para no necesitar
- * una DB real. Testeamos la lógica de los handlers + error handling.
+ * a real DB. We test the handler logic + error handling.
  */
 
 // --- Fixture: record completo como lo devuelve la DB ---
@@ -114,7 +114,7 @@ describe('GET /v1/records/:id', () => {
         expect(body.anchor.block).toBe(42);
     });
 
-    it('devuelve 400 invalid_record_id si UUID inválido', async () => {
+    it('returns 400 invalid_record_id if UUID is invalid', async () => {
         const res = await app.inject({
             method: 'GET',
             url: '/v1/records/not-a-uuid',
@@ -136,7 +136,7 @@ describe('GET /v1/records/:id', () => {
         expect(res.json().error.code).toBe('record_not_found');
     });
 
-    it('devuelve anchor: null si record no está anchored', async () => {
+    it('returns anchor: null if record is not anchored', async () => {
         const pendingRecord = {
             ...MOCK_RECORD,
             state: 'pending_anchor',
@@ -199,7 +199,7 @@ describe('GET /v1/records/verify', () => {
         expect(res.json().error.code).toBe('invalid_content_hash');
     });
 
-    it('devuelve 400 si hash tiene caracteres inválidos', async () => {
+    it('returns 400 if hash has invalid characters', async () => {
         const res = await app.inject({
             method: 'GET',
             url: '/v1/records/verify?content_hash=sha256:' + 'GG'.repeat(32),
@@ -266,7 +266,7 @@ describe('GET /v1/records/:id/export', () => {
         expect(res.json().anchor).toBeNull();
     });
 
-    it('devuelve 400 si UUID inválido', async () => {
+    it('returns 400 if UUID is invalid', async () => {
         const res = await app.inject({
             method: 'GET',
             url: '/v1/records/bad-id/export',
@@ -339,7 +339,7 @@ describe('DX: state_info en respuestas', () => {
 });
 
 describe('DX: modo compact en export', () => {
-    it('mode=compact incluye solo campos de verificación', async () => {
+    it('mode=compact includes only verification fields', async () => {
         mockDbResult = [MOCK_RECORD];
 
         const res = await app.inject({
@@ -350,7 +350,7 @@ describe('DX: modo compact en export', () => {
         expect(res.statusCode).toBe(200);
         const body = res.json();
 
-        // Campos que SÍ deben estar
+        // Fields that MUST be present
         expect(body.schema).toBe('rex.receipt.v1');
         expect(body.spec_version).toBe('1.2');
         expect(body.record_id).toBeDefined();

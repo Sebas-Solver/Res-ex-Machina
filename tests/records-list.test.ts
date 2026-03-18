@@ -7,7 +7,7 @@ import { apiErrorHandler } from '../src/utils/errors.js';
  * Tests para GET /v1/records (Issue #21).
  *
  * Estrategia: Mockeamos la capa de DB (drizzle) y testeamos
- * la lógica del handler + validación de query params + formateo.
+ * the handler logic + query params validation + formatting.
  */
 
 // --- Fixture: record completo como lo devuelve la DB ---
@@ -79,9 +79,9 @@ const mockWhereSingle = vi.fn(() => ({ limit: mockLimitSingle }));
 
 // El mockWhere necesita decidir si devolver la cadena de list o single
 const mockWhere = vi.fn((..._args: any[]) => {
-    // Si se llamó desde el count, devolver countResult
-    // Si se llamó desde el select con orderBy, devolver la cadena orderBy
-    // Detectamos el contexto por lo que se seleccionó
+    // If called from count, return countResult
+    // If called from select with orderBy, return the orderBy chain
+    // We detect the context by what was selected
     if (mockSelectingCount) {
         return mockCountResult;
     }
@@ -189,7 +189,7 @@ describe('GET /v1/records (Issue #21)', () => {
         expect(res.json().error.code).toBe('missing_agent_wallet');
     });
 
-    it('devuelve 400 si agent_wallet no es dirección válida', async () => {
+    it('returns 400 if agent_wallet is not a valid address', async () => {
         const res = await app.inject({
             method: 'GET',
             url: '/v1/records?agent_wallet=not-an-address',
@@ -199,7 +199,7 @@ describe('GET /v1/records (Issue #21)', () => {
         expect(res.json().error.code).toBe('missing_agent_wallet');
     });
 
-    it('devuelve 400 si state no es valor válido', async () => {
+    it('returns 400 if state is not a valid value', async () => {
         const wallet = '0xDd688C11a20e1aDa37CC4A6e4492D5A22bE23A47';
         const res = await app.inject({
             method: 'GET',
@@ -210,7 +210,7 @@ describe('GET /v1/records (Issue #21)', () => {
         expect(res.json().error.code).toBe('invalid_query_param');
     });
 
-    it('devuelve lista vacía si wallet no tiene records', async () => {
+    it('returns empty list if wallet has no records', async () => {
         mockCountResult = [{ count: 0 }];
         mockSelectResult = [];
 
@@ -227,7 +227,7 @@ describe('GET /v1/records (Issue #21)', () => {
         expect(body.pagination.has_more).toBe(false);
     });
 
-    it('devuelve records formateados con paginación', async () => {
+    it('returns formatted records with pagination', async () => {
         mockCountResult = [{ count: 2 }];
         mockSelectResult = [MOCK_RECORD, MOCK_RECORD_2];
 
@@ -279,7 +279,7 @@ describe('GET /v1/records (Issue #21)', () => {
         expect(res.json().error.code).toBe('invalid_query_param');
     });
 
-    it('acepta filtro state válido', async () => {
+    it('accepts valid state filter', async () => {
         mockCountResult = [{ count: 1 }];
         mockSelectResult = [MOCK_RECORD];
 
@@ -306,7 +306,7 @@ describe('GET /v1/records (Issue #21)', () => {
         expect(res.statusCode).toBe(200);
     });
 
-    it('devuelve 400 si sort no es valor válido', async () => {
+    it('returns 400 if sort is not a valid value', async () => {
         const wallet = '0xDd688C11a20e1aDa37CC4A6e4492D5A22bE23A47';
         const res = await app.inject({
             method: 'GET',

@@ -10,10 +10,10 @@ import { foundry, baseSepolia } from 'viem/chains';
 import { env } from './env.js';
 
 /**
- * Configuración blockchain compartida.
+ * Shared blockchain configuration.
  *
- * Centraliza la definición de chain, publicClient, walletClient
- * y anchorAccount que antes se duplicaban en:
+ * Centralizes the definition of chain, publicClient, walletClient
+ * and anchorAccount that were previously duplicated in:
  * - src/services/anchor.ts  (chain + publicClient + walletClient)
  * - src/services/fee.ts     (publicClient)
  * - src/routes/health.ts    (publicClient)
@@ -22,11 +22,11 @@ import { env } from './env.js';
 // --- Chain definition ---
 
 /**
- * Mapa de chains conocidas.
- * - 31337: Anvil (desarrollo local)
+ * Map of known chains.
+ * - 31337: Anvil (local development)
  * - 84532: Base Sepolia (testnet alpha)
  *
- * Si el chain ID no está en el mapa, se crea una definición custom.
+ * If the chain ID is not in the map, a custom definition is created.
  */
 const KNOWN_CHAINS: Record<number, Chain> = {
     31337: foundry,
@@ -44,11 +44,11 @@ export const l2Chain = baseChain
         rpcUrls: { default: { http: [env.L2_RPC_URL] } },
     };
 
-// --- Clientes viem ---
+// --- viem clients ---
 
 /**
- * Cliente público para leer la blockchain (fee verification, anchor reads, health check).
- * Un solo cliente compartido para todas las lecturas.
+ * Public client for reading the blockchain (fee verification, anchor reads, health check).
+ * A single shared client for all reads.
  */
 export const publicClient = createPublicClient({
     chain: l2Chain,
@@ -58,13 +58,13 @@ export const publicClient = createPublicClient({
 // --- Anchor-specific (wallet) ---
 
 /**
- * Cuenta wallet para firmar transacciones de anchoring.
- * Usa la private key configurada en ANCHOR_WALLET_PRIVATE_KEY.
+ * Wallet account for signing anchoring transactions.
+ * Uses the private key configured in ANCHOR_WALLET_PRIVATE_KEY.
  */
 export const anchorAccount = privateKeyToAccount(env.ANCHOR_WALLET_PRIVATE_KEY as Hex);
 
 /**
- * Cliente wallet para enviar transacciones de anchoring.
+ * Wallet client for sending anchoring transactions.
  */
 export const walletClient = createWalletClient({
     account: anchorAccount,

@@ -12,7 +12,7 @@ import { signPayload } from '../src/services/webhookDispatcher.js';
  * 4. Error factories
  */
 
-// Mock de módulos que requieren Redis/DB
+// Mock of modules that require Redis/DB
 vi.mock('../src/db/index.js', () => ({
     db: { select: vi.fn(), insert: vi.fn(), update: vi.fn(), delete: vi.fn() },
 }));
@@ -33,7 +33,7 @@ vi.mock('../src/services/queue.js', () => ({
 
 describe('createWebhookSchema (Issue #13)', () => {
 
-    it('acepta URL HTTPS válida', () => {
+    it('accepts valid HTTPS URL', () => {
         const result = createWebhookSchema.safeParse({
             url: 'https://example.com/webhook',
         });
@@ -53,7 +53,7 @@ describe('createWebhookSchema (Issue #13)', () => {
         }
     });
 
-    it('rechaza URL inválida', () => {
+    it('rejects invalid URL', () => {
         const result = createWebhookSchema.safeParse({
             url: 'not-a-url',
         });
@@ -67,7 +67,7 @@ describe('createWebhookSchema (Issue #13)', () => {
         expect(result.success).toBe(false);
     });
 
-    it('acepta eventos personalizados válidos', () => {
+    it('accepts valid custom events', () => {
         const result = createWebhookSchema.safeParse({
             url: 'https://example.com/webhook',
             events: ['state_changed'],
@@ -75,7 +75,7 @@ describe('createWebhookSchema (Issue #13)', () => {
         expect(result.success).toBe(true);
     });
 
-    it('rechaza evento inválido', () => {
+    it('rejects invalid event', () => {
         const result = createWebhookSchema.safeParse({
             url: 'https://example.com/webhook',
             events: ['invalid_event'],
@@ -113,7 +113,7 @@ describe('URL Validator — SSRF mitigation (Issue #13)', () => {
             .rejects.toThrow('localhost');
     });
 
-    it('rechaza URLs con protocolo inválido', async () => {
+    it('rejects URLs with invalid protocol', async () => {
         const { validateWebhookUrl } = await import('../src/utils/urlValidator.js');
         await expect(validateWebhookUrl('ftp://example.com/hook'))
             .rejects.toThrow('HTTPS');

@@ -18,7 +18,7 @@ export function computeReceiptHash(
     nonce: string,
     createdAt: Date,
 ): string {
-    // Concatenar en orden canónico con separador '|'
+    // Concatenate in canonical order with separator '|'
     const canonical = [
         recordId,
         contentHash,

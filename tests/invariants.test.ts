@@ -9,7 +9,7 @@ import { apiErrorHandler } from '../src/utils/errors.js';
  * Validan los invariantes definidos en invariants.yml:
  * - INV-001: Records permanentes (no DELETE)
  * - INV-003: Content hash sha256 obligatorio
- * - INV-005: Firma EIP-712 válida obligatoria
+ * - INV-005: Valid EIP-712 signature required
  * - INV-012: Fee verificado on-chain
  * - INV-014: Nonce unique por wallet
  * - INV-016: Content hash unique (idempotencia)
@@ -84,7 +84,7 @@ afterAll(async () => {
     await app.close();
 });
 
-// --- Fixture: PoG bundle válido ---
+// --- Fixture: valid PoG bundle ---
 const VALID_POG_BUNDLE = {
     schema: 'pog.v1',
     content_hash: 'sha256:' + 'ab'.repeat(32),
@@ -128,7 +128,7 @@ describe('INV-001: DELETE no permitido', () => {
 // =============================================
 // INV-003: Content hash formato sha256
 // =============================================
-describe('INV-003: Content hash válido', () => {
+describe('INV-003: Valid content hash', () => {
     it('POST con content_hash malformado → 400', async () => {
         const body = {
             ...VALID_POST_BODY,
@@ -166,7 +166,7 @@ describe('INV-003: Content hash válido', () => {
 // INV-005: Firma EIP-712 obligatoria
 // =============================================
 describe('INV-005: Firma EIP-712', () => {
-    it('POST con firma inválida → 401', async () => {
+    it('POST with invalid signature → 401', async () => {
         const { ApiError } = await import('../src/utils/errors.js');
         mockVerifyPoGSignature.mockRejectedValue(
             new ApiError(401, 'invalid_signature', 'Bad signature'),
@@ -334,7 +334,7 @@ describe('INV-016: Content hash unique', () => {
 // POST exitoso — flujo completo
 // =============================================
 describe('POST /v1/records — flujo exitoso', () => {
-    it('POST válido → 201 con record_id y receipt_hash', async () => {
+    it('valid POST → 201 with record_id and receipt_hash', async () => {
         mockVerifyPoGSignature.mockResolvedValue(undefined);
         mockVerifyFee.mockResolvedValue({ verified: true, amount: '0.01', recipient: '0x...', blockNumber: 1n });
         mockEnqueueAnchorJob.mockResolvedValue(undefined);
@@ -357,7 +357,7 @@ describe('POST /v1/records — flujo exitoso', () => {
 
 // =============================================
 // GET endpoints — ya cubiertos en records-get.test.ts
-// Aquí solo validamos los invariantes clave
+// Here we only validate the key invariants
 // =============================================
 describe('Invariantes GET', () => {
     it('GET record existente → 200', async () => {

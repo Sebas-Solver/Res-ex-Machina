@@ -1,7 +1,7 @@
 /**
  * Mapeo de chain IDs a explorers de blockchain.
  *
- * Genera URLs de explorador automáticamente para que
+ * Generates explorer URLs automatically so that
  * los developers/agentes no tengan que construirlas manualmente.
  */
 
@@ -23,7 +23,7 @@ const EXPLORERS: Record<number, ExplorerConfig> = {
 };
 
 /**
- * Devuelve la URL del explorador para una transacción.
+ * Returns the explorer URL for a transaction.
  * @returns URL completa o null si no hay explorer para esa chain.
  */
 export function getExplorerTxUrl(chainId: number, txHash: string): string | null {

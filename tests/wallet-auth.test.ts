@@ -18,7 +18,7 @@ describe('walletAuth middleware', () => {
         vi.clearAllMocks();
     });
 
-    it('rechaza si faltan headers de autenticación', async () => {
+    it('rejects if authentication headers are missing', async () => {
         await expect(walletAuth(fakeRequest())).rejects.toMatchObject({
             code: 'missing_auth_headers',
             statusCode: 401,
@@ -35,7 +35,7 @@ describe('walletAuth middleware', () => {
         });
     });
 
-    it('rechaza si X-Wallet-Address tiene formato inválido', async () => {
+    it('rejects if X-Wallet-Address has invalid format', async () => {
         await expect(walletAuth(fakeRequest({
             'x-wallet-address': 'not-a-wallet',
             'x-signature': '0x1234',
@@ -46,7 +46,7 @@ describe('walletAuth middleware', () => {
         });
     });
 
-    it('rechaza si X-Timestamp está expirado (>5 min)', async () => {
+    it('rejects if X-Timestamp is expired (>5 min)', async () => {
         const oldTimestamp = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10 min ago
         await expect(walletAuth(fakeRequest({
             'x-wallet-address': '0xDd6894b5447CD6A7103201372041DcAC8b2A0244',
@@ -58,7 +58,7 @@ describe('walletAuth middleware', () => {
         });
     });
 
-    it('rechaza si X-Timestamp tiene formato inválido', async () => {
+    it('rejects if X-Timestamp has invalid format', async () => {
         await expect(walletAuth(fakeRequest({
             'x-wallet-address': '0xDd6894b5447CD6A7103201372041DcAC8b2A0244',
             'x-signature': '0x1234',
@@ -69,7 +69,7 @@ describe('walletAuth middleware', () => {
         });
     });
 
-    it('rechaza si la firma es inválida (verifyMessage retorna false)', async () => {
+    it('rejects if signature is invalid (verifyMessage returns false)', async () => {
         mockVerifyMessage.mockResolvedValue(false);
         await expect(walletAuth(fakeRequest({
             'x-wallet-address': '0xDd6894b5447CD6A7103201372041DcAC8b2A0244',
@@ -93,7 +93,7 @@ describe('walletAuth middleware', () => {
         });
     });
 
-    it('autenticación exitosa → inyecta authenticatedWallet', async () => {
+    it('successful authentication → injects authenticatedWallet', async () => {
         mockVerifyMessage.mockResolvedValue(true);
         const timestamp = new Date().toISOString();
         const request = fakeRequest({
@@ -120,7 +120,7 @@ describe('walletAuth middleware', () => {
         mockVerifyMessage.mockResolvedValue(true);
         const timestamp = '2026-02-16T11:00:00.000Z';
 
-        // Simula que el timestamp está dentro de la ventana
+        // Simulates that the timestamp is within the window
         vi.spyOn(Date, 'now').mockReturnValue(new Date(timestamp).getTime());
 
         await walletAuth(fakeRequest({

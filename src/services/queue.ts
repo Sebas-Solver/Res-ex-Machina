@@ -5,7 +5,7 @@ import { redisConnectionConfig } from '../config/redis.js';
  * Cola de anchoring — los jobs se procesan en el worker (Issue #6).
  * Cada job contiene el record_id y receipt_hash para grabar on-chain.
  *
- * Conexión Redis centralizada en config/redis.ts (Issue #16).
+ * Redis connection centralized in config/redis.ts (Issue #16).
  */
 
 export const anchorQueue = new Queue('anchor', {
@@ -16,7 +16,7 @@ export const anchorQueue = new Queue('anchor', {
             type: 'exponential',
             delay: 5000, // 5s, 10s, 20s, 40s, 80s
         },
-        removeOnComplete: 50, // Threat Model — D-01: reducir retención en Redis
+        removeOnComplete: 50, // Threat Model — D-01: reduce retention in Redis
         removeOnFail: 200,
     },
 });

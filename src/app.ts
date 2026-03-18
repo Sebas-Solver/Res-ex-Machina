@@ -1,4 +1,4 @@
-// Issue #19: Sentry debe inicializarse ANTES que cualquier otro import
+// Issue #19: Sentry must be initialized BEFORE any other import
 import { initMonitoring } from './config/monitoring.js';
 initMonitoring();
 
@@ -16,8 +16,8 @@ import { client } from './db/index.js';
 /**
  * Res ex Machina — API Server
  *
- * Entry point principal de la aplicación.
- * Registra todas las rutas bajo el prefijo /v1.
+ * Main application entry point.
+ * Registers all routes under the /v1 prefix.
  */
 
 const app = Fastify({
@@ -28,17 +28,17 @@ const app = Fastify({
                 ? { target: 'pino-pretty', options: { colorize: true } }
                 : undefined,
     },
-    // Límite de body request (64KB según error catalog)
+    // Request body limit (64KB per error catalog)
     bodyLimit: 64 * 1024,
-    // Generar request_id único para trazabilidad
+    // Generate unique request_id for traceability
     genReqId: () => randomUUID(),
-    // Desactivar header X-Powered-By
+    // Disable X-Powered-By header
     disableRequestLogging: false,
 });
 
-// --- Logs estructurados: añadir wallet y record_id a los logs ---
+// --- Structured logs: add wallet and record_id to logs ---
 app.addHook('onRequest', async (request) => {
-    // Añadir request_id al header de respuesta para debugging del cliente
+    // Add request_id to response header for client debugging
     request.raw.headers['x-request-id'] = request.id;
 });
 
@@ -51,7 +51,7 @@ app.addHook('onResponse', async (request, reply) => {
         response_time_ms: reply.elapsedTime,
     };
 
-    // Extraer wallet del body si es POST /records (truncada por privacidad)
+    // Extract wallet from body if POST /records (truncated for privacy)
     if (request.method === 'POST' && request.url.includes('/records')) {
         const body = request.body as { pog_bundle?: { agent_wallet?: string } } | undefined;
         const wallet = body?.pog_bundle?.agent_wallet?.toLowerCase();
@@ -60,7 +60,7 @@ app.addHook('onResponse', async (request, reply) => {
         }
     }
 
-    // Log con nivel apropiado según status code
+    // Log with appropriate level based on status code
     if (reply.statusCode >= 500) {
         request.log.error(logData, 'request completed with error');
     } else if (reply.statusCode >= 400) {
@@ -83,13 +83,13 @@ await app.register(cors, {
     methods: ['GET', 'POST', 'DELETE'],
 });
 
-// --- Error handler global ---
+// --- Global error handler ---
 app.setErrorHandler(apiErrorHandler);
 
 // --- Rate limiting ---
 await registerRateLimit(app);
 
-// --- INV-001: DELETE no permitido (405 Method Not Allowed) ---
+// --- INV-001: DELETE not allowed (405 Method Not Allowed) ---
 app.delete('/v1/records/:id', async (_request, reply) => {
     return reply.status(405).send({
         error: {
@@ -99,22 +99,22 @@ app.delete('/v1/records/:id', async (_request, reply) => {
     });
 });
 
-// --- Registrar rutas bajo /v1 ---
+// --- Register routes under /v1 ---
 app.register(healthRoutes, { prefix: '/v1' });
 app.register(recordRoutes, { prefix: '/v1/records' });
 app.register(webhookRoutes, { prefix: '/v1/webhooks' });
 
-// --- Ruta raíz ---
+// --- Root route ---
 app.get('/', async () => {
     return {
         name: 'Res ex Machina',
-        description: 'Registro neutral y automatizado de hechos de generación por IA',
+        description: 'Neutral and automated registry of AI generation events',
         version: 'v1',
         docs: '/v1/health',
     };
 });
 
-// --- Arrancar servidor ---
+// --- Start server ---
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 const start = async () => {
@@ -122,17 +122,17 @@ const start = async () => {
         await app.listen({ port: PORT, host: '0.0.0.0' });
         app.log.info(`⚖️  Res ex Machina API listening on port ${PORT}`);
 
-        // En producción, arrancar el worker de anchoring en el mismo proceso.
-        // En desarrollo se ejecuta aparte con `npm run worker:anchor`.
-        // Import dinámico para evitar conexión Redis al cargar el módulo en tests.
+        // In production, start the anchoring worker in the same process.
+        // In development it runs separately with `npm run worker:anchor`.
+        // Dynamic import to avoid Redis connection when loading the module in tests.
         if (process.env.NODE_ENV === 'production') {
             try {
                 await import('./workers/anchor.worker.js');
-                app.log.info('⚓ Anchor worker iniciado (inline, mismo proceso)');
+                app.log.info('⚓ Anchor worker started (inline, same process)');
             } catch (workerErr) {
-                app.log.error(workerErr, '❌ Anchor worker falló al iniciar (¿Redis disponible?)');
-                // No hacer process.exit — la API puede funcionar sin worker,
-                // los jobs se procesarán cuando el worker esté disponible.
+                app.log.error(workerErr, '❌ Anchor worker failed to start (Redis available?)');
+                // Don't process.exit — the API can work without the worker,
+                // jobs will be processed when the worker becomes available.
             }
         }
     } catch (err) {
@@ -142,31 +142,31 @@ const start = async () => {
 };
 
 // --- Graceful shutdown (Q-2) ---
-// Al recibir SIGTERM (deploy) o SIGINT (Ctrl+C):
-// 1. Fastify deja de aceptar requests nuevas y espera a las activas
-// 2. Cierra la cola BullMQ (no acepta nuevos jobs)
-// 3. Cierra el pool de conexiones PostgreSQL
+// On receiving SIGTERM (deploy) or SIGINT (Ctrl+C):
+// 1. Fastify stops accepting new requests and waits for active ones
+// 2. Closes the BullMQ queue (no new jobs accepted)
+// 3. Closes the PostgreSQL connection pool
 async function shutdown(signal: string) {
-    app.log.info(`🛑 ${signal} recibido — iniciando shutdown graceful...`);
+    app.log.info(`🛑 ${signal} received — starting graceful shutdown...`);
 
     try {
-        // 1. Cerrar Fastify (drena requests activas)
+        // 1. Close Fastify (drains active requests)
         await app.close();
-        app.log.info('✅ Fastify cerrado (requests drenadas)');
+        app.log.info('✅ Fastify closed (requests drained)');
 
-        // 2. Cerrar cola BullMQ (import dinámico para evitar conexión Redis al cargar el módulo)
+        // 2. Close BullMQ queue (dynamic import to avoid Redis connection on module load)
         const { anchorQueue } = await import('./services/queue.js');
         await anchorQueue.close();
-        app.log.info('✅ Cola de anchoring cerrada');
+        app.log.info('✅ Anchoring queue closed');
 
-        // 3. Cerrar pool de PostgreSQL
+        // 3. Close PostgreSQL pool
         await client.end();
-        app.log.info('✅ Conexión PostgreSQL cerrada');
+        app.log.info('✅ PostgreSQL connection closed');
 
-        app.log.info('👋 Shutdown completo — saliendo');
+        app.log.info('👋 Shutdown complete — exiting');
         process.exit(0);
     } catch (err) {
-        app.log.error(err, '❌ Error durante shutdown');
+        app.log.error(err, '❌ Error during shutdown');
         process.exit(1);
     }
 }

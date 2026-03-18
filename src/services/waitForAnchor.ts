@@ -20,7 +20,7 @@ export interface WaitResult {
  * hasta que el estado cambie o se agote el timeout.
  *
  * @param recordId - UUID del record a esperar
- * @param maxWaitMs - Tiempo máximo de espera (default: 25s, compatible con Render)
+ * @param maxWaitMs - Maximum wait time (default: 25s, compatible with Render)
  * @param intervalMs - Intervalo entre consultas (default: 2s)
  * @returns El estado actual del record (puede ser pending_anchor si timeout)
  */
@@ -46,7 +46,7 @@ export async function waitForAnchor(
             .limit(1);
 
         if (result.length === 0) {
-            // El record no existe (no debería pasar, pero manejamos)
+            // The record does not exist (should not happen, but we handle it)
             return {
                 state: 'pending_anchor',
                 anchorTxHash: null,
@@ -58,7 +58,7 @@ export async function waitForAnchor(
 
         const record = result[0];
 
-        // Si salió de pending_anchor, devolver inmediatamente
+        // If it left pending_anchor, return immediately
         if (record.state !== 'pending_anchor') {
             return {
                 state: record.state,

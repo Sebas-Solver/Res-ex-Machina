@@ -1,17 +1,17 @@
 /**
- * Alpha Test — Agente A: Happy Path + Burst
+ * Alpha Test — Agent A: Happy Path + Burst
  *
- * Simula un agente legítimo que:
- * 1. Genera 20 records seguidos (burst)
- * 2. Verifica que todos se crearon correctamente
- * 3. Comprueba idempotencia
- * 4. Exporta y verifica un receipt offline
+ * Simulates a legitimate agent that:
+ * 1. Generates 20 records in a burst
+ * 2. Verifies all were created correctly
+ * 3. Checks idempotency
+ * 4. Exports and verifies a receipt offline
  *
- * Uso:
+ * Usage:
  *   docker compose up -d
  *   npm run db:push
- *   npm run dev          (otra terminal)
- *   npm run worker:anchor (otra terminal)
+ *   npm run dev          (another terminal)
+ *   npm run worker:anchor (another terminal)
  *   npx tsx scripts/alpha/agent-a-happy-path.ts
  */
 
@@ -22,11 +22,11 @@ import { createHash, randomBytes } from 'node:crypto';
 const API_URL = process.env.API_URL || 'http://localhost:3000';
 const BURST_COUNT = 20;
 
-// Anvil account #1 (no la #0 que es el receiver)
+// Anvil account #1 (not #0 which is the receiver)
 const AGENT_PRIVATE_KEY = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d';
 const account = privateKeyToAccount(AGENT_PRIVATE_KEY);
 
-console.log(`\n⚖️  Alpha Test — Agente A (Happy Path)`);
+console.log(`\n⚖️  Alpha Test — Agent A (Happy Path)`);
 console.log(`   Wallet: ${account.address}`);
 console.log(`   API:    ${API_URL}`);
 console.log(`   Burst:  ${BURST_COUNT} records\n`);
@@ -68,7 +68,7 @@ function generateNonce(): string {
 async function signPoG(contentHash: string, nonce: string) {
     const ts = new Date().toISOString();
 
-    // Campos planos para la firma EIP-712
+    // Flat fields for EIP-712 signing
     const sigMessage = {
         schema: 'pog.v1',
         content_hash: contentHash,
@@ -89,7 +89,7 @@ async function signPoG(contentHash: string, nonce: string) {
         message: sigMessage,
     });
 
-    // Body para la API: generation_process como objeto anidado
+    // API body: generation_process as nested object
     return {
         schema: 'pog.v1',
         content_hash: contentHash,
@@ -108,7 +108,7 @@ async function signPoG(contentHash: string, nonce: string) {
 }
 
 async function sendFeeTx(): Promise<string> {
-    // Enviar un pago real al fee receiver en Anvil
+    // Send a real payment to the fee receiver on Anvil
     const { createWalletClient, createPublicClient, http, parseEther } = await import('viem');
     const { anvil } = await import('viem/chains');
 
@@ -128,7 +128,7 @@ async function sendFeeTx(): Promise<string> {
         value: parseEther('0.01'),
     });
 
-    // Esperar confirmación
+    // Wait for confirmation
     await publicClient.waitForTransactionReceipt({ hash });
     return hash;
 }
@@ -148,18 +148,18 @@ const results: TestResult[] = [];
 const recordIds: string[] = [];
 
 console.log('═══════════════════════════════════════');
-console.log('  TEST 1: Burst de 20 records');
+console.log('  TEST 1: Burst of 20 records');
 console.log('═══════════════════════════════════════\n');
 
 for (let i = 0; i < BURST_COUNT; i++) {
     const start = performance.now();
     try {
-        // 1. Generar contenido y firma
+        // 1. Generate content and signature
         const contentHash = generateContentHash();
         const nonce = generateNonce();
         const pogBundle = await signPoG(contentHash, nonce);
 
-        // 2. Enviar fee real en Anvil
+        // 2. Send real fee on Anvil
         const feeTxHash = await sendFeeTx();
 
         // 3. POST /v1/records
@@ -203,7 +203,7 @@ console.log('  TEST 2: Idempotencia (duplicate hash)');
 console.log('═══════════════════════════════════════\n');
 
 if (recordIds.length > 0) {
-    // Intentar crear un record con el mismo content_hash (ya existe en DB)
+    // Try to create a record with the same content_hash (already exists in DB)
     const duplicateHash = 'sha256:0000000000000000000000000000000000000000000000000000000000000000';
     const nonce1 = generateNonce();
     const pog1 = await signPoG(duplicateHash, nonce1);
@@ -222,9 +222,9 @@ if (recordIds.length > 0) {
     const body1 = await res1.json();
 
     if (res1.status === 201) {
-        console.log(`  ✅ Primer registro con hash fijo: ${body1.record_id}`);
+        console.log(`  ✅ First record with fixed hash: ${body1.record_id}`);
 
-        // Segundo intento con el mismo hash
+        // Second attempt with same hash
         const nonce2 = generateNonce();
         const pog2 = await signPoG(duplicateHash, nonce2);
         const fee2 = await sendFeeTx();
@@ -242,12 +242,12 @@ if (recordIds.length > 0) {
         const body2 = await res2.json();
 
         if (res2.status === 409) {
-            console.log(`  ✅ Idempotencia correcta: 409 → ${body2.error?.code}`);
+            console.log(`  ✅ Idempotency correct: 409 → ${body2.error?.code}`);
         } else {
-            console.log(`  ❌ Esperaba 409, recibí ${res2.status}: ${JSON.stringify(body2)}`);
+            console.log(`  ❌ Expected 409, got ${res2.status}: ${JSON.stringify(body2)}`);
         }
     } else {
-        console.log(`  ⚠️  Primer registro falló: ${res1.status}`);
+        console.log(`  ⚠️  First record failed: ${res1.status}`);
     }
 }
 
@@ -270,7 +270,7 @@ if (recordIds.length > 0) {
     const receipt = await resExport.json();
     console.log(`  EXPORT /${testId}: ${resExport.status} → schema: ${receipt.schema}`);
 
-    // Verificar receipt_hash offline
+    // Verify receipt_hash offline
     if (receipt.receipt_hash && receipt.pog_bundle) {
         const canonical = [
             receipt.record_id,
@@ -286,10 +286,10 @@ if (recordIds.length > 0) {
     }
 }
 
-// ─── Resumen ───────────────────────────────────────────
+// ─── Summary ─────────────────────────────────────────
 
 console.log('\n═══════════════════════════════════════');
-console.log('  RESUMEN Agente A');
+console.log('  SUMMARY Agent A');
 console.log('═══════════════════════════════════════\n');
 
 const successes = results.filter(r => r.success);
@@ -298,14 +298,14 @@ const durations = results.map(r => r.durationMs).sort((a, b) => a - b);
 const p95 = durations[Math.floor(durations.length * 0.95)] ?? 0;
 const avg = Math.round(durations.reduce((a, b) => a + b, 0) / durations.length);
 
-console.log(`  Records creados: ${successes.length}/${BURST_COUNT}`);
-console.log(`  Fallos:          ${failures.length}`);
-console.log(`  Latencia media:  ${avg}ms`);
-console.log(`  Latencia p95:    ${p95}ms`);
-console.log(`  ¿p95 < 3000ms?   ${p95 < 3000 ? '✅ SÍ' : '❌ NO'}`);
+console.log(`  Records created: ${successes.length}/${BURST_COUNT}`);
+console.log(`  Failures:        ${failures.length}`);
+console.log(`  Avg latency:     ${avg}ms`);
+console.log(`  p95 latency:     ${p95}ms`);
+console.log(`  p95 < 3000ms?    ${p95 < 3000 ? '✅ YES' : '❌ NO'}`);
 
 if (failures.length > 0) {
-    console.log('\n  Detalles de fallos:');
+    console.log('\n  Failure details:');
     failures.forEach(f => console.log(`    [${f.index}] ${f.error}`));
 }
 

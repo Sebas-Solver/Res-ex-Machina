@@ -19,7 +19,7 @@ export interface AnchorResult {
 /**
  * Ancla un receipt_hash en la blockchain L2.
  *
- * La transacción es un simple transfer a la dirección del fee receiver
+ * The transaction is a simple transfer to the fee receiver address
  * con 0 valor, pero con el receipt_hash codificado en el input data.
  * Esto crea una huella inmutable en la blockchain.
  *
@@ -36,14 +36,14 @@ export async function anchorRecord(
     const encoder = new TextEncoder();
     const data = `0x${Buffer.from(encoder.encode(receiptHash)).toString('hex')}` as Hex;
 
-    // Enviar transacción con receipt_hash en calldata
+    // Send transaction with receipt_hash in calldata
     const txHash = await walletClient.sendTransaction({
         to: env.FEE_RECEIVER_ADDRESS as Address,
         value: 0n,
         data,
     });
 
-    // Esperar confirmación
+    // Wait for confirmation
     const receipt = await publicClient.waitForTransactionReceipt({
         hash: txHash,
     });
@@ -79,7 +79,7 @@ export async function anchorRecord(
         }
     } catch (webhookErr) {
         /* webhook dispatch failure must never block anchoring */
-        console.warn('[anchor] ⚠️ Webhook dispatch falló (no bloquea)', {
+        console.warn('[anchor] ⚠️ Webhook dispatch failed (non-blocking)', {
             recordId,
             error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr),
         });
@@ -117,7 +117,7 @@ export async function markAnchorFailed(
         }
     } catch (webhookErr) {
         /* webhook dispatch failure must never block anchoring */
-        console.warn('[anchor] ⚠️ Webhook dispatch falló (no bloquea)', {
+        console.warn('[anchor] ⚠️ Webhook dispatch failed (non-blocking)', {
             recordId,
             error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr),
         });

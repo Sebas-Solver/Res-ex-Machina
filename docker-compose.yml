@@ -1,5 +1,5 @@
 # ============================================
-# Res ex Machina — Docker Compose (desarrollo)
+# Res ex Machina — Docker Compose (development)
 # ============================================
 
 services:
@@ -25,7 +25,7 @@ services:
         condition: service_healthy
     command: npm run dev
 
-  # --- Anvil (blockchain local para desarrollo) ---
+  # --- Anvil (local blockchain for development) ---
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
     entrypoint: ["anvil", "--host", "0.0.0.0", "--chain-id", "31337", "--block-time", "1"]

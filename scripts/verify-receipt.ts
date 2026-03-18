@@ -4,7 +4,7 @@
  * Verifica un receipt exportado de RxM de forma independiente:
  *   1. Recalcula el receipt_hash y compara
  *   2. Verifica la firma EIP-712 del PoG bundle
- *   3. Comprueba en blockchain que el anchored_hash está en el calldata
+ *   3. Checks on blockchain that the anchored_hash is in the calldata
  *
  * Uso:
  *   npx tsx scripts/verify-receipt.ts <receipt.json | URL>
@@ -181,7 +181,7 @@ async function verifySignature(receipt: Receipt): Promise<{ ok: boolean; signer:
     } catch {
         return {
             ok: false,
-            signer: 'error: no se pudo verificar',
+            signer: 'error: could not verify',
             expected: pog_bundle.agent_wallet,
         };
     }
@@ -196,7 +196,7 @@ async function verifyAnchor(receipt: Receipt): Promise<{ ok: boolean; detail: st
     const config = CHAIN_CONFIG[chainId];
 
     if (!config) {
-        return { ok: false, detail: `Chain ID ${chainId} no soportada para verificación` };
+        return { ok: false, detail: `Chain ID not supported for verification` };
     }
 
     const client = createPublicClient({
@@ -284,10 +284,10 @@ async function main() {
     console.log('\n1️⃣  Verificando receipt_hash...');
     const hashResult = verifyReceiptHash(receipt);
     if (hashResult.ok) {
-        console.log(`   ✅ VÁLIDO — hash recalculado coincide`);
+        console.log(`   ✅ VALID — recalculated hash matches`);
         console.log(`      ${hashResult.computed}`);
     } else {
-        console.log(`   ❌ INVÁLIDO — hash no coincide`);
+        console.log(`   ❌ INVALID — hash does not match`);
         console.log(`      Esperado:  ${hashResult.expected}`);
         console.log(`      Calculado: ${hashResult.computed}`);
         allPassed = false;
@@ -297,9 +297,9 @@ async function main() {
     console.log('\n2️⃣  Verificando firma EIP-712...');
     const sigResult = await verifySignature(receipt);
     if (sigResult.ok) {
-        console.log(`   ✅ VÁLIDA — firmado por ${sigResult.signer}`);
+        console.log(`   ✅ VALID — signed by ${sigResult.signer}`);
     } else {
-        console.log(`   ❌ INVÁLIDA — ${sigResult.signer}`);
+        console.log(`   ❌ INVALID — ${sigResult.signer}`);
         allPassed = false;
     }
 
@@ -317,7 +317,7 @@ async function main() {
     } else {
         console.log(`   ⚠️  ${anchorResult.detail}`);
         if (receipt.state !== 'anchored') {
-            console.log(`      (El record aún no ha sido anclado)`);
+            console.log(`      (The record has not been anchored yet)`);
         } else {
             allPassed = false;
         }
@@ -326,9 +326,9 @@ async function main() {
     // Verdict
     console.log('\n═══════════════════════════════════════════');
     if (allPassed) {
-        console.log('  📋 Veredicto: ✅ RECORD AUTÉNTICO');
+        console.log('  📋 Verdict: ✅ AUTHENTIC RECORD');
     } else {
-        console.log('  📋 Veredicto: ❌ VERIFICACIÓN FALLIDA');
+        console.log('  📋 Verdict: ❌ VERIFICATION FAILED');
     }
     console.log('═══════════════════════════════════════════\n');
 

@@ -2,16 +2,16 @@ import { z } from 'zod';
 import 'dotenv/config';
 
 /**
- * Schema de validación para variables de entorno.
- * Si falta alguna variable obligatoria, la app no arranca.
+ * Validation schema for environment variables.
+ * If a required variable is missing, the app will not start.
  */
 const envSchema = z.object({
-    // Servidor
+    // Server
     PORT: z.coerce.number().default(3000),
     NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-    // Base de datos
+    // Database
     DATABASE_URL: z.string().url(),
 
     // Redis
@@ -27,10 +27,10 @@ const envSchema = z.object({
     // Anchoring
     ANCHOR_WALLET_PRIVATE_KEY: z.string().regex(/^0x[a-fA-F0-9]{64}$/),
 
-    // API (opcional — para links auto-generados en respuestas)
+    // API (optional — for auto-generated links in responses)
     API_BASE_URL: z.string().url().optional(),
 
-    // Sentry (Issue #19 — monitorización de errores)
+    // Sentry (Issue #19 — error monitoring)
     SENTRY_DSN: z.string().url().optional(),
 });
 
@@ -40,7 +40,7 @@ function loadEnv(): Env {
     const result = envSchema.safeParse(process.env);
 
     if (!result.success) {
-        console.error('❌ Variables de entorno inválidas:');
+        console.error('❌ Invalid environment variables:');
         console.error(result.error.format());
         process.exit(1);
     }

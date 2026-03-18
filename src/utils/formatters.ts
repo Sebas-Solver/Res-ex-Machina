@@ -6,14 +6,14 @@ import type { records } from '../db/schema.js';
 /**
  * Formatters de respuesta para la API.
  *
- * Extraídos de routes/records.ts para reutilización (Issue #18).
+ * Extracted from routes/records.ts for reuse (Issue #18).
  * Incluyen links auto-generados (Issue #20).
  */
 
 type DbRecord = typeof records.$inferSelect;
 
 /**
- * Dominio EIP-712 que se incluye en el export para verificación offline.
+ * EIP-712 domain included in the export for offline verification.
  * Debe coincidir con signature.ts.
  */
 const EXPORTED_EIP712_DOMAIN = {
@@ -67,7 +67,7 @@ export function buildFeeBlock(record: DbRecord) {
  * - export: URL para exportar el receipt
  * - verify: URL para verificar por content_hash
  *
- * Usa API_BASE_URL si está definida, sino construye desde localhost:PORT.
+ * Uses API_BASE_URL if defined, otherwise builds from localhost:PORT.
  */
 export function buildLinks(record: DbRecord) {
     const baseUrl = env.API_BASE_URL ?? `http://localhost:${env.PORT}`;
@@ -110,7 +110,7 @@ export function formatRecordResponse(record: DbRecord) {
 
 /**
  * Formatea el export completo (mode=full, default).
- * Incluye toda la info para verificación offline + links.
+ * Includes all info for offline verification + links.
  */
 export function formatFullExport(record: DbRecord) {
     return {
@@ -151,7 +151,7 @@ export function formatFullExport(record: DbRecord) {
 
 /**
  * Formatea el export compacto (mode=compact).
- * Solo incluye los campos necesarios para verificación criptográfica.
+ * Only includes fields necessary for cryptographic verification.
  * Optimizado para contextos de LLM donde cada token cuenta.
  * No incluye links (ahorro de tokens).
  */

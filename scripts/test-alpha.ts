@@ -3,10 +3,10 @@
  *
  * Este script ejecuta el flujo completo de registro de un contenido:
  *   1. Genera un contenido de prueba y calcula su hash SHA-256
- *   2. Envía la transacción de fee al fee receiver en Base Sepolia
+ *   2. Sends the fee transaction to the fee receiver on Base Sepolia
  *   3. Firma el PoG bundle con EIP-712
- *   4. Llama a POST /v1/records en la API pública
- *   5. Consulta el record para verificar el resultado
+ *   4. Calls POST /v1/records on the public API
+ *   5. Queries the record to verify the result
  *   6. Verifica links auto-generados (Issue #20)
  *   7. Exporta receipt y verifica estructura
  *   8. Verifica por content_hash
@@ -15,8 +15,8 @@
  * Uso:
  *   npx tsx scripts/test-alpha.ts
  *
- * Requiere la variable TEST_AGENT_PRIVATE_KEY (clave privada de la wallet del agente).
- * Se puede poner en .env o pasar por línea de comandos.
+ * Requires the TEST_AGENT_PRIVATE_KEY variable (private key of the agent wallet).
+ * Can be set in .env or passed via command line.
  */
 
 import 'dotenv/config';
@@ -38,13 +38,13 @@ import { baseSepolia } from 'viem/chains';
 
 const API_URL = 'https://res-ex-machina-api.onrender.com';
 const FEE_RECEIVER: Address = '0x13bB040691BBa236a2A2AB83fE904EcC965Ba8a0';
-const FEE_AMOUNT = 0.0002; // ETH (mínimo en Render es 0.0001)
+const FEE_AMOUNT = 0.0002; // ETH (minimum on Render is 0.0001)
 
 const AGENT_PRIVATE_KEY = process.env.TEST_AGENT_PRIVATE_KEY;
 if (!AGENT_PRIVATE_KEY) {
-    console.error('❌ Falta TEST_AGENT_PRIVATE_KEY en .env');
-    console.error('   Añade esta línea a tu .env:');
-    console.error('   TEST_AGENT_PRIVATE_KEY=0xTU_CLAVE_PRIVADA_DEL_AGENTE');
+    console.error('❌ Missing TEST_AGENT_PRIVATE_KEY in .env');
+    console.error('   Add this line to your .env:');
+    console.error('   TEST_AGENT_PRIVATE_KEY=0xYOUR_AGENT_PRIVATE_KEY');
     process.exit(1);
 }
 
@@ -119,12 +119,12 @@ async function main() {
     console.log('  🧪 Test E2E — Res ex Machina Alpha');
     console.log('═══════════════════════════════════════════\n');
 
-    // ── Paso 0: Verificar que la API está viva ──
-    console.log('📡 Paso 0: Verificando que la API está online...');
+    // ── Step 0: Verify the API is alive ──
+    console.log('📡 Paso 0: Verifying the API is online...');
     const healthRes = await fetch(`${API_URL}/v1/health`);
     const health = await healthRes.json();
     if (health.status !== 'ok') {
-        console.error('❌ La API no está sana:', health);
+        console.error('❌ The API is not healthy:', health);
         process.exit(1);
     }
     console.log(`   ✅ API OK (DB: ${health.checks.database.latencyMs}ms, Redis: ${health.checks.redis.latencyMs}ms, Blockchain: ${health.checks.blockchain.latencyMs}ms)\n`);
@@ -136,7 +136,7 @@ async function main() {
     console.log(`   Contenido: "${testContent.substring(0, 60)}..."`);
     console.log(`   Hash: ${contentHash}\n`);
 
-    // ── Paso 2: Verificar balance ──
+    // ── Step 2: Verify balance ──
     console.log('💰 Paso 2: Verificando balance del agente...');
     const balance = await publicClient.getBalance({ address: account.address });
     const balanceEth = parseFloat(formatEther(balance));
@@ -148,7 +148,7 @@ async function main() {
     }
     console.log(`   ✅ Balance suficiente\n`);
 
-    // ── Paso 3: Enviar transacción de fee ──
+    // ── Step 3: Send fee transaction ──
     console.log(`💸 Paso 3: Enviando fee de ${FEE_AMOUNT} ETH a ${FEE_RECEIVER}...`);
     const feeValue = BigInt(Math.round(FEE_AMOUNT * 1e18));
     const feeTxHash = await walletClient.sendTransaction({
@@ -156,11 +156,11 @@ async function main() {
         value: feeValue,
     });
     console.log(`   📤 Tx enviada: ${feeTxHash}`);
-    console.log('   ⏳ Esperando confirmación...');
+    console.log('   ⏳ Waiting for confirmation...');
 
     const feeReceipt = await publicClient.waitForTransactionReceipt({ hash: feeTxHash });
     console.log(`   ✅ Confirmada en bloque ${feeReceipt.blockNumber}`);
-    console.log('   ⏳ Esperando 10s para propagación en la red...');
+    console.log('   ⏳ Waiting 10s for network propagation...');
     await sleep(10000);
     console.log('   ✅ Listo\n');
 
@@ -236,7 +236,7 @@ async function main() {
         process.exit(1);
     }
 
-    // ── Paso 6: Esperar y verificar anchoring ──
+    // ── Step 6: Wait and verify anchoring ──
     console.log('⚓ Paso 6: Esperando anchoring (puede tardar ~30 seg)...');
     let anchored = false;
     let anchoredData: any = null;
@@ -249,23 +249,23 @@ async function main() {
         if (checkData.state === 'anchored') {
             anchored = true;
             anchoredData = checkData;
-            console.log(`\n   ✅ ¡ANCLADO EN BLOCKCHAIN!`);
+            console.log(`\n   ✅ ANCHORED ON BLOCKCHAIN!`);
             console.log(`   🔗 Tx: ${checkData.anchor.explorer_url}`);
             console.log(`   📦 Bloque: ${checkData.anchor.block}`);
             console.log(`   ⛓️  Chain: ${checkData.anchor.network_name} (ID: ${checkData.anchor.chain_id})`);
             break;
         } else if (checkData.state === 'anchor_failed') {
-            console.error(`\n   ❌ Anchoring falló`);
+            console.error(`\n   ❌ Anchoring failed`);
             break;
         }
     }
 
     if (!anchored) {
-        console.log(`\n   ⏳ El anchoring aún no se ha completado. Puedes revisar manualmente:`);
+        console.log(`\n   ⏳ Anchoring has not completed yet. You can check manually:`);
         console.log(`   ${API_URL}/v1/records/${apiData.record_id}`);
     }
 
-    // ── Paso 7: Verificar links auto-generados (Issue #20) ──
+    // ── Step 7: Verify auto-generated links (Issue #20) ──
     console.log('\n🔗 Paso 7: Verificando links auto-generados...');
     const linksRes = await fetch(`${API_URL}/v1/records/${apiData.record_id}`);
     const linksData = await linksRes.json();
@@ -276,7 +276,7 @@ async function main() {
         console.log(`      export: ${linksData.links.export}`);
         console.log(`      verify: ${linksData.links.verify}`);
 
-        // Verificar que los links son accesibles
+        // Verify that links are accessible
         const selfCheck = await fetch(linksData.links.self);
         console.log(`   ${selfCheck.ok ? '✅' : '❌'} Link 'self' ${selfCheck.ok ? 'funciona' : 'falla'} (${selfCheck.status})`);
 
@@ -286,7 +286,7 @@ async function main() {
         console.log(`   ⚠️ Links no presentes (API_BASE_URL no configurada?)`);
     }
 
-    // Verificar fee block con explorer
+    // Verify fee block with explorer
     if (linksData.fee) {
         console.log(`\n   💰 Fee block:`);
         console.log(`      amount:       ${linksData.fee.amount} ${linksData.fee.currency}`);
@@ -294,7 +294,7 @@ async function main() {
         console.log(`      explorer_url: ${linksData.fee.explorer_url}`);
     }
 
-    // Verificar state_info
+    // Verify state_info
     console.log(`\n   📊 State info: "${linksData.state_info?.description}" (terminal: ${linksData.state_info?.terminal}, retryable: ${linksData.state_info?.retryable})`);
 
     // ── Paso 8: Exportar receipt ──
@@ -302,7 +302,7 @@ async function main() {
     const exportRes = await fetch(`${API_URL}/v1/records/${apiData.record_id}/export`);
     const receipt = await exportRes.json();
 
-    // Verificar estructura del export
+    // Verify export structure
     const exportChecks = [
         ['schema', receipt.schema === 'rex.receipt.v1'],
         ['spec_version', receipt.spec_version === '1.2'],
@@ -311,12 +311,12 @@ async function main() {
         ['links', !!receipt.links],
         ['fee.explorer_url', !!receipt.fee?.explorer_url],
     ];
-    console.log('   Verificación de estructura del export:');
+    console.log('   Export structure verification:');
     for (const [name, ok] of exportChecks) {
         console.log(`      ${ok ? '✅' : '❌'} ${name}`);
     }
 
-    // Mostrar export compacto también
+    // Also show compact export
     console.log('\n   📦 Export compacto:');
     const compactRes = await fetch(`${API_URL}/v1/records/${apiData.record_id}/export?mode=compact`);
     const compact = await compactRes.json();
@@ -330,11 +330,11 @@ async function main() {
         console.log(`      ${ok ? '✅' : '❌'} ${name}`);
     }
 
-    // ── Paso 9: Verificar por content_hash ──
+    // ── Step 9: Verify by content_hash ──
     console.log('\n🔍 Paso 9: Verificando por content_hash...');
     const verifyRes = await fetch(`${API_URL}/v1/records/verify?content_hash=${contentHash}`);
     const verifyData = await verifyRes.json();
-    console.log(`   ✅ Record encontrado: ${verifyData.exists}`);
+    console.log(`   ✅ Record found: ${verifyData.exists}`);
     console.log(`   Record ID: ${verifyData.record_id}`);
     console.log(`   Estado: ${verifyData.state}`);
     console.log(`   State info: ${verifyData.state_info?.description}`);
@@ -355,15 +355,15 @@ async function main() {
     const mineData = await mineRes.json();
 
     if (mineRes.ok) {
-        console.log(`   ✅ Autenticación exitosa`);
+        console.log(`   ✅ Authentication successful`);
         console.log(`   Wallet: ${mineData.wallet}`);
         console.log(`   Total records: ${mineData.total}`);
-        console.log(`   Records en esta página: ${mineData.records?.length}`);
-        console.log(`   Paginación: limit=${mineData.pagination?.limit}, offset=${mineData.pagination?.offset}, has_more=${mineData.pagination?.has_more}`);
+        console.log(`   Records on this page: ${mineData.records?.length}`);
+        console.log(`   Pagination: limit=${mineData.pagination?.limit}, offset=${mineData.pagination?.offset}, has_more=${mineData.pagination?.has_more}`);
 
-        // Verificar que el record que acabamos de crear está en la lista
+        // Verify the record we just created is in the list
         const found = mineData.records?.some((r: any) => r.record_id === apiData.record_id);
-        console.log(`   ${found ? '✅' : '❌'} Record recién creado ${found ? 'encontrado' : 'NO encontrado'} en la lista`);
+        console.log(`   ${found ? '✅' : '❌'} Record just created ${found ? 'encontrado' : 'NOT found'} en la lista`);
     } else {
         console.log(`   ❌ Error ${mineRes.status}: ${JSON.stringify(mineData)}`);
     }

@@ -25,7 +25,7 @@ const API = 'https://res-ex-machina-api.onrender.com';
 const PRIVATE_KEY = process.env.TEST_AGENT_PRIVATE_KEY as Hex;
 
 if (!PRIVATE_KEY) {
-    console.error('❌ Falta TEST_AGENT_PRIVATE_KEY en .env');
+    console.error('❌ Missing TEST_AGENT_PRIVATE_KEY in .env');
     process.exit(1);
 }
 
@@ -107,12 +107,12 @@ async function main() {
 
         // Validaciones
         if (data.record_id !== EXISTING_RECORD_ID) throw new Error('record_id no coincide');
-        if (!data.content_hash?.startsWith('sha256:')) throw new Error('Falta content_hash');
+        if (!data.content_hash?.startsWith('sha256:')) throw new Error('Missing content_hash');
         if (data.state !== 'anchored') throw new Error(`state: ${data.state} (esperado: anchored)`);
-        if (!data.pog_bundle?.signature) throw new Error('Falta pog_bundle.signature');
-        if (!data.fee?.tx_hash) throw new Error('Falta fee.tx_hash');
-        if (!data.anchor?.tx_hash) throw new Error('Falta anchor.tx_hash');
-        if (!data.links?.self) throw new Error('Falta links.self');
+        if (!data.pog_bundle?.signature) throw new Error('Missing pog_bundle.signature');
+        if (!data.fee?.tx_hash) throw new Error('Missing fee.tx_hash');
+        if (!data.anchor?.tx_hash) throw new Error('Missing anchor.tx_hash');
+        if (!data.links?.self) throw new Error('Missing links.self');
 
         return `state=${data.state}, anchor_block=${data.anchor.block}`;
     });
@@ -130,9 +130,9 @@ async function main() {
         // Puede devolver records[] o un wrapper con data[]
         const records = data.records ?? data.data ?? data;
         if (!Array.isArray(records)) throw new Error('Respuesta no es array');
-        if (records.length === 0) throw new Error('No se encontraron records para esta wallet');
+        if (records.length === 0) throw new Error('No records found for this wallet');
 
-        // Verificar que el record del smoke test está en la lista
+        // Verify the smoke test record is in the list
         const found = records.some((r: any) => r.record_id === EXISTING_RECORD_ID);
         if (!found) throw new Error(`Record ${EXISTING_RECORD_ID} no aparece en /mine`);
 
@@ -156,9 +156,9 @@ async function main() {
         }
         const data = await res.json() as any;
 
-        if (!data.webhook_id) throw new Error('Falta webhook_id');
-        if (!data.secret) throw new Error('Falta secret (debería mostrarse solo una vez)');
-        if (!data.url) throw new Error('Falta url');
+        if (!data.webhook_id) throw new Error('Missing webhook_id');
+        if (!data.secret) throw new Error('Missing secret (should be shown only once)');
+        if (!data.url) throw new Error('Missing url');
         if (data.active !== true) throw new Error(`active=${data.active} (esperado: true)`);
 
         webhookId = data.webhook_id;
@@ -175,23 +175,23 @@ async function main() {
         }
         const data = await res.json() as any;
 
-        if (!data.webhooks || !Array.isArray(data.webhooks)) throw new Error('Falta array webhooks');
-        if (data.total < 1) throw new Error('total < 1 — debería haber al menos 1');
+        if (!data.webhooks || !Array.isArray(data.webhooks)) throw new Error('Missing webhooks array');
+        if (data.total < 1) throw new Error('total < 1 — should have at least 1');
 
-        // Verificar que el webhook creado aparece
+        // Verify the created webhook appears
         const found = data.webhooks.some((w: any) => w.webhook_id === webhookId);
         if (webhookId && !found) throw new Error(`Webhook ${webhookId} no aparece en la lista`);
 
-        // Verificar que no se devuelve el secret
+        // Verify the secret is not returned
         const leakedSecret = data.webhooks.some((w: any) => w.secret);
-        if (leakedSecret) throw new Error('⚠️ SEGURIDAD: el secret se muestra en GET (no debería)');
+        if (leakedSecret) throw new Error('⚠️ SECURITY: secret is shown in GET (should not be)');
 
         return `${data.total} webhook(s), sin secret expuesto ✔`;
     });
 
     // ─── Step 11: DELETE /v1/webhooks/:id ───
     await runStep(11, 'DELETE /webhooks/:id (eliminar)', async () => {
-        if (!webhookId) throw new Error('No hay webhook_id (paso 9 falló)');
+        if (!webhookId) throw new Error('No webhook_id (step 9 failed)');
 
         const headers = await getAuthHeaders();
         // DELETE no tiene body → quitar Content-Type para evitar error de Fastify
@@ -209,14 +209,14 @@ async function main() {
         if (data.deleted !== true) throw new Error(`deleted=${data.deleted} (esperado: true)`);
         if (data.webhook_id !== webhookId) throw new Error('webhook_id no coincide');
 
-        // Verificar que ya no aparece como activo
+        // Verify it no longer appears as active
         const headers2 = await getAuthHeaders();
         const res2 = await fetch(`${API}/v1/webhooks`, { headers: headers2 });
         const data2 = await res2.json() as any;
         const stillActive = (data2.webhooks ?? []).some(
             (w: any) => w.webhook_id === webhookId && w.active === true
         );
-        if (stillActive) throw new Error('Webhook sigue activo después de DELETE');
+        if (stillActive) throw new Error('Webhook still active after DELETE');
 
         return `webhook ${webhookId} eliminado y verificado`;
     });

@@ -18,7 +18,7 @@ describe('pogBundleSchema', () => {
         signature: '0x' + 'ab'.repeat(65),
     };
 
-    it('acepta un bundle válido', () => {
+    it('accepts a valid bundle', () => {
         const result = pogBundleSchema.safeParse(validBundle);
         expect(result.success).toBe(true);
     });
@@ -43,7 +43,7 @@ describe('pogBundleSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rechaza process_type inválido', () => {
+    it('rejects invalid process_type', () => {
         const result = pogBundleSchema.safeParse({
             ...validBundle,
             generation_process: { ...validBundle.generation_process, process_type: 'invalid' },
@@ -51,7 +51,7 @@ describe('pogBundleSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('acepta los 4 process_types válidos', () => {
+    it('accepts the 4 valid process_types', () => {
         for (const type of ['direct', 'pipeline', 'iterative', 'autonomous']) {
             const result = pogBundleSchema.safeParse({
                 ...validBundle,
@@ -61,19 +61,19 @@ describe('pogBundleSchema', () => {
         }
     });
 
-    // --- Límite de tamaño 32KB (Threat Model — D-04) ---
+    // --- Size limit 32KB (Threat Model — D-04) ---
 
-    it('acepta pog_bundle dentro del límite de 32KB', () => {
+    it('accepts pog_bundle within the 32KB limit', () => {
         const result = pogBundleSchema.safeParse(validBundle);
         expect(result.success).toBe(true);
-        // Un bundle típico pesa ~500 bytes, muy por debajo de 32KB
+        // A typical bundle weighs ~500 bytes, well below 32KB
         expect(JSON.stringify(validBundle).length).toBeLessThan(32_768);
     });
 
-    it('tiene protección doble: límites de campo + refine de tamaño total', () => {
-        // Los campos individuales ya tienen límites estrictos:
+    it('has double protection: field limits + total size refine', () => {
+        // Individual fields already have strict limits:
         // model_id max 128, runtime_id max 128, nonce max 128, signature 132
-        // Esto hace imposible crear un bundle > 32KB con campos válidos.
+        // This makes it impossible to create a bundle > 32KB with valid fields.
         // Verificamos que el refine de 32KB existe como defensa en profundidad.
         const maxBundle = {
             ...validBundle,
@@ -82,7 +82,7 @@ describe('pogBundleSchema', () => {
             nonce: 'z'.repeat(128),
         };
         const serialized = JSON.stringify(maxBundle);
-        // Incluso con campos al máximo, no supera 32KB
+        // Even with maximum fields, it does not exceed 32KB
         expect(serialized.length).toBeLessThan(32_768);
         const result = pogBundleSchema.safeParse(maxBundle);
         expect(result.success).toBe(true);
@@ -111,7 +111,7 @@ describe('createRecordSchema', () => {
         fee_tx_hash: '0x' + 'ee'.repeat(32),
     };
 
-    it('acepta un body válido con campos opcionales por defecto', () => {
+    it('accepts a valid body with default optional fields', () => {
         const result = createRecordSchema.safeParse(validBody);
         expect(result.success).toBe(true);
         if (result.success) {
@@ -120,14 +120,14 @@ describe('createRecordSchema', () => {
         }
     });
 
-    it('acepta visibility válida', () => {
+    it('accepts valid visibility', () => {
         for (const vis of ['proof_only', 'input_hash_only', 'content_optional']) {
             const result = createRecordSchema.safeParse({ ...validBody, visibility: vis });
             expect(result.success).toBe(true);
         }
     });
 
-    it('rechaza visibility inválida', () => {
+    it('rejects invalid visibility', () => {
         const result = createRecordSchema.safeParse({ ...validBody, visibility: 'public' });
         expect(result.success).toBe(false);
     });
@@ -137,7 +137,7 @@ describe('createRecordSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('acepta tags válidas (max 10)', () => {
+    it('accepts valid tags (max 10)', () => {
         const result = createRecordSchema.safeParse({
             ...validBody,
             tags: ['art', 'code', 'music'],
@@ -145,7 +145,7 @@ describe('createRecordSchema', () => {
         expect(result.success).toBe(true);
     });
 
-    it('rechaza más de 10 tags', () => {
+    it('rejects more than 10 tags', () => {
         const result = createRecordSchema.safeParse({
             ...validBody,
             tags: Array.from({ length: 11 }, (_, i) => `tag-${i}`),
@@ -153,7 +153,7 @@ describe('createRecordSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rechaza fee_tx_hash inválido', () => {
+    it('rejects invalid fee_tx_hash', () => {
         const result = createRecordSchema.safeParse({ ...validBody, fee_tx_hash: 'no-es-hash' });
         expect(result.success).toBe(false);
     });
@@ -168,7 +168,7 @@ describe('createRecordSchema', () => {
         }
     });
 
-    it('acepta provenance_metadata C2PA válido', () => {
+    it('accepts valid C2PA provenance_metadata', () => {
         const result = createRecordSchema.safeParse({
             ...validBody,
             provenance_metadata: {
@@ -205,14 +205,14 @@ describe('provenanceMetadataSchema', () => {
         manifest_hash: 'sha256:' + 'ab'.repeat(32),
     };
 
-    it('acepta los 5 standards válidos', () => {
+    it('accepts the 5 valid standards', () => {
         for (const std of ['c2pa', 'iptc', 'xmp', 'schema_org', 'custom']) {
             const result = provenanceMetadataSchema.safeParse({ ...validProvenance, standard: std });
             expect(result.success).toBe(true);
         }
     });
 
-    it('rechaza standard inválido', () => {
+    it('rejects invalid standard', () => {
         const result = provenanceMetadataSchema.safeParse({ ...validProvenance, standard: 'unknown' });
         expect(result.success).toBe(false);
     });
@@ -227,7 +227,7 @@ describe('provenanceMetadataSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rechaza más de 20 assertions', () => {
+    it('rejects more than 20 assertions', () => {
         const result = provenanceMetadataSchema.safeParse({
             ...validProvenance,
             assertions: Array.from({ length: 21 }, (_, i) => `assertion-${i}`),
@@ -259,7 +259,7 @@ describe('provenanceMetadataSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('acepta manifest_uri URL válida', () => {
+    it('accepts valid manifest_uri URL', () => {
         const result = provenanceMetadataSchema.safeParse({
             ...validProvenance,
             manifest_uri: 'https://example.com/manifest.c2pa',
@@ -269,7 +269,7 @@ describe('provenanceMetadataSchema', () => {
 
     // --- pki_timestamp (Issue #14) ---
 
-    it('acepta pki_timestamp ISO-8601 válido', () => {
+    it('accepts valid ISO-8601 pki_timestamp', () => {
         const result = provenanceMetadataSchema.safeParse({
             ...validProvenance,
             pki_timestamp: '2026-02-16T12:00:00.000Z',
@@ -285,7 +285,7 @@ describe('provenanceMetadataSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('acepta provenance completa con doble atestación temporal', () => {
+    it('accepts complete provenance with dual temporal attestation', () => {
         const result = provenanceMetadataSchema.safeParse({
             ...validProvenance,
             claim_generator: 'Adobe Photoshop 25.0',

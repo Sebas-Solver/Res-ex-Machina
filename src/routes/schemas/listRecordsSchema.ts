@@ -8,7 +8,7 @@ const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;
  * - agent_wallet: obligatorio, filtra por wallet del agente
  * - state, content_type, tag: filtros opcionales
  * - from, to: rango de fechas (ISO 8601)
- * - limit, offset: paginación
+ * - limit, offset: pagination
  * - sort: orden de resultados
  */
 export const listRecordsQuerySchema = z.object({

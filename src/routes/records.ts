@@ -43,14 +43,14 @@ import { walletAuth } from '../middleware/walletAuth.js';
  * GET /:id/export — Exportar receipt (Issue #5, soporta ?mode=compact)
  */
 export default async function recordRoutes(fastify: FastifyInstance) {
-    // --- Endpoint de listado público (Issue #21) ---
+    // --- Public listing endpoint (Issue #21) ---
 
     /**
      * GET /v1/records?agent_wallet=0x...
      *
      * Lista records filtrados por wallet (obligatorio) y criterios opcionales.
      * Soporta filtros: state, content_type, tag, from, to, sort.
-     * Paginación: limit (1-100, default 20), offset (default 0).
+     * Pagination: limit (1-100, default 20), offset (default 0).
      */
     fastify.get<{
         Querystring: Record<string, string | undefined>;
@@ -62,7 +62,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
             const firstError = parsed.error.issues[0];
             const path = firstError?.path?.join('.') ?? 'unknown';
 
-            // Error específico si falta agent_wallet
+            // Specific error if agent_wallet is missing
             if (path === 'agent_wallet') {
                 throw missingAgentWallet();
             }
@@ -118,7 +118,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         await verifyPoGSignature(pog_bundle);
 
         // 3. Checks de duplicados (content_hash, nonce, fee_tx_hash) en paralelo
-        //    + verificar fee on-chain — independientes entre sí
+        //    + verify fee on-chain — independent of each other
         const [, feeVerification] = await Promise.all([
             checkDuplicates(
                 pog_bundle.content_hash,
@@ -180,7 +180,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
      *
      * Registra hasta 100 records en una sola llamada.
      * Cada record se procesa de forma independiente: si uno falla,
-     * los demás continúan. No hay transacción global.
+     * the rest continue. There is no global transaction.
      *
      * Body: { records: CreateRecordInput[] }
      * Respuesta: { results: [...], summary: { total, succeeded, failed } }
@@ -297,7 +297,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
      *
      * Lista los records del agente autenticado.
      * Requiere firma EIP-191 del mensaje "RexAuth:{timestamp}" en headers.
-     * Soporta paginación con ?limit=20&offset=0
+     * Supports pagination with ?limit=20&offset=0
      *
      * IMPORTANTE: Esta ruta DEBE registrarse ANTES de /:id
      * para que Fastify no interprete "mine" como un UUID.
@@ -321,7 +321,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
 
         const total = countResult.length;
 
-        // Obtener records paginados, más recientes primero
+        // Get paginated records, most recent first
         const result = await db
             .select()
             .from(records)
@@ -342,7 +342,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         });
     });
 
-    // --- Endpoints de consulta públicos (Issue #5) ---
+    // --- Public query endpoints (Issue #5) ---
 
     /**
      * GET /v1/records/:id
@@ -405,7 +405,7 @@ export default async function recordRoutes(fastify: FastifyInstance) {
     /**
      * GET /v1/records/:id/export
      * Exporta el receipt completo verificable (PoG + anchoring + metadata).
-     * Soporta ?mode=compact para reducir tamaño (menos tokens para LLMs).
+     * Supports ?mode=compact to reduce size (fewer tokens for LLMs).
      */
     fastify.get<{
         Params: { id: string };
@@ -434,12 +434,12 @@ export default async function recordRoutes(fastify: FastifyInstance) {
             return reply.send(formatCompactExport(record));
         }
 
-        // Receipt exportable — contiene toda la info para verificación offline
+        // Exportable receipt — contains all info for offline verification
         return reply.send(formatFullExport(record));
     });
 
     // No DELETE route — INV-001: Records son permanentes.
-    // Fastify devuelve 404 automáticamente si la ruta no existe.
+    // Fastify returns 404 automatically if the route does not exist.
 }
 
 // --- Helpers ---

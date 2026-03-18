@@ -6,16 +6,16 @@ import type { AnchorJobData } from '../services/queue.js';
 /**
  * BullMQ Anchor Worker.
  *
- * Procesa jobs de la cola 'anchor' de forma asíncrona.
+ * Processes jobs from the 'anchor' queue asynchronously.
  * Cada job contiene un recordId y receiptHash para grabar on-chain.
  *
  * Comportamiento (ADR-001):
  * - Retries: 5 (configurado en la cola)
  * - Backoff: exponencial (5s → 10s → 20s → 40s → 80s)
  * - Al agotar retries: state = anchor_failed
- * - Idempotente: si el record ya está anchored, no hace nada
+ * - Idempotent: if the record is already anchored, it does nothing
  *
- * Conexión Redis centralizada en config/redis.ts (Issue #16).
+ * Redis connection centralized in config/redis.ts (Issue #16).
  */
 
 const worker = new Worker<AnchorJobData>(
@@ -74,13 +74,13 @@ console.log('⚓ Anchor worker started, waiting for jobs...');
 // 1. worker.close() deja de coger jobs nuevos
 // 2. Espera a que el job actual termine (o timeout de BullMQ)
 // 3. Si el proceso muere a medio job, BullMQ lo marca como "stalled"
-//    y lo re-encola automáticamente. anchorRecord es idempotente:
-//    si el record ya está anchored, no duplica el anchor.
+//    and re-queues it automatically. anchorRecord is idempotent:
+//    if the record is already anchored, it won't duplicate the anchor.
 async function shutdown(signal: string) {
     console.log(`🛑 Worker: ${signal} recibido — cerrando...`);
 
     try {
-        // Cierra el worker: no coge más jobs, espera al actual
+        // Closes the worker: stops taking new jobs, waits for current one
         await worker.close();
         console.log('✅ Worker cerrado (job actual completado o devuelto a cola)');
 
