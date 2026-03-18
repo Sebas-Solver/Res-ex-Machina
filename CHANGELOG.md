@@ -5,6 +5,54 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — Production Readiness
+
+### Code Audit & Security Review
+
+#### Added
+
+- **Full code audit** — Exhaustive review of all source files, middleware, services, routes, and security measures. Result: production-ready with minor recommendations
+- **LICENSE file** — Apache 2.0 license (`LICENSE` in repo root). Required for public open-source release
+- **Narrative hook in README** — Elevator pitch paragraph: *"By 2026, over 90% of digital content will be AI-generated..."*
+- **GitHub Issue #35** — Horizontal Scaling: Separate API and Anchor Worker (tracked for v2+)
+- **GitHub Issue #36** — Add CONTRIBUTING.md for external contributors (tracked for production)
+
+### Worker Scalability
+
+#### Changed
+
+- **`START_INLINE_WORKER` env var** — `src/app.ts` now respects `START_INLINE_WORKER` (default `true`). Set to `false` to run the BullMQ anchor worker as a separate process for horizontal scaling
+- **Documented in deploy guide** — `Docs/40-guides/deploy-alpha-guide.md` updated with `START_INLINE_WORKER` variable
+- **Documented in runbook** — `Docs/60-operations/runbook.md` updated with separate worker deployment
+
+### Documentation Overhaul
+
+#### Added
+
+- **`Docs/60-operations/horizontal-scaling-guide.md`** — Architecture and steps for separating API and Worker into independent services
+- **`Docs/60-operations/production-cost-analysis.md`** — Infrastructure costs (Render, Neon, Upstash), blockchain gas fees, initial ETH requirements, and break-even analysis
+
+#### Fixed
+
+- **~10 broken links in README** — All doc links pointed to old flat structure (`Docs/quick-start.md`), now corrected to new subfolder structure (`Docs/40-guides/quick-start.md`)
+- **Broken link in developer-guide** — `receipt-verification-spec.md` → `../10-specs/receipt-verification-spec.md`
+- **Docs/ structure in README** — Project structure section updated to show all 7 subcategories (00-foundation through 60-operations)
+- **Documentation table in README** — Added 4 missing documents (deploy guide, api examples, scaling guide, cost analysis)
+
+#### Changed
+
+- **Faucet reference** — Changed from Alchemy to [Optimism Superchain Faucet](https://console.optimism.io/faucet) in `quick-start.md` and `deploy-alpha-guide.md`
+- **MetaMask wallet creation** — Added as recommended option in `quick-start.md` and `deploy-alpha-guide.md`
+- **`.env.example`** — Added documentation for wallet unification (FEE_RECEIVER = ANCHOR_WALLET address in production)
+
+### Dependency Updates
+
+#### Updated
+
+- `npm update` — All dependencies updated to latest compatible versions (Fastify, Zod, BullMQ, Helmet, etc.)
+
+---
+
 ## [Unreleased] — For alpha.3
 
 ### Security Hardening (Threat Model)
