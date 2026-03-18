@@ -12,6 +12,12 @@
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
 </p>
 
+<p align="center"><em>
+By 2026, over 90% of digital content will be AI-generated.<br/>
+Who certifies what was generated, by whom, and when?<br/>
+<strong>Res ex Machina — the technical trail AI agents leave behind.</strong>
+</em></p>
+
 > [!IMPORTANT]
 > **This project is in early alpha (testing phase).** It runs on **Base Sepolia testnet** — records are not permanent and may be reset. The API, SDK, and data formats may change without notice. Use it to experiment and integrate, but do not rely on it for production workloads yet.
 
@@ -394,6 +400,7 @@ The system has **24 invariants** that are never violated:
 | [#33](https://github.com/Sebas-Solver/Res-ex-Machina/issues/33) | v1.2+ | Write public narrative — Elevator pitch + "Why now?" |
 | ~~[#34](https://github.com/Sebas-Solver/Res-ex-Machina/issues/34)~~ | ✅ alpha.2 | ~~Bug: Webhook endpoints return HTTP 500 — table not migrated~~ |
 | [#35](https://github.com/Sebas-Solver/Res-ex-Machina/issues/35) | v2+ | Horizontal Scaling: Separate API and Anchor Worker |
+| [#36](https://github.com/Sebas-Solver/Res-ex-Machina/issues/36) | production | Add CONTRIBUTING.md for external contributors |
 
 ---
 
