@@ -122,10 +122,10 @@ const start = async () => {
         await app.listen({ port: PORT, host: '0.0.0.0' });
         app.log.info(`⚖️  Res ex Machina API listening on port ${PORT}`);
 
-        // In production, start the anchoring worker in the same process.
-        // In development it runs separately with `npm run worker:anchor`.
-        // Dynamic import to avoid Redis connection when loading the module in tests.
-        if (process.env.NODE_ENV === 'production') {
+        // In production, start the anchoring worker in the same process by default.
+        // If START_INLINE_WORKER=false, the worker will NOT start here, and should be run 
+        // separately via `npm run worker:anchor` for better horizontal scaling.
+        if (process.env.NODE_ENV === 'production' && process.env.START_INLINE_WORKER !== 'false') {
             try {
                 await import('./workers/anchor.worker.js');
                 app.log.info('⚓ Anchor worker started (inline, same process)');
@@ -134,6 +134,8 @@ const start = async () => {
                 // Don't process.exit — the API can work without the worker,
                 // jobs will be processed when the worker becomes available.
             }
+        } else if (process.env.NODE_ENV === 'production' && process.env.START_INLINE_WORKER === 'false') {
+            app.log.info('⚖️  Running in API-only mode (START_INLINE_WORKER=false). Remember to start the worker separately.');
         }
     } catch (err) {
         app.log.error(err);

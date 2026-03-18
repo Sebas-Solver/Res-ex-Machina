@@ -49,6 +49,7 @@
 ### Actions
 1. Verify worker is running:
    ```bash
+   # If using START_INLINE_WORKER=false, the worker runs as a separate process/container.
    # Process alive?
    ps aux | grep anchor.worker
    ```

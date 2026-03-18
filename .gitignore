@@ -33,3 +33,6 @@ redisdata/
 # TestSprite
 testsprite_tests/
 semgrep-results.json
+
+# Internal docs (not published)
+Docs/_internal/

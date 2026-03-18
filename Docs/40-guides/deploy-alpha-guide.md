@@ -92,7 +92,8 @@ These are **all** variables you configured in Render → Environment:
 | Variable | Value | What it does |
 |---|---|---|
 | `PORT` | `10000` | Port API listens to (Render requires it) |
-| `NODE_ENV` | `production` | Production mode (activates inline worker) |
+| `NODE_ENV` | `production` | Production mode (activates inline worker by default) |
+| `START_INLINE_WORKER` | `true` (default) | Set to `false` if deploying the worker as a separate service for horizontal scaling |
 | `LOG_LEVEL` | `info` | Log level |
 | `DATABASE_URL` | `postgresql://...@...neon.tech/...` | Neon Database connection |
 | `REDIS_URL` | `rediss://default:...@...upstash.io:6379` | Upstash Redis connection (TLS) |
