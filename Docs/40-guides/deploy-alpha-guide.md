@@ -81,7 +81,8 @@ These are the 4 cloud services we use. **All are free**.
 **Important things:**
 - Testnet ETH is free and obtained from **faucets**
 - Your **test user** wallet has funds to pay fees
-- The **RxM** wallet (which anchors) needs funds to pay gas → use a faucet like [Alchemy](https://www.alchemy.com/faucets/base-sepolia)
+- The **RxM** wallet (which anchors) needs funds to pay gas → use the [Optimism Superchain Faucet](https://console.optimism.io/faucet) (select "Base Sepolia")
+- You can create a wallet easily with [MetaMask](https://metamask.io/)
 
 ---
 

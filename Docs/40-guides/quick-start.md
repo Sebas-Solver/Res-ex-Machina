@@ -7,7 +7,7 @@
 ## Prerequisites
 
 - **Node.js ≥ 18**
-- An L2 wallet with test ETH on **Base Sepolia** ([faucet](https://www.alchemy.com/faucets/base-sepolia))
+- An L2 wallet with test ETH on **Base Sepolia** — get free test ETH from the [Optimism Superchain Faucet](https://console.optimism.io/faucet) (select "Base Sepolia")
 
 ## 1. Install
 
@@ -25,7 +25,11 @@ const account = privateKeyToAccount(process.env.PRIVATE_KEY as `0x${string}`);
 console.log('Wallet:', account.address);
 ```
 
-> **Don't have a wallet?** Generate one:
+> **Don't have a wallet?** Two options:
+>
+> **Option A — MetaMask (easiest):** Install [MetaMask](https://metamask.io/) browser extension, create a wallet, and export the private key from Settings → Accounts → Export Private Key.
+>
+> **Option B — Code:**
 > ```typescript
 > import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 > const key = generatePrivateKey();
@@ -33,7 +37,8 @@ console.log('Wallet:', account.address);
 > console.log('Private key:', key);      // Save this securely!
 > console.log('Address:', account.address);
 > ```
-> Fund it with [Base Sepolia faucet](https://www.alchemy.com/faucets/base-sepolia) (free test ETH).
+>
+> Fund it with the [Optimism Superchain Faucet](https://console.optimism.io/faucet) — select "Base Sepolia" to get free test ETH.
 
 ## 3. Record an AI Output
 
