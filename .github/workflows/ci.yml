@@ -2,10 +2,12 @@
 # Res ex Machina — CI Pipeline
 # ============================================
 # Ejecuta en cada push y PR a main:
-# 1. TypeScript compile check
-# 2. Tests unitarios + integración (vitest)
-# 3. Coverage report (v8)
-# 4. Build de producción
+# 1. npm audit (dependencias de seguridad)
+# 2. TypeScript compile check
+# 3. ESLint (code quality + style)
+# 4. Tests unitarios + integración (vitest)
+# 5. Coverage report (v8)
+# 6. Build de producción
 
 name: CI
 
@@ -60,6 +62,9 @@ jobs:
 
       - name: Verificar tipos TypeScript
         run: npx tsc --noEmit
+
+      - name: Lint (ESLint)
+        run: npm run lint
 
       - name: Ejecutar tests
         run: npm test

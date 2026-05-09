@@ -4,6 +4,7 @@ import { redisConnectionConfig } from '../config/redis.js';
 import { db } from '../db/index.js';
 import { webhooks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
+import { logger } from '../utils/logger.js';
 
 /**
  * Webhook Dispatcher — Asynchronous webhook delivery service (Issue #13).
@@ -173,9 +174,9 @@ export function createWebhookWorker(): Worker<WebhookJobData> {
     return new Worker<WebhookJobData>(
         'webhook_dispatch',
         async (job) => {
-            console.log(`📬 Delivering webhook ${job.data.deliveryId} (attempt ${job.attemptsMade + 1})`);
+            logger.info({ deliveryId: job.data.deliveryId, attempt: job.attemptsMade + 1 }, '📬 Delivering webhook');
             await executeWebhookDelivery(job);
-            console.log(`✅ Webhook delivered: ${job.data.deliveryId}`);
+            logger.info({ deliveryId: job.data.deliveryId }, '✅ Webhook delivered');
         },
         {
             connection: redisConnectionConfig,

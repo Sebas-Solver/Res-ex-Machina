@@ -5,6 +5,7 @@ import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { enqueueWebhookDispatch } from './webhookDispatcher.js';
+import { logger } from '../utils/logger.js';
 
 
 /**
@@ -31,7 +32,30 @@ export async function anchorRecord(
     recordId: string,
     _contentHash: string,
     receiptHash: string,
+    agentWallet?: string,
 ): Promise<AnchorResult> {
+    // IDEMPOTENCY CHECK (Audit fix: prevents duplicate on-chain txs when
+    // BullMQ re-executes stalled/retried jobs). If the record is already
+    // anchored, return existing data without sending a new transaction.
+    const [existing] = await db
+        .select({
+            state: records.state,
+            anchorTxHash: records.anchorTxHash,
+            anchorBlock: records.anchorBlock,
+            anchorChainId: records.anchorChainId,
+        })
+        .from(records)
+        .where(eq(records.recordId, recordId))
+        .limit(1);
+
+    if (existing?.state === 'anchored' && existing.anchorTxHash) {
+        return {
+            txHash: existing.anchorTxHash,
+            block: Number(existing.anchorBlock),
+            chainId: existing.anchorChainId ?? env.L2_CHAIN_ID,
+        };
+    }
+
     // Codificar el receipt_hash como bytes para el calldata
     const encoder = new TextEncoder();
     const data = `0x${Buffer.from(encoder.encode(receiptHash)).toString('hex')}` as Hex;
@@ -68,21 +92,23 @@ export async function anchorRecord(
 
     // Disparar webhooks (async, no bloquea) — Issue #13
     try {
-        // Obtener wallet del record para buscar webhooks
-        const [record] = await db.select({ agentWallet: records.agentWallet })
-            .from(records).where(eq(records.recordId, recordId)).limit(1);
-        if (record) {
+        // Use agentWallet from job data if available, otherwise fetch from DB
+        let wallet = agentWallet;
+        if (!wallet) {
+            const [record] = await db.select({ agentWallet: records.agentWallet })
+                .from(records).where(eq(records.recordId, recordId)).limit(1);
+            wallet = record?.agentWallet;
+        }
+        if (wallet) {
             await enqueueWebhookDispatch(
-                record.agentWallet, recordId, 'pending_anchor', 'anchored',
+                wallet, recordId, 'pending_anchor', 'anchored',
                 { txHash: result.txHash, block: result.block, chainId: result.chainId },
             );
         }
     } catch (webhookErr) {
         /* webhook dispatch failure must never block anchoring */
-        console.warn('[anchor] ⚠️ Webhook dispatch failed (non-blocking)', {
-            recordId,
-            error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr),
-        });
+        logger.warn({ recordId, error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr) },
+            '[anchor] Webhook dispatch failed (non-blocking)');
     }
 
     return result;
@@ -117,9 +143,7 @@ export async function markAnchorFailed(
         }
     } catch (webhookErr) {
         /* webhook dispatch failure must never block anchoring */
-        console.warn('[anchor] ⚠️ Webhook dispatch failed (non-blocking)', {
-            recordId,
-            error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr),
-        });
+        logger.warn({ recordId, error: webhookErr instanceof Error ? webhookErr.message : String(webhookErr) },
+            '[anchor] Webhook dispatch failed (non-blocking)');
     }
 }

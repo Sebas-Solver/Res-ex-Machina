@@ -13,6 +13,7 @@ import {
     duplicateNonce,
     feeTxReused,
 } from '../utils/errors.js';
+import { logger } from '../utils/logger.js';
 
 // -------------------------------------------------------------------
 // Tipos
@@ -160,14 +161,12 @@ export async function createRecord(
     // el record se guarda igualmente y el anchoring se reintenta
     // cuando el worker se reconecte)
     try {
-        await enqueueAnchorJob(recordId, receiptHash);
+        await enqueueAnchorJob(recordId, receiptHash, pog_bundle.agent_wallet);
     } catch (enqueueError) {
         // Do not throw — the record is already saved in DB with state=pending_anchor.
         // The worker will process the job when Redis comes back.
-        console.warn('[recordsService] ⚠️ No se pudo encolar anchor (Redis down?)', {
-            recordId,
-            error: enqueueError instanceof Error ? enqueueError.message : String(enqueueError),
-        });
+        logger.warn({ recordId, error: enqueueError instanceof Error ? enqueueError.message : String(enqueueError) },
+            '[recordsService] Could not enqueue anchor (Redis down?)');
     }
 
     return {

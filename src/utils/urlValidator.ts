@@ -1,19 +1,22 @@
-import { resolve4 } from 'node:dns/promises';
+import { resolve4, resolve6 } from 'node:dns/promises';
 
 /**
  * Validador de URLs para webhooks (Issue #13).
  *
  * SSRF Mitigation:
  * 1. Solo acepta HTTPS
- * 2. Resuelve DNS y bloquea IPs privadas, localhost, link-local
+ * 2. Resuelve DNS (IPv4 + IPv6) y bloquea IPs privadas, localhost, link-local
  * 3. No seguir redirects (configurado en el fetch del dispatcher)
+ *
+ * Audit fix: Added resolve6() alongside resolve4() to prevent SSRF bypass
+ * via IPv6 addresses (e.g., ::1, fc00::/7, fe80::/10).
  */
 
 /** Rangos de IPs bloqueadas */
 const BLOCKED_IP_RANGES = [
     /^127\./,                     // Loopback
     /^10\./,                      // Clase A privada
-    /^172\.(1[6-9]|2\d|3[01])\./,// Clase B privada
+    /^172\.(1[6-9]|2\d|3[01])\./, // Clase B privada
     /^192\.168\./,                // Clase C privada
     /^169\.254\./,                // Link-local
     /^0\./,                       // Red actual
@@ -46,19 +49,32 @@ export async function validateWebhookUrl(url: string): Promise<void> {
         throw new Error('localhost URLs are not allowed');
     }
 
-    // 4. Resolver DNS y comprobar IPs
+    // 4. Resolver DNS (IPv4 + IPv6) y comprobar IPs
+    // Audit fix: resolve both A and AAAA records to prevent IPv6 SSRF bypass
+    let allIps: string[] = [];
+
     try {
-        const ips = await resolve4(hostname);
-        for (const ip of ips) {
+        const ipv4 = await resolve4(hostname);
+        allIps = allIps.concat(ipv4);
+    } catch {
+        // No IPv4 records — continue to check IPv6
+    }
+
+    try {
+        const ipv6 = await resolve6(hostname);
+        allIps = allIps.concat(ipv6);
+    } catch {
+        // No IPv6 records — continue
+    }
+
+    if (allIps.length > 0) {
+        // Validate all resolved IPs against blocked ranges
+        for (const ip of allIps) {
             if (BLOCKED_IP_RANGES.some((regex) => regex.test(ip))) {
                 throw new Error(`IP ${ip} is in a blocked range (private/loopback/link-local)`);
             }
         }
-    } catch (err) {
-        // Si es nuestro error, re-lanzar
-        if (err instanceof Error && err.message.includes('blocked range')) {
-            throw err;
-        }
+    } else {
         // DNS did not resolve — for direct IPs, check the hostname literal
         if (BLOCKED_IP_RANGES.some((regex) => regex.test(hostname))) {
             throw new Error(`IP ${hostname} is in a blocked range`);
@@ -66,3 +82,4 @@ export async function validateWebhookUrl(url: string): Promise<void> {
         // If DNS truly fails, let it pass (will error on fetch)
     }
 }
+

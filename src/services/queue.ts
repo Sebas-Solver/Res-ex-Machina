@@ -27,6 +27,7 @@ export const anchorQueue = new Queue('anchor', {
 export interface AnchorJobData {
     recordId: string;
     receiptHash: string;
+    agentWallet?: string;
 }
 
 /**
@@ -34,15 +35,17 @@ export interface AnchorJobData {
  *
  * @param recordId - UUID del record a anclar
  * @param receiptHash - Hash del receipt (se graba on-chain)
+ * @param agentWallet - Wallet del agente (passed to anchorRecord to avoid extra DB query)
  * @returns ID del job encolado
  */
 export async function enqueueAnchorJob(
     recordId: string,
     receiptHash: string,
+    agentWallet?: string,
 ): Promise<string> {
     const job = await anchorQueue.add(
         'anchor-record',
-        { recordId, receiptHash } satisfies AnchorJobData,
+        { recordId, receiptHash, agentWallet } satisfies AnchorJobData,
         { jobId: recordId },
     );
 

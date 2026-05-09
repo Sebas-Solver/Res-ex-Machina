@@ -334,6 +334,8 @@ These risks are a direct consequence of the foundational principles:
 | Post-registration modification | Immutability + anchoring |
 | Spam | On-chain fee + rate limit + idempotency |
 | Repudiation | Cryptographic signature + receipt_hash + on-chain anchor |
+| SSRF via webhooks (IPv4 + IPv6) | DNS resolution + IP range blocking (audit fix) |
+| Duplicate on-chain anchoring | Idempotency check in anchorRecord (audit fix) |
 
 ### PENDING Implementation Risks
 
@@ -344,6 +346,8 @@ These risks are a direct consequence of the foundational principles:
 | Compromised anchoring key | HSM / Vault / Multi-sig | MEDIUM | ⏳ Pending |
 | UUID enumeration | Rate limit on GET + monitoring | LOW | ✅ Rate limit on GET |
 | Direct DB access | Network isolation + least privilege | **HIGH** | ⏳ Hosting config |
+| SSRF via IPv6 in webhooks | resolve6() in urlValidator | **HIGH** | ✅ Implemented (audit fix) |
+| Anchor tx duplication (BullMQ stalled) | State check before sendTransaction | **CRITICAL** | ✅ Implemented (audit fix) |
 
 ---
 

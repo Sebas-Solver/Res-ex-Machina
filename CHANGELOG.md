@@ -7,7 +7,22 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — Production Readiness
 
+### Code Audit Fixes (Session 2)
+
+#### Fixed
+
+- **CRITICAL: anchorRecord idempotency** — `services/anchor.ts` now checks if the record is already in `anchored` state before sending a new blockchain transaction. Prevents duplicate on-chain txs and gas waste when BullMQ re-executes stalled/retried jobs
+- **HIGH: SSRF IPv6 bypass** — `utils/urlValidator.ts` now resolves both IPv4 (A records) AND IPv6 (AAAA records) via DNS, preventing attackers from registering webhooks that resolve to internal IPv6 addresses (`::1`, `fc00::/7`, `fe80::/10`)
+- **MEDIUM: Structured logger** — Created `utils/logger.ts` (shared Pino instance). Replaced all `console.log/warn/error` in `anchor.worker.ts`, `anchor.ts`, `webhookDispatcher.ts`, and `recordsService.ts` with structured JSON logging for production observability
+- **LOW: Dead code cleanup** — Removed unused `postRecordsRateConfig` export from `middleware/rateLimit.ts`
+
+#### Changed
+
+- **agentWallet in AnchorJobData** — `services/queue.ts` now passes `agentWallet` in job data, eliminating an extra DB query in `anchorRecord()` when dispatching webhooks. Updated worker and recordsService accordingly
+- **CI pipeline** — Added ESLint linting step to `.github/workflows/ci.yml` between TypeScript check and tests for code quality enforcement
+
 ### Code Audit & Security Review
+
 
 #### Added
 

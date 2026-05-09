@@ -135,8 +135,9 @@ AI Agent ──────────── REST API ────────�
 - **Unique nonce** — per wallet, anti-replay (409)
 - **Body limit** — 64KB maximum
 - **Helmet** — Automatic security headers
-- **SSRF** — Webhooks HTTPS-only, private/localhost IPs blocked
+- **SSRF** — Webhooks HTTPS-only, private/localhost IPs blocked (IPv4 + IPv6)
 - **HMAC-SHA256** — Webhook payload signing
+- **Structured logging** — Pino JSON logs (workers + services)
 
 ---
 
@@ -280,8 +281,9 @@ src/
 ├── utils/
 │   ├── errors.ts             # ApiError + factories
 │   ├── explorer.ts           # Blockchain explorer URLs per chain
+│   ├── logger.ts             # Shared Pino logger (workers + services)
 │   ├── stateInfo.ts          # Structured state metadata
-│   ├── urlValidator.ts       # SSRF validation for webhooks
+│   ├── urlValidator.ts       # SSRF validation for webhooks (IPv4 + IPv6)
 │   └── uuid.ts               # UUID v7
 └── workers/
     └── anchor.worker.ts      # BullMQ worker
@@ -401,6 +403,10 @@ The system has **24 invariants** that are never violated:
 | ~~[#34](https://github.com/Sebas-Solver/Res-ex-Machina/issues/34)~~ | ✅ alpha.2 | ~~Bug: Webhook endpoints return HTTP 500 — table not migrated~~ |
 | [#35](https://github.com/Sebas-Solver/Res-ex-Machina/issues/35) | v2+ | Horizontal Scaling: Separate API and Anchor Worker |
 | [#36](https://github.com/Sebas-Solver/Res-ex-Machina/issues/36) | production | Add CONTRIBUTING.md for external contributors |
+| ~~[#37](https://github.com/Sebas-Solver/Res-ex-Machina/issues/37)~~ | ✅ audit | ~~Anchor idempotency — prevent duplicate on-chain txs~~ |
+| ~~[#38](https://github.com/Sebas-Solver/Res-ex-Machina/issues/38)~~ | ✅ audit | ~~SSRF IPv6 bypass in webhook URL validator~~ |
+| ~~[#39](https://github.com/Sebas-Solver/Res-ex-Machina/issues/39)~~ | ✅ audit | ~~Structured logger — replace console.* with Pino~~ |
+| ~~[#40](https://github.com/Sebas-Solver/Res-ex-Machina/issues/40)~~ | ✅ audit | ~~Dead code cleanup + CI lint step~~ |
 
 ---
 
@@ -416,7 +422,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2** — API deployed at `https://res-ex-machina-api.onrender.com`. **167 tests in 13 suites**, CI/CD (GitHub Actions, Node 20+22). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 22 closed.
+🟢 **v1.0.0-alpha.2** — API deployed at `https://res-ex-machina-api.onrender.com`. **167 tests in 13 suites**, CI/CD (GitHub Actions, Node 20+22, ESLint). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF (IPv4+IPv6) + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Structured Pino logging. Anchor idempotency protection. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 26 closed.
 
 ---
 
