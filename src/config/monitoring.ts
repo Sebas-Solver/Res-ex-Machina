@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/node';
-import { env } from './env.js';
 
 /**
  * Initializes Sentry for error and performance monitoring.
@@ -7,24 +6,32 @@ import { env } from './env.js';
  * Only activates if SENTRY_DSN is defined (production).
  * En desarrollo/test funciona como noop.
  *
+ * Note: reads process.env directly (not via env.ts) to avoid the
+ * import chain errors.ts → monitoring.ts → env.ts → process.exit(1)
+ * that crashes tests which only need error factories.
+ * env.ts validation still runs first in app.ts, so values are safe.
+ *
  * Issue #19 — Hallazgo H-7 del code review alpha.1
  */
 export function initMonitoring(): void {
-    if (!env.SENTRY_DSN) {
+    const sentryDsn = process.env.SENTRY_DSN;
+    const nodeEnv = process.env.NODE_ENV || 'development';
+
+    if (!sentryDsn) {
         console.log('ℹ️  Sentry desactivado (SENTRY_DSN no definido)');
         return;
     }
 
     Sentry.init({
-        dsn: env.SENTRY_DSN,
-        environment: env.NODE_ENV,
+        dsn: sentryDsn,
+        environment: nodeEnv,
         // 10% de traces para no saturar el free tier (5K errores/mes)
         tracesSampleRate: 0.1,
         // No enviar PII (direcciones de wallet, IPs, etc.)
         sendDefaultPii: false,
     });
 
-    console.log(`🛡️  Sentry inicializado (env: ${env.NODE_ENV})`);
+    console.log(`🛡️  Sentry inicializado (env: ${nodeEnv})`);
 }
 
 // Re-exportar Sentry para uso directo en error handler

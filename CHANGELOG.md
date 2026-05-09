@@ -21,6 +21,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **agentWallet in AnchorJobData** — `services/queue.ts` now passes `agentWallet` in job data, eliminating an extra DB query in `anchorRecord()` when dispatching webhooks. Updated worker and recordsService accordingly
 - **CI pipeline** — Added ESLint linting step to `.github/workflows/ci.yml` between TypeScript check and tests for code quality enforcement
 
+### Code Audit Fixes (Session 3)
+
+#### Fixed
+
+- **HIGH: 7 broken tests** — Fixed import chain `errors.ts → monitoring.ts → env.ts → process.exit(1)` that crashed tests lacking env vars. `monitoring.ts` now reads `process.env` directly instead of importing `env.ts`. Added `vi.mock` for `env.ts` in `invariants.test.ts` and `records-get.test.ts`. **Result: 169/169 tests passing (was 112/119)**
+
+#### Changed
+
+- **Batch parallelization** — `POST /v1/records/batch` now uses `Promise.allSettled` instead of sequential `for` loop for concurrent processing of up to 100 records. Each record is independently validated (signature, fee, duplicates)
+- **Project skill** — Created `res-ex-machina` skill in `skills/custom/sebas-solver-skills/` documenting architecture, invariants, testing patterns, and gotchas
+
 ### Code Audit & Security Review
 
 

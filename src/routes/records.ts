@@ -212,18 +212,15 @@ export default async function recordRoutes(fastify: FastifyInstance) {
 
         const { records: batchItems } = parsed.data;
 
-        // 2. Procesar cada record de forma independiente
+        // 2. Procesar cada record en paralelo con Promise.allSettled
+        //    Cada record es independiente (distinto content_hash, nonce, fee_tx_hash).
+        //    Promise.allSettled nunca rechaza: cada resultado es fulfilled o rejected.
         type BatchResultSuccess = { index: number; record_id: string; state: string; receipt_hash: string; created_at: string };
         type BatchResultError = { index: number; error: { code: string; message: string; details?: Record<string, unknown> } };
         type BatchResult = BatchResultSuccess | BatchResultError;
 
-        const results: BatchResult[] = [];
-        let succeeded = 0;
-        let failed = 0;
-
-        for (let i = 0; i < batchItems.length; i++) {
-            try {
-                const item = batchItems[i];
+        const settlements = await Promise.allSettled(
+            batchItems.map(async (item, i) => {
                 const { pog_bundle } = item;
 
                 // Verificar firma EIP-712
@@ -246,6 +243,19 @@ export default async function recordRoutes(fastify: FastifyInstance) {
                     feeConfirmedAt: feeVerification.confirmedAt,
                 });
 
+                return { index: i, result };
+            }),
+        );
+
+        // 3. Recopilar resultados manteniendo el orden original
+        const results: BatchResult[] = [];
+        let succeeded = 0;
+        let failed = 0;
+
+        for (let i = 0; i < settlements.length; i++) {
+            const settlement = settlements[i];
+            if (settlement.status === 'fulfilled') {
+                const { result } = settlement.value;
                 results.push({
                     index: i,
                     record_id: result.record_id,
@@ -254,8 +264,9 @@ export default async function recordRoutes(fastify: FastifyInstance) {
                     created_at: result.created_at,
                 });
                 succeeded++;
-            } catch (err) {
+            } else {
                 failed++;
+                const err = settlement.reason;
                 if (err instanceof ApiError) {
                     results.push({
                         index: i,

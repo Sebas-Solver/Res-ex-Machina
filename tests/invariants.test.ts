@@ -17,6 +17,23 @@ import { apiErrorHandler } from '../src/utils/errors.js';
  * Estrategia: Fastify inject + vi.mock de todas las dependencias.
  */
 
+// --- Mock env.ts FIRST to prevent process.exit(1) ---
+vi.mock('../src/config/env.js', () => ({
+    env: {
+        PORT: 3000,
+        NODE_ENV: 'test',
+        LOG_LEVEL: 'info',
+        DATABASE_URL: 'postgres://test:test@localhost:5432/test',
+        REDIS_URL: 'redis://localhost:6379',
+        L2_RPC_URL: 'http://localhost:8545',
+        L2_CHAIN_ID: 31337,
+        FEE_RECEIVER_ADDRESS: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+        FEE_MINIMUM_AMOUNT: 0.01,
+        FEE_TX_MAX_AGE_HOURS: 24,
+        ANCHOR_WALLET_PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+    },
+}));
+
 // --- Mocks de servicios ---
 const mockVerifyPoGSignature = vi.fn();
 const mockVerifyFee = vi.fn();

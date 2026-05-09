@@ -422,7 +422,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2** — API deployed at `https://res-ex-machina-api.onrender.com`. **167 tests in 13 suites**, CI/CD (GitHub Actions, Node 20+22, ESLint). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records). Status webhooks with SSRF (IPv4+IPv6) + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Structured Pino logging. Anchor idempotency protection. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 26 closed.
+🟢 **v1.0.0-alpha.2** — API deployed at `https://res-ex-machina-api.onrender.com`. **169 tests in 13 suites (100% passing)**, CI/CD (GitHub Actions, Node 20+22, ESLint). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records, parallel processing). Status webhooks with SSRF (IPv4+IPv6) + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Structured Pino logging. Anchor idempotency protection. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 26 closed.
 
 ---
 
