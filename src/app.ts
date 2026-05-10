@@ -9,6 +9,7 @@ import { randomUUID } from 'node:crypto';
 import healthRoutes from './routes/health.js';
 import recordRoutes from './routes/records.js';
 import webhookRoutes from './routes/webhooks.js';
+import adminRoutes from './routes/admin.js';
 import { apiErrorHandler } from './utils/errors.js';
 import { registerRateLimit } from './middleware/rateLimit.js';
 import { client } from './db/index.js';
@@ -103,6 +104,7 @@ app.delete('/v1/records/:id', async (_request, reply) => {
 app.register(healthRoutes, { prefix: '/v1' });
 app.register(recordRoutes, { prefix: '/v1/records' });
 app.register(webhookRoutes, { prefix: '/v1/webhooks' });
+app.register(adminRoutes, { prefix: '/admin' });
 
 // --- Root route ---
 app.get('/', async () => {

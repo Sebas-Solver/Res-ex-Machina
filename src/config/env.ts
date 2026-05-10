@@ -32,6 +32,9 @@ const envSchema = z.object({
 
     // Sentry (Issue #19 — error monitoring)
     SENTRY_DSN: z.string().url().optional(),
+
+    // Admin dashboard
+    ADMIN_API_KEY: z.string().min(32).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
