@@ -277,12 +277,11 @@ tests/
 └── webhooks.test.ts
 Docs/
 ├── 00-foundation/            # Invariants
-├── 10-specs/                 # Technical specifications
-├── 20-security/              # Threat model + audit
-├── 30-adr/                   # Architecture Decision Records
-├── 40-guides/                # Quick start, developer guide, deploy guide
+├── 10-specs/                 # Technical specifications (PoG, OpenAPI, fee flow)
+├── 20-security/              # Security audit report
+├── 40-guides/                # Quick start, developer guide, API examples
 ├── 50-testing/               # Test plans, reports, Postman collection
-└── 60-operations/            # Runbook, scaling guide, cost analysis
+└── 60-operations/            # Integrator guide
 ```
 
 ---
