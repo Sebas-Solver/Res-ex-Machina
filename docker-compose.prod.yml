@@ -1,0 +1,120 @@
+# ============================================
+# Res ex Machina — Docker Compose (production)
+# ============================================
+# Horizontal scaling: API and Worker run as separate services.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Scale workers independently:
+#   docker compose -f docker-compose.prod.yml up -d --scale worker=3
+#
+# Architecture:
+#   ┌─────────┐     ┌──────────┐     ┌───────┐
+#   │  API    │────▶│  Redis   │◀────│Worker │ × N
+#   │ :3000   │     │  (queue) │     │(anchor)│
+#   └────┬────┘     └──────────┘     └───┬───┘
+#        │                               │
+#        └──────────┐   ┌────────────────┘
+#                   ▼   ▼
+#              ┌──────────┐
+#              │PostgreSQL│
+#              └──────────┘
+
+services:
+  # --- API Server ---
+  # Handles HTTP requests only. Does NOT run the anchor worker.
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      START_INLINE_WORKER: "false"  # Worker runs separately
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      L2_RPC_URL: ${L2_RPC_URL}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-84532}
+      FEE_RECEIVER_ADDRESS: ${FEE_RECEIVER_ADDRESS}
+      FEE_MINIMUM_AMOUNT: ${FEE_MINIMUM_AMOUNT:-0.01}
+      FEE_TX_MAX_AGE_HOURS: ${FEE_TX_MAX_AGE_HOURS:-24}
+      ANCHOR_WALLET_PRIVATE_KEY: ${ANCHOR_WALLET_PRIVATE_KEY}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # --- Anchor Worker ---
+  # Processes anchoring jobs from the BullMQ queue.
+  # Scale independently: docker compose up --scale worker=3
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    command: ["node", "dist/workers/anchor.worker.js"]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      L2_RPC_URL: ${L2_RPC_URL}
+      L2_CHAIN_ID: ${L2_CHAIN_ID:-84532}
+      ANCHOR_WALLET_PRIVATE_KEY: ${ANCHOR_WALLET_PRIVATE_KEY}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # --- PostgreSQL 16 ---
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-rexm}
+      POSTGRES_USER: ${POSTGRES_USER:-rexm}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rexm} -d ${POSTGRES_DB:-rexm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Redis 7 ---
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

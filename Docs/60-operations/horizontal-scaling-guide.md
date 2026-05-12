@@ -68,3 +68,47 @@ Add the **same environment variables** as the API (`DATABASE_URL`, `REDIS_URL`, 
 - **Multiple workers:** On Docker or Kubernetes, you can run `--scale worker=N` to add more worker replicas. BullMQ distributes jobs automatically.
 - **Separate Redis:** For very high throughput, consider a dedicated Redis instance instead of serverless Upstash.
 - **Region optimization:** Deploy API close to users, workers close to the L2 RPC node.
+
+---
+
+## Docker Compose (Self-Hosted)
+
+For self-hosted deployments, use `docker-compose.prod.yml`:
+
+```bash
+# 1. Copy and configure environment
+cp .env.production.example .env.production
+# Edit .env.production with your values
+
+# 2. Start all services (API + 1 Worker)
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# 3. Scale workers independently
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --scale worker=3
+
+# 4. Check status
+docker compose -f docker-compose.prod.yml ps
+```
+
+### Architecture
+
+```
+┌─────────┐     ┌──────────┐     ┌────────┐
+│  API    │────▶│  Redis   │◀────│Worker  │ × N
+│ :3000   │     │  (queue) │     │(anchor)│
+└────┬────┘     └──────────┘     └───┬────┘
+     │                               │
+     └──────────┐   ┌────────────────┘
+                ▼   ▼
+           ┌──────────┐
+           │PostgreSQL│
+           └──────────┘
+```
+
+Key design decisions:
+- **API** runs with `START_INLINE_WORKER=false` — no anchoring, only HTTP
+- **Worker** runs `node dist/workers/anchor.worker.js` — no HTTP, only anchoring
+- Both share the same `DATABASE_URL` and `REDIS_URL`
+- Workers can be scaled to `N` replicas; BullMQ distributes jobs automatically
+- Redis configured with `appendonly yes` for durability and `noeviction` to prevent job loss
+

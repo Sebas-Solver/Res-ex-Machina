@@ -401,7 +401,7 @@ The system has **24 invariants** that are never violated:
 | [#32](https://github.com/Sebas-Solver/Res-ex-Machina/issues/32) | beta | Public status page — Live health dashboard |
 | [#33](https://github.com/Sebas-Solver/Res-ex-Machina/issues/33) | v1.2+ | Write public narrative — Elevator pitch + "Why now?" |
 | ~~[#34](https://github.com/Sebas-Solver/Res-ex-Machina/issues/34)~~ | ✅ alpha.2 | ~~Bug: Webhook endpoints return HTTP 500 — table not migrated~~ |
-| [#35](https://github.com/Sebas-Solver/Res-ex-Machina/issues/35) | v2+ | Horizontal Scaling: Separate API and Anchor Worker |
+| ~~[#35](https://github.com/Sebas-Solver/Res-ex-Machina/issues/35)~~ | ✅ v2 | ~~Horizontal Scaling: Separate API and Anchor Worker~~ |
 | [#36](https://github.com/Sebas-Solver/Res-ex-Machina/issues/36) | production | Add CONTRIBUTING.md for external contributors |
 | ~~[#37](https://github.com/Sebas-Solver/Res-ex-Machina/issues/37)~~ | ✅ audit | ~~Anchor idempotency — prevent duplicate on-chain txs~~ |
 | ~~[#38](https://github.com/Sebas-Solver/Res-ex-Machina/issues/38)~~ | ✅ audit | ~~SSRF IPv6 bypass in webhook URL validator~~ |
