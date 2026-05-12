@@ -235,9 +235,11 @@
 
     footer a { color: var(--accent); text-decoration: none; }
 
-    #countdown {
-      font-variant-numeric: tabular-nums;
-    }
+    .overall-status.degraded { background: var(--yellow-dim); border: 1px solid var(--yellow); }
+    .degraded .dot { background: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
+
+    .indicator.degraded { background: var(--yellow); }
+    .status-degraded { background: var(--yellow-dim); color: var(--yellow); }
   </style>
 </head>
 <body>
@@ -348,6 +350,18 @@
       span.textContent = text;
     }
 
+    // Parse component status from health JSON
+    // Real API response: { status, checks: { database: {status}, redis: {status}, blockchain: {status} } }
+    function getCheckStatus(data, key) {
+      // Try nested: data.checks.{key}.status
+      if (data.checks && data.checks[key]) return data.checks[key].status;
+      // Try flat: data.{key}.status
+      if (data[key] && typeof data[key] === 'object') return data[key].status;
+      // Try flat string: data.{key}
+      if (typeof data[key] === 'string') return data[key];
+      return null;
+    }
+
     async function checkStatus() {
       // Reset to loading
       setOverall('loading', 'Checking status…');
@@ -356,29 +370,42 @@
       const start = Date.now();
 
       try {
-        const res = await fetch(API, { signal: AbortSignal.timeout(12000) });
+        const res = await fetch(API, {
+          signal: AbortSignal.timeout(15000),
+          mode: 'cors',
+        });
         const latency = Date.now() - start;
         const data = await res.json();
 
-        // API itself is responding
+        // API itself is responding if we got here
         setComponent('api', 'ok', 'Operational');
 
-        // DB
-        const dbOk = data.database?.status === 'ok' || data.db === 'ok';
+        // DB — key is "database" in the real response
+        const dbStatus = getCheckStatus(data, 'database') || getCheckStatus(data, 'db');
+        const dbOk = dbStatus === 'ok';
         setComponent('db', dbOk ? 'ok' : 'error', dbOk ? 'Operational' : 'Degraded');
 
         // Redis
-        const redisOk = data.redis?.status === 'ok' || data.redis === 'ok';
+        const redisStatus = getCheckStatus(data, 'redis');
+        const redisOk = redisStatus === 'ok';
         setComponent('redis', redisOk ? 'ok' : 'error', redisOk ? 'Operational' : 'Degraded');
 
-        // L2
-        const l2Ok = data.blockchain?.status === 'ok' || data.l2 === 'ok' || data.chain === 'ok';
+        // L2 Blockchain — key is "blockchain" in the real response
+        const l2Status = getCheckStatus(data, 'blockchain') || getCheckStatus(data, 'l2') || getCheckStatus(data, 'chain');
+        const l2Ok = l2Status === 'ok';
         setComponent('l2', l2Ok ? 'ok' : 'error', l2Ok ? 'Operational' : 'Degraded');
 
         // Overall
         const allOk = dbOk && redisOk && l2Ok;
-        setOverall(allOk ? 'ok' : 'error',
-          allOk ? 'All systems operational' : 'Partial outage — one or more systems degraded');
+        const noneOk = !dbOk && !redisOk && !l2Ok;
+
+        if (allOk) {
+          setOverall('ok', 'All systems operational');
+        } else if (noneOk) {
+          setOverall('error', 'Major outage — all systems degraded');
+        } else {
+          setOverall('degraded', 'Partial outage — one or more systems degraded');
+        }
 
         // Latency
         const latEl = document.getElementById('metric-latency');

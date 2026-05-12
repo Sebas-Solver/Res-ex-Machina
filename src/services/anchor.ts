@@ -1,6 +1,6 @@
 import { type Hex, type Address } from 'viem';
 import { env } from '../config/env.js';
-import { publicClient, walletClient, anchorAccount } from '../config/blockchain.js';
+import { publicClient, walletClient } from '../config/blockchain.js';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 import { eq } from 'drizzle-orm';

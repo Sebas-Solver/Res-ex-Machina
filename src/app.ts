@@ -74,12 +74,19 @@ app.addHook('onResponse', async (request, reply) => {
 // --- Security headers (Helmet) ---
 await app.register(helmet, {
     contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
 });
 
 // --- CORS ---
 await app.register(cors, {
     origin: process.env.NODE_ENV === 'production'
-        ? false
+        ? [
+            /\.github\.io$/,                          // GitHub Pages status page
+            'https://sebas-solver.github.io',         // Status page exact origin
+            ...(process.env.CORS_ALLOWED_ORIGINS
+                ? process.env.CORS_ALLOWED_ORIGINS.split(',')
+                : []),
+        ]
         : true,
     methods: ['GET', 'POST', 'DELETE'],
 });
