@@ -2,8 +2,8 @@ import { Queue } from 'bullmq';
 import { redisConnectionConfig } from '../config/redis.js';
 
 /**
- * Cola de anchoring — los jobs se procesan en el worker (Issue #6).
- * Cada job contiene el record_id y receipt_hash para grabar on-chain.
+ * Anchoring queue — jobs are processed by the worker (Issue #6).
+ * Each job contains the record_id and receipt_hash to write on-chain.
  *
  * Redis connection centralized in config/redis.ts (Issue #16).
  */
@@ -22,7 +22,7 @@ export const anchorQueue = new Queue('anchor', {
 });
 
 /**
- * Datos del job de anchoring.
+ * Anchoring job data.
  */
 export interface AnchorJobData {
     recordId: string;
@@ -31,12 +31,12 @@ export interface AnchorJobData {
 }
 
 /**
- * Encola un job de anchoring para un record.
+ * Enqueues an anchoring job for a record.
  *
- * @param recordId - UUID del record a anclar
- * @param receiptHash - Hash del receipt (se graba on-chain)
- * @param agentWallet - Wallet del agente (passed to anchorRecord to avoid extra DB query)
- * @returns ID del job encolado
+ * @param recordId - UUID of the record to anchor
+ * @param receiptHash - Hash of the receipt (written on-chain)
+ * @param agentWallet - Agent wallet (passed to anchorRecord to avoid extra DB query)
+ * @returns Enqueued job ID
  */
 export async function enqueueAnchorJob(
     recordId: string,

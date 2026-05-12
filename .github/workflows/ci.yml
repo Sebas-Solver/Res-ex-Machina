@@ -1,13 +1,13 @@
 # ============================================
 # Res ex Machina — CI Pipeline
 # ============================================
-# Ejecuta en cada push y PR a main:
-# 1. npm audit (dependencias de seguridad)
+# Runs on every push and PR to main:
+# 1. npm audit (security dependencies)
 # 2. TypeScript compile check
 # 3. ESLint (code quality + style)
-# 4. Tests unitarios + integración (vitest)
+# 4. Unit + integration tests (vitest)
 # 5. Coverage report (v8)
-# 6. Build de producción
+# 6. Production build
 
 name: CI
 
@@ -17,8 +17,8 @@ on:
   pull_request:
     branches: [main]
 
-# Cancela runs anteriores de la misma branch/PR
-# para no gastar minutos de CI innecesariamente
+# Cancel previous runs of the same branch/PR
+# to avoid wasting CI minutes unnecessarily
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -33,11 +33,10 @@ jobs:
       matrix:
         node-version: [20, 22]
 
-    # Variables de entorno definidas una sola vez,
-    # heredadas por todos los steps del job
-    # Variables de entorno para CI.
-    # ⚠️ Claves sensibles en GitHub Secrets (Settings → Secrets → Actions).
-    # Incluso para desarrollo, nunca hardcodear claves en YAML público.
+    # Environment variables defined once,
+    # inherited by all steps in the job.
+    # ⚠️ Sensitive keys stored in GitHub Secrets (Settings → Secrets → Actions).
+    # Never hardcode keys in public YAML, even for development.
     env:
       DATABASE_URL: postgres://test:test@localhost:5432/test
       REDIS_URL: redis://localhost:6379
@@ -57,25 +56,25 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
-      - name: Instalar dependencias
+      - name: Install dependencies
         run: npm ci
 
-      - name: Auditar dependencias (seguridad)
+      - name: Audit dependencies (security)
         run: npm audit --audit-level=high
 
-      - name: Verificar tipos TypeScript
+      - name: TypeScript type check
         run: npx tsc --noEmit
 
       - name: Lint (ESLint)
         run: npm run lint
 
-      - name: Ejecutar tests
+      - name: Run tests
         run: npm test
 
-      - name: Ejecutar tests con cobertura
+      - name: Run tests with coverage
         run: npm run test:coverage
 
-      - name: Subir reporte de cobertura
+      - name: Upload coverage report
         if: matrix.node-version == 22
         uses: actions/upload-artifact@v4
         with:
@@ -83,5 +82,5 @@ jobs:
           path: coverage/
           retention-days: 14
 
-      - name: Build producción
+      - name: Production build
         run: npm run build

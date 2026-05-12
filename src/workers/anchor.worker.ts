@@ -8,12 +8,12 @@ import { logger } from '../utils/logger.js';
  * BullMQ Anchor Worker.
  *
  * Processes jobs from the 'anchor' queue asynchronously.
- * Cada job contiene un recordId y receiptHash para grabar on-chain.
+ * Each job contains a recordId and receiptHash to write on-chain.
  *
- * Comportamiento (ADR-001):
- * - Retries: 5 (configurado en la cola)
- * - Backoff: exponencial (5s → 10s → 20s → 40s → 80s)
- * - Al agotar retries: state = anchor_failed
+ * Behavior (ADR-001):
+ * - Retries: 5 (configured in the queue)
+ * - Backoff: exponential (5s → 10s → 20s → 40s → 80s)
+ * - After exhausting retries: state = anchor_failed
  * - Idempotent: if the record is already anchored, it does nothing
  *
  * Redis connection centralized in config/redis.ts (Issue #16).
@@ -33,13 +33,13 @@ const worker = new Worker<AnchorJobData>(
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             logger.error({ recordId, error: message }, '❌ Anchor failed');
-            throw error; // Re-throw para que BullMQ reintente
+            throw error; // Re-throw so BullMQ retries
         }
     },
     {
         connection: redisConnectionConfig,
-        concurrency: 3, // Procesar hasta 3 anchors en paralelo
-        maxStalledCount: 2, // Marcar job como fallido si se detecta stalled 2 veces (Threat Model — D-01)
+        concurrency: 3, // Process up to 3 anchors in parallel
+        maxStalledCount: 2, // Mark job as failed if stalled 2 times (Threat Model — D-01)
     },
 );
 
@@ -57,7 +57,7 @@ worker.on('failed', async (job, error) => {
 
     logger.error({ jobId: job.id, recordId, attempt: job.attemptsMade, maxAttempts, error: error.message }, '💀 Job failed');
 
-    // Si se agotaron los reintentos, marcar como anchor_failed
+    // If all retries exhausted, mark as anchor_failed
     if (job.attemptsMade >= maxAttempts) {
         logger.error({ recordId }, '🚫 All retries exhausted, marking as anchor_failed');
         await markAnchorFailed(recordId, error.message, job.attemptsMade);
@@ -71,10 +71,10 @@ worker.on('error', (error) => {
 logger.info('⚓ Anchor worker started, waiting for jobs...');
 
 // --- Graceful shutdown (Q-3) ---
-// Al recibir SIGTERM/SIGINT:
-// 1. worker.close() deja de coger jobs nuevos
-// 2. Espera a que el job actual termine (o timeout de BullMQ)
-// 3. Si el proceso muere a medio job, BullMQ lo marca como "stalled"
+// On SIGTERM/SIGINT:
+// 1. worker.close() stops accepting new jobs
+// 2. Waits for the current job to finish (or BullMQ timeout)
+// 3. If the process dies mid-job, BullMQ marks it as "stalled"
 //    and re-queues it automatically. anchorRecord is idempotent:
 //    if the record is already anchored, it won't duplicate the anchor.
 async function shutdown(signal: string) {
