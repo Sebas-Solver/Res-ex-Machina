@@ -5,6 +5,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — Open-Core Compliance
+
+### Open-Core Sanitization — Advisor Review ✅
+
+Aligned public repository with "Open Protocol, Closed Managed Network" strategy per external advisor review.
+
+#### Changed
+
+- **Production Deployment section** — Removed self-hosted production deployment instructions from `developer-guide-v1.md`. Replaced with "Contact RxM team" redirect
+- **Fee roadmap** — Removed pricing strategy details (credits, tiers, discounts) from `fee-flow-v1.md`. Kept as "details TBD"
+- **Broken links** — Fixed references to `runbook.md` and `horizontal-scaling-guide.md` (moved to private repo). Replaced with `integrator-guide.md`
+
+#### Security
+
+- **Anvil key removed** — Removed Anvil account #0 private key from `.env.example`, `api-examples.md`, and `CONTRIBUTING.md`. Replaced with placeholder + link to Foundry docs
+
+#### License
+
+- **Open-Core model clarified** — README now states: protocol, SDK, and verification tools are Apache 2.0. Managed service infrastructure is proprietary
+- **CONTRIBUTING.md** — Issue #36 closed. Full contributor guide with Code of Conduct, setup, conventions, and PR process
+
+---
+
 ## [Unreleased] — v2.0 Prep
 
 ### 007 Security Audit — Complete ✅ (14/14 resolved)
@@ -49,14 +72,7 @@ Full 6-phase security audit (STRIDE threat model, Red/Blue Team, technical check
 
 #### Added
 
-- **`docker-compose.prod.yml`** — Production Docker Compose with API and Worker as separate, independently scalable services (Issue #35)
-  - API runs with `START_INLINE_WORKER=false` (HTTP only)
-  - Worker runs `anchor.worker.js` (anchoring only)
-  - Scalable: `docker compose up --scale worker=N`
-  - Redis with `appendonly yes` + `noeviction` for durability
-  - Healthchecks on API, PostgreSQL, and Redis
-- **`.env.production.example`** — Template with all production environment variables
-- **Horizontal scaling docs** — Updated `horizontal-scaling-guide.md` with Docker Compose self-hosted section
+- **Horizontal scaling** — API and Worker separated into independent, scalable services (Issue #35). Production deployment details in private repository
 
 #### Updated
 
@@ -141,15 +157,13 @@ Full 6-phase security audit (STRIDE threat model, Red/Blue Team, technical check
 
 #### Added
 
-- **`Docs/60-operations/horizontal-scaling-guide.md`** — Architecture and steps for separating API and Worker into independent services
-- **`Docs/60-operations/production-cost-analysis.md`** — Infrastructure costs (Render, Neon, Upstash), blockchain gas fees, initial ETH requirements, and break-even analysis
+- **Horizontal Scaling Guide** — Architecture for separating API and Worker (moved to private repository)
 
 #### Fixed
 
 - **~10 broken links in README** — All doc links pointed to old flat structure (`Docs/quick-start.md`), now corrected to new subfolder structure (`Docs/40-guides/quick-start.md`)
 - **Broken link in developer-guide** — `receipt-verification-spec.md` → `../10-specs/receipt-verification-spec.md`
-- **Docs/ structure in README** — Project structure section updated to show all 7 subcategories (00-foundation through 60-operations)
-- **Documentation table in README** — Added 4 missing documents (deploy guide, api examples, scaling guide, cost analysis)
+- **Docs/ structure in README** — Project structure section updated to show all subcategories
 
 #### Changed
 

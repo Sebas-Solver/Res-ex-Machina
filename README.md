@@ -118,7 +118,7 @@ Full API reference: [`openapi-v1.yaml`](Docs/10-specs/openapi-v1.yaml)
 
 ## 🧪 Tests
 
-### Server (167 tests, 13 suites)
+### Server (169 tests, 13 suites)
 ```
  ✓ errors.test.ts         (9)   — ApiError + factories
  ✓ receipt.test.ts        (4)   — SHA-256 receipt hash
@@ -356,11 +356,11 @@ Key security controls: EIP-712/EIP-191 cryptographic verification, SSRF protecti
 | ~~[#29](https://github.com/Sebas-Solver/Res-ex-Machina/issues/29)~~ | ✅ beta | ~~Agent skill for AI frameworks (replaces per-framework plugins)~~ |
 | [#30](https://github.com/Sebas-Solver/Res-ex-Machina/issues/30) | v2+ | Python SDK (`rxm`) — Same design as TypeScript |
 | ~~[#31](https://github.com/Sebas-Solver/Res-ex-Machina/issues/31)~~ | ✅ v1.2 | ~~Integration smoke test — SDK E2E against live API~~ |
-| [#32](https://github.com/Sebas-Solver/Res-ex-Machina/issues/32) | ✅ v2 | ~~Public status page — Live health dashboard~~ |
+| ~~[#32](https://github.com/Sebas-Solver/Res-ex-Machina/issues/32)~~ | ✅ v2 | ~~Public status page — Live health dashboard~~ |
 | ~~[#33](https://github.com/Sebas-Solver/Res-ex-Machina/issues/33)~~ | ✅ v2 | ~~Write public narrative — Elevator pitch + "Why now?"~~ |
 | ~~[#34](https://github.com/Sebas-Solver/Res-ex-Machina/issues/34)~~ | ✅ alpha.2 | ~~Bug: Webhook endpoints return HTTP 500 — table not migrated~~ |
 | ~~[#35](https://github.com/Sebas-Solver/Res-ex-Machina/issues/35)~~ | ✅ v2 | ~~Horizontal Scaling: Separate API and Anchor Worker~~ |
-| [#36](https://github.com/Sebas-Solver/Res-ex-Machina/issues/36) | production | Add CONTRIBUTING.md for external contributors |
+| ~~[#36](https://github.com/Sebas-Solver/Res-ex-Machina/issues/36)~~ | ✅ done | ~~Add CONTRIBUTING.md for external contributors~~ |
 | ~~[#37](https://github.com/Sebas-Solver/Res-ex-Machina/issues/37)~~ | ✅ audit | ~~Anchor idempotency — prevent duplicate on-chain txs~~ |
 | ~~[#38](https://github.com/Sebas-Solver/Res-ex-Machina/issues/38)~~ | ✅ audit | ~~SSRF IPv6 bypass in webhook URL validator~~ |
 | ~~[#39](https://github.com/Sebas-Solver/Res-ex-Machina/issues/39)~~ | ✅ audit | ~~Structured logger — replace console.* with Pino~~ |
@@ -394,5 +394,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 ## 📜 License & Trademark
 
 Source code licensed under [Apache-2.0](./LICENSE). Trademark terms apply — see [TRADEMARK.md](./TRADEMARK.md).
+
+**Open-Core model:** The protocol, SDK, and verification tools are open source (Apache 2.0). The managed service infrastructure, operational runbooks, and enterprise features are proprietary.
 
 *"Res ex Machina", "RxM", and "Proof of Generation" are protected marks. The code is open; the brand is not.*
