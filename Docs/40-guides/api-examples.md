@@ -163,7 +163,9 @@ Response (405):
 import { privateKeyToAccount } from 'viem/accounts';
 import { signTypedData } from 'viem/accounts';
 
-const account = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
+// Use an Anvil default account for local testing
+// See: https://book.getfoundry.sh/reference/anvil/#default-accounts
+const account = privateKeyToAccount('0x_YOUR_ANVIL_PRIVATE_KEY');
 
 const signature = await account.signTypedData({
   domain: {

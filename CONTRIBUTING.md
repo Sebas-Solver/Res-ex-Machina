@@ -152,7 +152,9 @@ vi.mock('../src/config/env.js', () => ({
         FEE_RECEIVER_ADDRESS: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
         FEE_MINIMUM_AMOUNT: 0.01,
         FEE_TX_MAX_AGE_HOURS: 24,
-        ANCHOR_WALLET_PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+        // Use an Anvil default account key for local testing
+        // See: https://book.getfoundry.sh/reference/anvil/#default-accounts
+        ANCHOR_WALLET_PRIVATE_KEY: '0x_YOUR_ANVIL_PRIVATE_KEY',
     },
 }));
 ```

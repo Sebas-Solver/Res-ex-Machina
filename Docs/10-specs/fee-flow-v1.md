@@ -122,10 +122,8 @@ Additional table to prevent fee_tx_hash reuse:
 
 ```yaml
 fee_scope_out:
-  - fiat_payments          # v2. Fiat payment gateway
-  - credit_pools           # v2. Prepaid credits
-  - tiered_pricing         # v2. Volume discounts
-  - batch_fee              # v1.1. One fee for multiple records
+  - fiat_payments          # Future consideration
+  - batch_fee              # Future: one fee for multiple records
   - fee_refunds            # NEVER. Fees are not refunded
   - fee_negotiation        # NEVER. Fee is public and fixed
 ```
@@ -150,5 +148,4 @@ fee_scope_out:
 |---|---|
 | v1 | Simple on-chain fee, L2 native token, 1:1 with record |
 | v1.1 | Batch: 1 fee → N records |
-| v2 | Fiat gateway + prepaid credits + tiered pricing |
-| v3 | Fee smart contract with automatic discount logic |
+| v2+ | Additional payment methods and managed plans (details TBD) |

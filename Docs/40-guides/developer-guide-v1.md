@@ -1088,36 +1088,9 @@ For full documentation, see [`packages/sdk/README.md`](../../packages/sdk/README
 
 ## Production Deployment
 
-### Docker Compose (Self-Hosted)
+For production deployment, managed hosting, and scaling guidance, contact the RxM team via [GitHub Issues](https://github.com/Sebas-Solver/Res-ex-Machina/issues).
 
-For production, use the dedicated `docker-compose.prod.yml` which separates API and Worker into independent, scalable services:
-
-```bash
-# 1. Configure environment
-cp .env.production.example .env.production
-# Edit .env.production with real values (DATABASE_URL, REDIS_URL, etc.)
-
-# 2. Start all services
-docker compose -f docker-compose.prod.yml --env-file .env.production up -d
-
-# 3. Scale workers independently
-docker compose -f docker-compose.prod.yml --env-file .env.production up -d --scale worker=3
-
-# 4. Check status
-docker compose -f docker-compose.prod.yml ps
-```
-
-**Architecture:**
-- **API** runs with `START_INLINE_WORKER=false` — handles HTTP only
-- **Worker** runs `anchor.worker.js` — processes anchoring jobs only
-- Both share the same `DATABASE_URL` and `REDIS_URL`
-- Workers can be scaled to N replicas; BullMQ distributes jobs automatically
-
-For full details, see the [Horizontal Scaling Guide](../60-operations/horizontal-scaling-guide.md).
-
-### Cloud Deployment
-
-For production cloud deployment instructions, contact the RxM team.
+The local development setup (`docker compose up -d`) is designed for development and testing only.
 
 ---
 
@@ -1133,7 +1106,6 @@ Current version: **v1.0.0-alpha.2** (2026-05-12)
 - [Fee Flow v1](../10-specs/fee-flow-v1.md) — Fee payment and verification details
 - [Error Catalog](../10-specs/error-catalog.md) — Complete error code reference
 - [OpenAPI v1](../10-specs/openapi-v1.yaml) — Machine-readable API spec
-- [Runbook](../60-operations/runbook.md) — Operations guide for troubleshooting
-- [Horizontal Scaling Guide](../60-operations/horizontal-scaling-guide.md) — API/Worker separation
+- [Integrator Guide](../60-operations/integrator-guide.md) — Monitoring and troubleshooting for integrators
 - [Alpha Test Report](../50-testing/alpha-test-report.md) — Test results and regression data
 
