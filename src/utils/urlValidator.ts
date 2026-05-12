@@ -12,14 +12,14 @@ import { resolve4, resolve6 } from 'node:dns/promises';
  * via IPv6 addresses (e.g., ::1, fc00::/7, fe80::/10).
  */
 
-/** Rangos de IPs bloqueadas (exportado para re-validación en fetch time — M-04) */
+/** Blocked IP ranges (exported for re-validation at fetch time — M-04) */
 export const BLOCKED_IP_RANGES = [
     /^127\./,                     // Loopback
-    /^10\./,                      // Clase A privada
-    /^172\.(1[6-9]|2\d|3[01])\./, // Clase B privada
-    /^192\.168\./,                // Clase C privada
+    /^10\./,                      // Class A private
+    /^172\.(1[6-9]|2\d|3[01])\./, // Class B private
+    /^192\.168\./,                // Class C private
     /^169\.254\./,                // Link-local
-    /^0\./,                       // Red actual
+    /^0\./,                       // Current network
     /^::1$/,                      // IPv6 loopback
     /^fc/i,                       // IPv6 ULA
     /^fe80/i,                     // IPv6 link-local
@@ -70,11 +70,11 @@ export async function resolveAndValidateHostname(hostname: string): Promise<void
 }
 
 /**
- * Valida que una URL de webhook sea segura.
- * Lanza Error si la URL no pasa las comprobaciones.
+ * Validates that a webhook URL is safe.
+ * Throws Error if the URL fails the checks.
  */
 export async function validateWebhookUrl(url: string): Promise<void> {
-    // 1. Parsear URL
+    // 1. Parse URL
     let parsed: URL;
     try {
         parsed = new URL(url);
@@ -82,17 +82,17 @@ export async function validateWebhookUrl(url: string): Promise<void> {
         throw new Error('Invalid URL format');
     }
 
-    // 2. Solo HTTPS
+    // 2. HTTPS only
     if (parsed.protocol !== 'https:') {
         throw new Error('Only HTTPS URLs are allowed');
     }
 
-    // 3. Bloquear hostnames peligrosos
+    // 3. Block dangerous hostnames
     const hostname = parsed.hostname.toLowerCase();
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
         throw new Error('localhost URLs are not allowed');
     }
 
-    // 4. Resolver DNS y comprobar IPs (usa función compartida — M-04)
+    // 4. Resolve DNS and check IPs (uses shared function — M-04)
     await resolveAndValidateHostname(hostname);
 }

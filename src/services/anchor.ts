@@ -115,11 +115,11 @@ export async function anchorRecord(
 }
 
 /**
- * Marca un record como anchor_failed en la DB.
- * Se llama cuando se agotan todos los reintentos.
+ * Marks a record as anchor_failed in the DB.
+ * Called when all retries are exhausted.
  *
- * L-01: Emite alerta Sentry para que los operadores
- * detecten acumulación de fallos (posible problema RPC/L2).
+ * L-01: Emits a Sentry alert so that operators
+ * detect accumulated failures (possible RPC/L2 issue).
  */
 export async function markAnchorFailed(
     recordId: string,
@@ -135,7 +135,7 @@ export async function markAnchorFailed(
         })
         .where(eq(records.recordId, recordId));
 
-    // L-01: Alertar via Sentry (solo si está configurado)
+    // L-01: Alert via Sentry (only if configured)
     Sentry.captureMessage(`Anchor failed: ${recordId}`, {
         level: 'warning',
         tags: { component: 'anchor', recordId },

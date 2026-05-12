@@ -3,7 +3,7 @@ import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
 
 /**
- * Resultado del wait — contiene el record actualizado.
+ * Wait result — contains the updated record.
  */
 export interface WaitResult {
     state: string;
@@ -14,15 +14,15 @@ export interface WaitResult {
 }
 
 /**
- * Espera a que un record salga del estado `pending_anchor`.
+ * Waits for a record to leave the `pending_anchor` state.
  *
- * Hace polling a la base de datos (no depende de Redis ni BullMQ)
- * hasta que el estado cambie o se agote el timeout.
+ * Polls the database (does not depend on Redis or BullMQ)
+ * until the state changes or the timeout expires.
  *
- * @param recordId - UUID del record a esperar
+ * @param recordId - UUID of the record to wait for
  * @param maxWaitMs - Maximum wait time (default: 25s, compatible with Render)
- * @param intervalMs - Intervalo entre consultas (default: 2s)
- * @returns El estado actual del record (puede ser pending_anchor si timeout)
+ * @param intervalMs - Interval between queries (default: 2s)
+ * @returns The current state of the record (may be pending_anchor on timeout)
  */
 export async function waitForAnchor(
     recordId: string,
@@ -32,7 +32,7 @@ export async function waitForAnchor(
     const deadline = Date.now() + maxWaitMs;
 
     while (Date.now() < deadline) {
-        // Consultar estado actual
+        // Query current state
         const result = await db
             .select({
                 state: records.state,
@@ -69,13 +69,13 @@ export async function waitForAnchor(
             };
         }
 
-        // Esperar antes del siguiente intento
+        // Wait before next attempt
         const remainingMs = deadline - Date.now();
         if (remainingMs <= 0) break;
         await sleep(Math.min(intervalMs, remainingMs));
     }
 
-    // Timeout — devolver estado actual (pending_anchor)
+    // Timeout — return current state (pending_anchor)
     return {
         state: 'pending_anchor',
         anchorTxHash: null,

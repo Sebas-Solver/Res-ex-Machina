@@ -5,23 +5,23 @@ import { createRateLimitRedisClient } from '../config/redis.js';
 /**
  * Configures rate limiting in the application.
  *
- * Dos niveles:
- * 1. Global: 100 req/min por IP (todos los endpoints)
+ * Two levels:
+ * 1. Global: 100 req/min per IP (all endpoints)
  * 2. POST /records: 10 req/min per IP (stricter, route-level)
  *
- * Store: Redis compartido (Issue #17).
- * Resiliencia: skipOnError = true → si Redis cae, rate limit se
- * desactiva temporalmente en vez de tumbar la API (Issue #22).
+ * Store: Shared Redis (Issue #17).
+ * Resilience: skipOnError = true → if Redis goes down, rate limit is
+ * temporarily disabled instead of crashing the API (Issue #22).
  *
- * Headers de respuesta:
+ * Response headers:
  * - X-RateLimit-Limit
  * - X-RateLimit-Remaining
  * - X-RateLimit-Reset
  *
- * Referencia: PRD v1.1, Threat Model D-01/D-03
+ * Reference: PRD v1.1, Threat Model D-01/D-03
  */
 
-// Cliente Redis singleton para rate limiting
+// Singleton Redis client for rate limiting
 let rateLimitRedis: ReturnType<typeof createRateLimitRedisClient> | null = null;
 
 function getRateLimitRedis() {
@@ -37,11 +37,11 @@ function getRateLimitRedis() {
 
 export async function registerRateLimit(app: FastifyInstance): Promise<void> {
     await app.register(rateLimit, {
-        max: 100,                  // 100 requests por ventana
-        timeWindow: '1 minute',    // Ventana de 1 minuto
+        max: 100,                  // 100 requests per window
+        timeWindow: '1 minute',    // 1-minute window
         redis: getRateLimitRedis(),
-        nameSpace: 'rxm-rl:',     // Prefijo en Redis para evitar colisiones
-        skipOnError: true,         // Issue #22: si Redis falla, no bloquear requests
+        nameSpace: 'rxm-rl:',     // Redis prefix to avoid collisions
+        skipOnError: true,         // Issue #22: if Redis fails, don't block requests
         keyGenerator: (request) => {
             return request.ip;
         },

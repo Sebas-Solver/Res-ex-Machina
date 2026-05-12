@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "Res ex Machina — API Alpha",
-        "description": "Colección completa de la API de Res ex Machina.\nBase URL: https://res-ex-machina-api.onrender.com\n\nPara endpoints GET: funcionan directamente.\nPara POST /records: necesitas firmar con EIP-712 (usa el script test-alpha.ts para el flujo completo).",
+        "description": "Complete API collection for Res ex Machina.\nBase URL: https://res-ex-machina-api.onrender.com\n\nFor GET endpoints: they work directly.\nFor POST /records: you need to sign with EIP-712 (use the test-alpha.ts script for the full flow).",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "variable": [
@@ -12,12 +12,12 @@
         },
         {
             "key": "record_id",
-            "value": "REEMPLAZA_CON_UN_RECORD_ID_REAL",
+            "value": "REPLACE_WITH_A_REAL_RECORD_ID",
             "type": "string"
         },
         {
             "key": "content_hash",
-            "value": "sha256:REEMPLAZA_CON_UN_HASH_REAL",
+            "value": "sha256:REPLACE_WITH_A_REAL_HASH",
             "type": "string"
         }
     ],
@@ -37,11 +37,11 @@
                         "health"
                     ]
                 },
-                "description": "Verifica que la API, base de datos, Redis y blockchain están operativos."
+                "description": "Verifies that the API, database, Redis, and blockchain are operational."
             }
         },
         {
-            "name": "📝 Crear registro (POST /records)",
+            "name": "📝 Create record (POST /records)",
             "request": {
                 "method": "POST",
                 "header": [
@@ -52,7 +52,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"pog_bundle\": {\n        \"schema\": \"pog.v1\",\n        \"content_hash\": \"sha256:TU_HASH_SHA256_AQUI\",\n        \"agent_wallet\": \"0xTU_WALLET_AQUI\",\n        \"model_id\": \"gpt-4o\",\n        \"runtime_id\": \"postman-test\",\n        \"generation_process\": {\n            \"process_type\": \"direct\",\n            \"human_intervention_level\": 0,\n            \"pipeline_steps\": 1\n        },\n        \"timestamp\": \"2026-02-14T12:00:00.000Z\",\n        \"nonce\": \"tu_nonce_unico_aqui\",\n        \"signature\": \"0xTU_FIRMA_EIP712_AQUI\"\n    },\n    \"content_type\": \"text/plain\",\n    \"visibility\": \"proof_only\",\n    \"tags\": [\"test\"],\n    \"fee_amount\": 0.0002,\n    \"fee_currency\": \"ETH\",\n    \"fee_tx_hash\": \"0xTU_TX_HASH_AQUI\"\n}",
+                    "raw": "{\n    \"pog_bundle\": {\n        \"schema\": \"pog.v1\",\n        \"content_hash\": \"sha256:YOUR_SHA256_HASH_HERE\",\n        \"agent_wallet\": \"0xYOUR_WALLET_HERE\",\n        \"model_id\": \"gpt-4o\",\n        \"runtime_id\": \"postman-test\",\n        \"generation_process\": {\n            \"process_type\": \"direct\",\n            \"human_intervention_level\": 0,\n            \"pipeline_steps\": 1\n        },\n        \"timestamp\": \"2026-02-14T12:00:00.000Z\",\n        \"nonce\": \"your_unique_nonce_here\",\n        \"signature\": \"0xYOUR_EIP712_SIGNATURE_HERE\"\n    },\n    \"content_type\": \"text/plain\",\n    \"visibility\": \"proof_only\",\n    \"tags\": [\"test\"],\n    \"fee_amount\": 0.0002,\n    \"fee_currency\": \"ETH\",\n    \"fee_tx_hash\": \"0xYOUR_TX_HASH_HERE\"\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -69,11 +69,11 @@
                         "records"
                     ]
                 },
-                "description": "Crea un nuevo registro de Proof of Generation.\n\n⚠️ IMPORTANTE: Este endpoint requiere:\n1. Un fee pagado previamente en Base Sepolia\n2. Una firma EIP-712 válida del pog_bundle\n\nPara el flujo completo, usa el script test-alpha.ts del repositorio."
+                "description": "Creates a new Proof of Generation record.\n\n⚠️ IMPORTANT: This endpoint requires:\n1. A fee paid beforehand on Base Sepolia\n2. A valid EIP-712 signature of the pog_bundle\n\nFor the full flow, use the test-alpha.ts script from the repository."
             }
         },
         {
-            "name": "📝 Crear registro + esperar anchoring",
+            "name": "📝 Create record + wait for anchoring",
             "request": {
                 "method": "POST",
                 "header": [
@@ -84,7 +84,7 @@
                 ],
                 "body": {
                     "mode": "raw",
-                    "raw": "{\n    \"pog_bundle\": {\n        \"schema\": \"pog.v1\",\n        \"content_hash\": \"sha256:TU_HASH_SHA256_AQUI\",\n        \"agent_wallet\": \"0xTU_WALLET_AQUI\",\n        \"model_id\": \"gpt-4o\",\n        \"runtime_id\": \"postman-test\",\n        \"generation_process\": {\n            \"process_type\": \"direct\",\n            \"human_intervention_level\": 0,\n            \"pipeline_steps\": 1\n        },\n        \"timestamp\": \"2026-02-14T12:00:00.000Z\",\n        \"nonce\": \"tu_nonce_unico_aqui\",\n        \"signature\": \"0xTU_FIRMA_EIP712_AQUI\"\n    },\n    \"content_type\": \"text/plain\",\n    \"visibility\": \"proof_only\",\n    \"tags\": [\"test\"],\n    \"fee_amount\": 0.0002,\n    \"fee_currency\": \"ETH\",\n    \"fee_tx_hash\": \"0xTU_TX_HASH_AQUI\"\n}",
+                    "raw": "{\n    \"pog_bundle\": {\n        \"schema\": \"pog.v1\",\n        \"content_hash\": \"sha256:YOUR_SHA256_HASH_HERE\",\n        \"agent_wallet\": \"0xYOUR_WALLET_HERE\",\n        \"model_id\": \"gpt-4o\",\n        \"runtime_id\": \"postman-test\",\n        \"generation_process\": {\n            \"process_type\": \"direct\",\n            \"human_intervention_level\": 0,\n            \"pipeline_steps\": 1\n        },\n        \"timestamp\": \"2026-02-14T12:00:00.000Z\",\n        \"nonce\": \"your_unique_nonce_here\",\n        \"signature\": \"0xYOUR_EIP712_SIGNATURE_HERE\"\n    },\n    \"content_type\": \"text/plain\",\n    \"visibility\": \"proof_only\",\n    \"tags\": [\"test\"],\n    \"fee_amount\": 0.0002,\n    \"fee_currency\": \"ETH\",\n    \"fee_tx_hash\": \"0xYOUR_TX_HASH_HERE\"\n}",
                     "options": {
                         "raw": {
                             "language": "json"
@@ -104,15 +104,15 @@
                         {
                             "key": "wait_for_anchor",
                             "value": "true",
-                            "description": "Espera hasta 25s a que se complete el anchoring"
+                            "description": "Waits up to 25s for anchoring to complete"
                         }
                     ]
                 },
-                "description": "Igual que POST /records, pero espera hasta 25 segundos a que el anchoring en blockchain se complete antes de responder.\n\nSi el anchoring no se completa a tiempo, devuelve igualmente el record con state=pending_anchor y un header Retry-After: 5."
+                "description": "Same as POST /records, but waits up to 25 seconds for the blockchain anchoring to complete before responding.\n\nIf anchoring does not complete in time, the record is still returned with state=pending_anchor and a Retry-After: 5 header."
             }
         },
         {
-            "name": "🔍 Consultar registro por ID",
+            "name": "🔍 Get record by ID",
             "request": {
                 "method": "GET",
                 "header": [],
@@ -127,11 +127,11 @@
                         "{{record_id}}"
                     ]
                 },
-                "description": "Consulta los detalles de un registro por su UUID.\n\nLa respuesta incluye:\n- state_info: metadata estructurada del estado (terminal, retryable, description)\n- anchor: con explorer_url y network_name\n- fee: con explorer_url y network_name"
+                "description": "Retrieves the details of a record by its UUID.\n\nThe response includes:\n- state_info: structured state metadata (terminal, retryable, description)\n- anchor: with explorer_url and network_name\n- fee: with explorer_url and network_name"
             }
         },
         {
-            "name": "✅ Verificar por content_hash",
+            "name": "✅ Verify by content_hash",
             "request": {
                 "method": "GET",
                 "header": [],
@@ -149,15 +149,15 @@
                         {
                             "key": "content_hash",
                             "value": "{{content_hash}}",
-                            "description": "Hash SHA-256 del contenido, formato: sha256:64hex"
+                            "description": "SHA-256 hash of the content, format: sha256:64hex"
                         }
                     ]
                 },
-                "description": "Verifica si existe un registro para un contenido dado su hash.\n\nDevuelve 200 con los datos del registro si existe,\no 404 si no se encontró ningún registro con ese hash."
+                "description": "Verifies whether a record exists for given content by its hash.\n\nReturns 200 with the record data if it exists,\nor 404 if no record was found with that hash."
             }
         },
         {
-            "name": "📋 Exportar receipt (completo)",
+            "name": "📋 Export receipt (full)",
             "request": {
                 "method": "GET",
                 "header": [],
@@ -173,11 +173,11 @@
                         "export"
                     ]
                 },
-                "description": "Exporta el receipt verificable completo de un registro.\n\nIncluye todos los datos necesarios para verificación independiente:\n- pog_bundle con eip712_domain\n- verification metadata\n- anchor con explorer_url\n- fee con explorer_url\n- state_info"
+                "description": "Exports the complete verifiable receipt of a record.\n\nIncludes all data necessary for independent verification:\n- pog_bundle with eip712_domain\n- verification metadata\n- anchor with explorer_url\n- fee with explorer_url\n- state_info"
             }
         },
         {
-            "name": "📋 Exportar receipt (compacto)",
+            "name": "📋 Export receipt (compact)",
             "request": {
                 "method": "GET",
                 "header": [],
@@ -196,11 +196,11 @@
                         {
                             "key": "mode",
                             "value": "compact",
-                            "description": "Devuelve solo campos de verificación criptográfica"
+                            "description": "Returns only cryptographic verification fields"
                         }
                     ]
                 },
-                "description": "Export reducido con solo los campos esenciales para verificación criptográfica.\n\nOmite: fee, visibility, content_type, runtime_id, model_id.\nIdeal para agentes IA (ahorra tokens) y para compartir pruebas sin datos operacionales."
+                "description": "Reduced export with only the essential fields for cryptographic verification.\n\nOmits: fee, visibility, content_type, runtime_id, model_id.\nIdeal for AI agents (saves tokens) and for sharing proofs without operational data."
             }
         }
     ]

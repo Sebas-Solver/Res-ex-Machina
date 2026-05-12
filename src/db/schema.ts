@@ -16,16 +16,16 @@ import {
 import { sql } from 'drizzle-orm';
 
 /**
- * Tabla principal: records
+ * Main table: records
  *
  * Stores each generation fact registered by an AI agent.
  * Reference: PRD v1.1 section G (Data model)
  *
- * Invariantes relacionados:
- * - INV-001: Records permanentes (no DELETE)
+ * Related invariants:
+ * - INV-001: Records are permanent (no DELETE)
  * - INV-002: No UPDATE of post-creation fields
- * - INV-014: Nonce uniqueness por wallet
- * - INV-012: No hay registro sin fee pagado
+ * - INV-014: Nonce uniqueness per wallet
+ * - INV-012: No record without a paid fee
  */
 export const records = pgTable(
     'records',
@@ -34,13 +34,13 @@ export const records = pgTable(
         /** UUID v7, generated in the application (NOT gen_random_uuid()) */
         recordId: uuid('record_id').primaryKey(),
 
-        /** SHA-256 del output generado. Formato: sha256:{64hex} */
+        /** SHA-256 of the generated output. Format: sha256:{64hex} */
         contentHash: varchar('content_hash', { length: 128 }).notNull().unique(),
 
-        /** MIME type del output (opcional) */
+        /** MIME type of the output (optional) */
         contentType: varchar('content_type', { length: 64 }),
 
-        /** Modo de visibilidad del registro */
+        /** Record visibility mode */
         visibility: varchar('visibility', { length: 32 }).notNull().default('proof_only'),
 
         // --- Proof of Generation ---
@@ -53,31 +53,31 @@ export const records = pgTable(
         /** Address of the signing agent wallet */
         agentWallet: varchar('agent_wallet', { length: 42 }).notNull(),
 
-        // --- Estado ---
-        /** Estado del anchoring: pending_anchor → anchored | anchor_failed */
+        // --- State ---
+        /** Anchoring state: pending_anchor → anchored | anchor_failed */
         state: varchar('state', { length: 32 }).notNull().default('pending_anchor'),
 
         /** Record creation timestamp */
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 
-        /** Hash del receipt completo */
+        /** Hash of the complete receipt */
         receiptHash: varchar('receipt_hash', { length: 128 }).notNull(),
 
-        // --- Metadata opcional ---
-        /** Etiquetas libres (max 10) */
+        // --- Optional metadata ---
+        /** Free-form tags (max 10) */
         tags: text('tags').array().default(sql`'{}'::text[]`),
 
-        /** URL o pointer a contenido externo (IPFS, S3, etc.) */
+        /** URL or pointer to external content (IPFS, S3, etc.) */
         externalRef: text('external_ref'),
 
-        /** Metadatos de procedencia (C2PA, IPTC, XMP, Schema.org) — Issue #11 */
+        /** Provenance metadata (C2PA, IPTC, XMP, Schema.org) — Issue #11 */
         provenanceMetadata: jsonb('provenance_metadata'),
 
         // --- Fee ---
-        /** Monto del fee pagado */
+        /** Amount of the paid fee */
         feeAmount: numeric('fee_amount', { precision: 18, scale: 8 }).notNull(),
 
-        /** Moneda del fee (ej: "MATIC", "ETH") */
+        /** Fee currency (e.g.: "MATIC", "ETH") */
         feeCurrency: varchar('fee_currency', { length: 8 }).notNull(),
 
         /** Fee payment transaction hash — 1:1 with record, non-reusable */
@@ -96,21 +96,21 @@ export const records = pgTable(
         /** Anchoring block number */
         anchorBlock: bigint('anchor_block', { mode: 'number' }),
 
-        /** Chain ID de la blockchain de anchoring */
+        /** Chain ID of the anchoring blockchain */
         anchorChainId: integer('anchor_chain_id'),
 
-        /** Motivo del fallo de anchoring (si state == anchor_failed) */
+        /** Reason for anchoring failure (if state == anchor_failed) */
         anchorErrorReason: text('anchor_error_reason'),
 
         /** Number of anchoring retries */
         anchorRetries: integer('anchor_retries').notNull().default(0),
 
-        /** Timestamp del anchoring exitoso */
+        /** Timestamp of successful anchoring */
         anchoredAt: timestamp('anchored_at', { withTimezone: true }),
     },
     (table) => [
         // --- UNIQUE constraints ---
-        /** Anti-replay: un nonce no puede reutilizarse por la misma wallet */
+        /** Anti-replay: a nonce cannot be reused by the same wallet */
         unique('uq_wallet_nonce').on(table.agentWallet, table.nonce),
 
         // --- Indexes ---
@@ -121,16 +121,16 @@ export const records = pgTable(
         index('idx_records_fee_tx').on(table.feeTxHash),
 
         // --- CHECK constraints ---
-        /** content_hash debe seguir el formato sha256:{64 hex chars} */
+        /** content_hash must follow the format sha256:{64 hex chars} */
         check('chk_content_hash', sql`${table.contentHash} ~ '^sha256:[a-f0-9]{64}$'`),
 
-        /** state solo puede ser uno de estos 3 valores */
+        /** state can only be one of these 3 values */
         check(
             'chk_state',
             sql`${table.state} IN ('pending_anchor', 'anchored', 'anchor_failed')`,
         ),
 
-        /** visibility solo puede ser uno de estos 3 valores */
+        /** visibility can only be one of these 3 values */
         check(
             'chk_visibility',
             sql`${table.visibility} IN ('proof_only', 'input_hash_only', 'content_optional')`,
@@ -138,10 +138,10 @@ export const records = pgTable(
     ],
 );
 
-/** Tipo inferido para un record completo (SELECT) */
+/** Inferred type for a complete record (SELECT) */
 export type DbRecord = typeof records.$inferSelect;
 
-/** Tipo inferido para insertar un nuevo record (INSERT) */
+/** Inferred type for inserting a new record (INSERT) */
 export type NewRecord = typeof records.$inferInsert;
 
 // =============================================
@@ -149,11 +149,11 @@ export type NewRecord = typeof records.$inferInsert;
 // =============================================
 
 /**
- * Tabla de webhooks para notificaciones push de cambios de estado.
+ * Webhooks table for push notifications on state changes.
  *
- * Seguridad:
- * - URL solo HTTPS (validado en app layer)
- * - Secret generado por servidor (32 bytes hex)
+ * Security:
+ * - HTTPS-only URLs (validated in app layer)
+ * - Server-generated secret (32 bytes hex)
  * - Maximum 5 active webhooks per wallet (app layer)
  */
 export const webhooks = pgTable(
@@ -162,16 +162,16 @@ export const webhooks = pgTable(
         /** UUID v7, generated in the application */
         webhookId: uuid('webhook_id').primaryKey(),
 
-        /** Wallet del agente propietario */
+        /** Owner agent wallet address */
         agentWallet: varchar('agent_wallet', { length: 42 }).notNull(),
 
-        /** URL HTTPS donde enviar notificaciones */
+        /** HTTPS URL to send notifications to */
         url: text('url').notNull(),
 
-        /** Secreto HMAC-SHA256 generado por servidor (64 hex chars) */
+        /** Server-generated HMAC-SHA256 secret (64 hex chars) */
         secret: varchar('secret', { length: 128 }).notNull(),
 
-        /** Eventos suscritos */
+        /** Subscribed events */
         events: text('events').array().notNull().default(sql`ARRAY['state_changed']::text[]`),
 
         /** Whether the webhook is active */
@@ -186,9 +186,9 @@ export const webhooks = pgTable(
     ],
 );
 
-/** Tipo inferido para un webhook completo (SELECT) */
+/** Inferred type for a complete webhook (SELECT) */
 export type Webhook = typeof webhooks.$inferSelect;
 
-/** Tipo inferido para insertar un nuevo webhook (INSERT) */
+/** Inferred type for inserting a new webhook (INSERT) */
 export type NewWebhook = typeof webhooks.$inferInsert;
 
