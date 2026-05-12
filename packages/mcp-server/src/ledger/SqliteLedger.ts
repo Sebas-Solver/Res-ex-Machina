@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { getConfig } from '../config.js';
-import { Ledger, LedgerStats, GuardrailResult } from './Ledger.js';
+import { Ledger, LedgerStats, GuardrailResult, BatchJobStatus, BatchItemRecord, BatchJobResult } from './Ledger.js';
 
 export class SqliteLedger implements Ledger {
   private db: Database.Database;
@@ -36,6 +36,28 @@ export class SqliteLedger implements Ledger {
         id TEXT PRIMARY KEY,
         reason TEXT NOT NULL,
         timestamp INTEGER NOT NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS batch_jobs (
+        batch_id TEXT PRIMARY KEY,
+        created_at INTEGER NOT NULL,
+        total_items INTEGER NOT NULL,
+        new_items INTEGER NOT NULL,
+        duplicate_items INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        estimated_cost_wei TEXT NOT NULL DEFAULT '0',
+        actual_cost_wei TEXT NOT NULL DEFAULT '0'
+      );
+
+      CREATE TABLE IF NOT EXISTS batch_items (
+        batch_id TEXT NOT NULL,
+        content_hash TEXT NOT NULL,
+        record_id TEXT,
+        fee_tx_hash TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        error_code TEXT,
+        PRIMARY KEY (batch_id, content_hash),
+        FOREIGN KEY (batch_id) REFERENCES batch_jobs(batch_id)
       );
     `);
   }
@@ -110,6 +132,92 @@ export class SqliteLedger implements Ledger {
     }
 
     return { allowed: true };
+  }
+
+  public checkBatchGuardrails(itemCount: number, perItemFeeWei: bigint, perItemGasWei: bigint): GuardrailResult {
+    const config = getConfig();
+
+    // Per-item limits still apply
+    if (perItemFeeWei > BigInt(config.MCP_MAX_RXM_FEE_WEI)) {
+      return { allowed: false, reason: `Per-item fee (${perItemFeeWei}) exceeds MCP_MAX_RXM_FEE_WEI (${config.MCP_MAX_RXM_FEE_WEI})` };
+    }
+    if (perItemGasWei > BigInt(config.MCP_MAX_GAS_COST_WEI)) {
+      return { allowed: false, reason: `Per-item gas (${perItemGasWei}) exceeds MCP_MAX_GAS_COST_WEI (${config.MCP_MAX_GAS_COST_WEI})` };
+    }
+
+    const totalBatchCost = (perItemFeeWei + perItemGasWei) * BigInt(itemCount);
+    const { totalSpentWei, recordsCount } = this.getDailyStats();
+
+    // Check daily records limit (existing + new items)
+    if (recordsCount + itemCount > config.MCP_MAX_RECORDS_PER_DAY) {
+      return { allowed: false, reason: `Batch of ${itemCount} would exceed daily record limit (${recordsCount} used / ${config.MCP_MAX_RECORDS_PER_DAY} max)` };
+    }
+
+    // Check daily spend limit
+    const newDailyTotal = totalSpentWei + totalBatchCost;
+    if (newDailyTotal > BigInt(config.MCP_MAX_SPEND_PER_DAY_WEI)) {
+      return { allowed: false, reason: `Batch cost would exceed daily spend limit. Current: ${totalSpentWei}, Batch: ${totalBatchCost}, Max: ${config.MCP_MAX_SPEND_PER_DAY_WEI}` };
+    }
+
+    return { allowed: true };
+  }
+
+  // ─── Batch Operations ──────────────────────────────────────
+
+  public createBatchJob(batchId: string, totalItems: number, newItems: number, duplicateItems: number, estimatedCostWei: bigint): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO batch_jobs (batch_id, created_at, total_items, new_items, duplicate_items, status, estimated_cost_wei, actual_cost_wei)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?, '0')
+    `);
+    stmt.run(batchId, Date.now(), totalItems, newItems, duplicateItems, estimatedCostWei.toString());
+  }
+
+  public updateBatchJobStatus(batchId: string, status: BatchJobStatus, actualCostWei?: bigint): void {
+    if (actualCostWei !== undefined) {
+      const stmt = this.db.prepare(`UPDATE batch_jobs SET status = ?, actual_cost_wei = ? WHERE batch_id = ?`);
+      stmt.run(status, actualCostWei.toString(), batchId);
+    } else {
+      const stmt = this.db.prepare(`UPDATE batch_jobs SET status = ? WHERE batch_id = ?`);
+      stmt.run(status, batchId);
+    }
+  }
+
+  public addBatchItem(item: BatchItemRecord): void {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO batch_items (batch_id, content_hash, record_id, fee_tx_hash, status, error_code)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(item.batchId, item.contentHash, item.recordId, item.feeTxHash, item.status, item.errorCode);
+  }
+
+  public getBatchJob(batchId: string): BatchJobResult | null {
+    const jobStmt = this.db.prepare(`SELECT * FROM batch_jobs WHERE batch_id = ?`);
+    const jobRow = jobStmt.get(batchId) as any;
+    if (!jobRow) return null;
+
+    const itemsStmt = this.db.prepare(`SELECT * FROM batch_items WHERE batch_id = ?`);
+    const itemRows = itemsStmt.all(batchId) as any[];
+
+    return {
+      job: {
+        batchId: jobRow.batch_id,
+        createdAt: jobRow.created_at,
+        totalItems: jobRow.total_items,
+        newItems: jobRow.new_items,
+        duplicateItems: jobRow.duplicate_items,
+        status: jobRow.status,
+        estimatedCostWei: jobRow.estimated_cost_wei,
+        actualCostWei: jobRow.actual_cost_wei,
+      },
+      items: itemRows.map((r: any) => ({
+        batchId: r.batch_id,
+        contentHash: r.content_hash,
+        recordId: r.record_id,
+        feeTxHash: r.fee_tx_hash,
+        status: r.status,
+        errorCode: r.error_code,
+      })),
+    };
   }
 
   public close(): void {

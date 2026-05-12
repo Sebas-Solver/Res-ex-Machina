@@ -37,6 +37,11 @@ export const envSchema = z.object({
   MCP_ALLOWED_CONTENT_TYPES: z.string().transform(s => s.split(',')).default('text/plain,text/markdown,application/json'),
   MCP_DEFAULT_TAGS: z.string().transform(s => s.split(',')).default('mcp,rxm'),
   MCP_REQUIRE_MODEL_ID: z.enum(['true', 'false']).transform(v => v === 'true').default('true'),
+
+  // Batch Processing
+  MCP_ENABLE_BATCH_TOOLS: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
+  MCP_MAX_BATCH_SIZE: z.coerce.number().min(1).max(100).default(20),
+  MCP_BATCH_DEDUP_BEFORE_PAY: z.enum(['true', 'false']).transform(v => v === 'true').default('true'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
