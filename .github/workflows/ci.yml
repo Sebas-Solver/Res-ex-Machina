@@ -35,14 +35,17 @@ jobs:
 
     # Variables de entorno definidas una sola vez,
     # heredadas por todos los steps del job
+    # Variables de entorno para CI.
+    # ⚠️ Claves sensibles en GitHub Secrets (Settings → Secrets → Actions).
+    # Incluso para desarrollo, nunca hardcodear claves en YAML público.
     env:
       DATABASE_URL: postgres://test:test@localhost:5432/test
       REDIS_URL: redis://localhost:6379
       L2_RPC_URL: http://localhost:8545
       L2_CHAIN_ID: 31337
-      FEE_RECEIVER_ADDRESS: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+      FEE_RECEIVER_ADDRESS: ${{ secrets.FEE_RECEIVER_ADDRESS }}
       FEE_MINIMUM_AMOUNT: 0.01
-      ANCHOR_WALLET_PRIVATE_KEY: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+      ANCHOR_WALLET_PRIVATE_KEY: ${{ secrets.ANCHOR_WALLET_PRIVATE_KEY }}
 
     steps:
       - name: Checkout

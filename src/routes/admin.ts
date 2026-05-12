@@ -1,4 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { timingSafeEqual } from 'node:crypto';
 import { db } from '../db/index.js';
 import { records, webhooks } from '../db/schema.js';
 import { sql, eq, desc, count } from 'drizzle-orm';
@@ -14,6 +15,20 @@ import { env } from '../config/env.js';
 
 // --- Auth middleware ---
 
+/**
+ * Timing-safe comparison of admin API key.
+ * Prevents side-channel attacks that could brute-force
+ * the key by measuring response time differences.
+ */
+function safeCompareKey(provided: string, expected: string): boolean {
+    if (provided.length !== expected.length) return false;
+    try {
+        return timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+    } catch {
+        return false;
+    }
+}
+
 async function requireAdminKey(request: FastifyRequest, reply: FastifyReply) {
     if (!env.ADMIN_API_KEY) {
         return reply.status(503).send({
@@ -22,7 +37,7 @@ async function requireAdminKey(request: FastifyRequest, reply: FastifyReply) {
     }
 
     const key = request.headers['x-admin-key'];
-    if (!key || key !== env.ADMIN_API_KEY) {
+    if (!key || typeof key !== 'string' || !safeCompareKey(key, env.ADMIN_API_KEY)) {
         return reply.status(401).send({
             error: { code: 'unauthorized', message: 'Invalid or missing X-Admin-Key header' },
         });
