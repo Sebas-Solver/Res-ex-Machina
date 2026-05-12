@@ -12,8 +12,8 @@ import { resolve4, resolve6 } from 'node:dns/promises';
  * via IPv6 addresses (e.g., ::1, fc00::/7, fe80::/10).
  */
 
-/** Rangos de IPs bloqueadas */
-const BLOCKED_IP_RANGES = [
+/** Rangos de IPs bloqueadas (exportado para re-validación en fetch time — M-04) */
+export const BLOCKED_IP_RANGES = [
     /^127\./,                     // Loopback
     /^10\./,                      // Clase A privada
     /^172\.(1[6-9]|2\d|3[01])\./, // Clase B privada
@@ -24,6 +24,50 @@ const BLOCKED_IP_RANGES = [
     /^fc/i,                       // IPv6 ULA
     /^fe80/i,                     // IPv6 link-local
 ];
+
+/**
+ * Checks if an IP address falls within a blocked range.
+ * Exported for use in webhook delivery (DNS rebinding mitigation — M-04).
+ */
+export function isBlockedIp(ip: string): boolean {
+    return BLOCKED_IP_RANGES.some((regex) => regex.test(ip));
+}
+
+/**
+ * Resolves a hostname and validates all IPs against blocked ranges.
+ * Can be called both at registration and at delivery time.
+ * Throws if any resolved IP is in a blocked range.
+ */
+export async function resolveAndValidateHostname(hostname: string): Promise<void> {
+    let allIps: string[] = [];
+
+    try {
+        const ipv4 = await resolve4(hostname);
+        allIps = allIps.concat(ipv4);
+    } catch {
+        // No IPv4 records
+    }
+
+    try {
+        const ipv6 = await resolve6(hostname);
+        allIps = allIps.concat(ipv6);
+    } catch {
+        // No IPv6 records
+    }
+
+    if (allIps.length > 0) {
+        for (const ip of allIps) {
+            if (isBlockedIp(ip)) {
+                throw new Error(`IP ${ip} is in a blocked range (private/loopback/link-local)`);
+            }
+        }
+    } else {
+        // Direct IP literal — check hostname itself
+        if (isBlockedIp(hostname)) {
+            throw new Error(`IP ${hostname} is in a blocked range`);
+        }
+    }
+}
 
 /**
  * Valida que una URL de webhook sea segura.
@@ -49,37 +93,6 @@ export async function validateWebhookUrl(url: string): Promise<void> {
         throw new Error('localhost URLs are not allowed');
     }
 
-    // 4. Resolver DNS (IPv4 + IPv6) y comprobar IPs
-    // Audit fix: resolve both A and AAAA records to prevent IPv6 SSRF bypass
-    let allIps: string[] = [];
-
-    try {
-        const ipv4 = await resolve4(hostname);
-        allIps = allIps.concat(ipv4);
-    } catch {
-        // No IPv4 records — continue to check IPv6
-    }
-
-    try {
-        const ipv6 = await resolve6(hostname);
-        allIps = allIps.concat(ipv6);
-    } catch {
-        // No IPv6 records — continue
-    }
-
-    if (allIps.length > 0) {
-        // Validate all resolved IPs against blocked ranges
-        for (const ip of allIps) {
-            if (BLOCKED_IP_RANGES.some((regex) => regex.test(ip))) {
-                throw new Error(`IP ${ip} is in a blocked range (private/loopback/link-local)`);
-            }
-        }
-    } else {
-        // DNS did not resolve — for direct IPs, check the hostname literal
-        if (BLOCKED_IP_RANGES.some((regex) => regex.test(hostname))) {
-            throw new Error(`IP ${hostname} is in a blocked range`);
-        }
-        // If DNS truly fails, let it pass (will error on fetch)
-    }
+    // 4. Resolver DNS y comprobar IPs (usa función compartida — M-04)
+    await resolveAndValidateHostname(hostname);
 }
-

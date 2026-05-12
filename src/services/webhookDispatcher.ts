@@ -5,6 +5,7 @@ import { db } from '../db/index.js';
 import { webhooks } from '../db/schema.js';
 import { eq, and } from 'drizzle-orm';
 import { logger } from '../utils/logger.js';
+import { resolveAndValidateHostname } from '../utils/urlValidator.js';
 
 /**
  * Webhook Dispatcher — Asynchronous webhook delivery service (Issue #13).
@@ -15,6 +16,7 @@ import { logger } from '../utils/logger.js';
  * - 3 retries with backoff: 5s → 30s → 120s
  * - 5s timeout per HTTP request
  * - No redirect following (SSRF mitigation)
+ * - DNS re-validation at fetch time (M-04 DNS rebinding mitigation)
  * - delivery_id + attempt for deduplication
  */
 
@@ -127,6 +129,12 @@ export function signPayload(secret: string, body: string): string {
  */
 export async function executeWebhookDelivery(job: Job<WebhookJobData>): Promise<void> {
     const { url, secret, payload } = job.data;
+
+    // M-04: Re-validate DNS at delivery time to prevent DNS rebinding.
+    // The URL was checked at registration, but DNS can change between
+    // registration and delivery (TOCTOU attack vector).
+    const parsedUrl = new URL(url);
+    await resolveAndValidateHostname(parsedUrl.hostname);
 
     // Update attempt in the payload
     const currentPayload = { ...payload, attempt: job.attemptsMade + 1 };

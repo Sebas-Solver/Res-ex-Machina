@@ -72,8 +72,23 @@ app.addHook('onResponse', async (request, reply) => {
 });
 
 // --- Security headers (Helmet) ---
+// M-05: CSP habilitado. RxM es una API JSON, así que usamos una política
+// estricta. El dashboard admin (si sirve HTML) necesitaría su propio override.
 await app.register(helmet, {
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"], // Admin dashboard inline styles
+            imgSrc: ["'self'", 'data:'],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            frameSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+        },
+    },
     crossOriginResourcePolicy: { policy: 'cross-origin' },
 });
 
