@@ -6,10 +6,11 @@
 <p align="center">
   <img src="https://img.shields.io/badge/status-Private%20Alpha-brightgreen" alt="Status: Private Alpha"/>
   <img src="https://img.shields.io/badge/version-v1.0.0--alpha.2-blue" alt="Version: v1.0.0-alpha.2"/>
-  <img src="https://img.shields.io/badge/tests-167%20passing%20(13%20suites)-brightgreen" alt="Tests: 167 passing (13 suites)"/>
+  <img src="https://img.shields.io/badge/tests-169%20passing%20(13%20suites)-brightgreen" alt="Tests: 169 passing (13 suites)"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
+  <img src="https://img.shields.io/badge/status_page-live-brightgreen" alt="Status Page: Live"/>
 </p>
 
 <p align="center"><em>
@@ -231,7 +232,7 @@ npm run worker:anchor    # Anchoring worker
 | Script | Description |
 |---|---|
 | `npm run dev` | Development server (tsx watch) |
-| `npm test` | Run 167 tests |
+| `npm test` | Run 169 tests |
 | `npm run test:coverage` | Tests with coverage report (v8) |
 | `npm run build` | Production build |
 | `npx drizzle-kit push` | Apply schema to database |
@@ -336,6 +337,7 @@ Docs/
 | [`runbook.md`](Docs/60-operations/runbook.md) | Operations runbook |
 | [`horizontal-scaling-guide.md`](Docs/60-operations/horizontal-scaling-guide.md) | Horizontal scaling guide (API + Worker separation) |
 | [`production-cost-analysis.md`](Docs/60-operations/production-cost-analysis.md) | Production cost analysis and break-even |
+| [`narrative.md`](Docs/narrative.md) | Public narrative — Elevator pitch, why now, competitive positioning |
 
 ---
 
@@ -398,8 +400,8 @@ The system has **24 invariants** that are never violated:
 | ~~[#29](https://github.com/Sebas-Solver/Res-ex-Machina/issues/29)~~ | ✅ beta | ~~Agent skill for AI frameworks (replaces per-framework plugins)~~ |
 | [#30](https://github.com/Sebas-Solver/Res-ex-Machina/issues/30) | v2+ | Python SDK (`rxm`) — Same design as TypeScript |
 | ~~[#31](https://github.com/Sebas-Solver/Res-ex-Machina/issues/31)~~ | ✅ v1.2 | ~~Integration smoke test — SDK E2E against live API~~ |
-| [#32](https://github.com/Sebas-Solver/Res-ex-Machina/issues/32) | beta | Public status page — Live health dashboard |
-| [#33](https://github.com/Sebas-Solver/Res-ex-Machina/issues/33) | v1.2+ | Write public narrative — Elevator pitch + "Why now?" |
+| [#32](https://github.com/Sebas-Solver/Res-ex-Machina/issues/32) | ✅ v2 | ~~Public status page — Live health dashboard~~ |
+| ~~[#33](https://github.com/Sebas-Solver/Res-ex-Machina/issues/33)~~ | ✅ v2 | ~~Write public narrative — Elevator pitch + "Why now?"~~ |
 | ~~[#34](https://github.com/Sebas-Solver/Res-ex-Machina/issues/34)~~ | ✅ alpha.2 | ~~Bug: Webhook endpoints return HTTP 500 — table not migrated~~ |
 | ~~[#35](https://github.com/Sebas-Solver/Res-ex-Machina/issues/35)~~ | ✅ v2 | ~~Horizontal Scaling: Separate API and Anchor Worker~~ |
 | [#36](https://github.com/Sebas-Solver/Res-ex-Machina/issues/36) | production | Add CONTRIBUTING.md for external contributors |
@@ -422,7 +424,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2** — API deployed at `https://res-ex-machina-api.onrender.com`. **169 tests in 13 suites (100% passing)**, CI/CD (GitHub Actions, Node 20+22, ESLint). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records, parallel processing). Status webhooks with SSRF (IPv4+IPv6) + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Structured Pino logging. Anchor idempotency protection. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. 4 open issues, 26 closed.
+🟢 **v1.0.0-alpha.2** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). **169 tests in 13 suites (100% passing)**, CI/CD (GitHub Actions, Node 20+22, ESLint). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records, parallel processing). Status webhooks with SSRF (IPv4+IPv6) + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Structured Pino logging. Anchor idempotency protection. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. Horizontal scaling (docker-compose.prod.yml). Public narrative + status page. 3 open issues, 29 closed.
 
 ---
 

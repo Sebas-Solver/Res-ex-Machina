@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Res ex Machina — Status</title>
+  <meta name="description" content="Live status of the Res ex Machina API — the neutral registry for AI generation provenances." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #21262d;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --green: #3fb950;
+      --green-dim: #1a3a22;
+      --red: #f85149;
+      --red-dim: #3d1418;
+      --yellow: #d29922;
+      --yellow-dim: #3d2f0a;
+      --blue: #388bfd;
+      --accent: #58a6ff;
+      --radius: 8px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header .logo {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-top: 6px;
+    }
+
+    header a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .overall-status {
+      width: 100%;
+      max-width: 640px;
+      padding: 20px 24px;
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .overall-status.ok    { background: var(--green-dim); border: 1px solid var(--green); }
+    .overall-status.error { background: var(--red-dim);   border: 1px solid var(--red);   }
+    .overall-status.loading { background: var(--surface); border: 1px solid var(--border); color: var(--text-muted); }
+
+    .overall-status .dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .ok .dot    { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .error .dot { background: var(--red);   box-shadow: 0 0 8px var(--red);   }
+    .loading .dot { background: var(--text-muted); animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      padding: 14px 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .component {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      transition: background 0.2s;
+    }
+
+    .component:last-child { border-bottom: none; }
+    .component:hover { background: var(--surface2); }
+
+    .component .indicator {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .indicator.ok     { background: var(--green); }
+    .indicator.error  { background: var(--red); }
+    .indicator.loading { background: var(--text-muted); animation: pulse 1.5s infinite; }
+
+    .component-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+      flex: 1;
+    }
+
+    .component-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .component-status {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 20px;
+    }
+
+    .status-ok    { background: var(--green-dim); color: var(--green); }
+    .status-error { background: var(--red-dim);   color: var(--red);   }
+    .status-loading { background: var(--surface2); color: var(--text-muted); }
+
+    .meta {
+      width: 100%;
+      max-width: 640px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 4px;
+    }
+
+    .meta-left { font-size: 0.75rem; color: var(--text-muted); }
+    .meta-right { font-size: 0.75rem; color: var(--text-muted); }
+    .meta a { color: var(--accent); text-decoration: none; }
+
+    .latency-card {
+      width: 100%;
+      max-width: 640px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-around;
+      gap: 12px;
+    }
+
+    .metric {
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-value.good { color: var(--green); }
+    .metric-value.warn { color: var(--yellow); }
+
+    .metric-label {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+
+    .refresh-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+      font-family: var(--font);
+    }
+
+    .refresh-btn:hover { background: var(--border); }
+
+    footer {
+      margin-top: 40px;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      text-align: center;
+    }
+
+    footer a { color: var(--accent); text-decoration: none; }
+
+    #countdown {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">⚖️</div>
+    <h1>Res ex Machina — Status</h1>
+    <p>
+      Live status of the <a href="https://res-ex-machina-api.onrender.com" target="_blank" rel="noopener">API</a>.
+      Updates every 60 seconds.
+    </p>
+  </header>
+
+  <!-- Overall Status Banner -->
+  <div class="overall-status loading" id="overall-status">
+    <div class="dot"></div>
+    <span id="overall-text">Checking status…</span>
+  </div>
+
+  <!-- Metrics -->
+  <div class="latency-card" id="metrics-card">
+    <div class="metric">
+      <div class="metric-value" id="metric-latency">—</div>
+      <div class="metric-label">Response time</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value" id="metric-checked">—</div>
+      <div class="metric-label">Last checked</div>
+    </div>
+    <div class="metric">
+      <div class="metric-value" id="metric-next"><span id="countdown">60</span>s</div>
+      <div class="metric-label">Next refresh</div>
+    </div>
+  </div>
+
+  <!-- Components -->
+  <div class="card">
+    <div class="card-title">Components</div>
+    <div class="component" id="comp-api">
+      <div class="indicator loading"></div>
+      <div>
+        <div class="component-name">API Server</div>
+        <div class="component-desc">Fastify HTTP — POST/GET /v1/records</div>
+      </div>
+      <div class="component-status status-loading" id="status-api">Checking…</div>
+    </div>
+    <div class="component" id="comp-db">
+      <div class="indicator loading"></div>
+      <div>
+        <div class="component-name">Database</div>
+        <div class="component-desc">PostgreSQL — Records, webhooks, state</div>
+      </div>
+      <div class="component-status status-loading" id="status-db">Checking…</div>
+    </div>
+    <div class="component" id="comp-redis">
+      <div class="indicator loading"></div>
+      <div>
+        <div class="component-name">Redis / Queue</div>
+        <div class="component-desc">BullMQ — Anchor job queue</div>
+      </div>
+      <div class="component-status status-loading" id="status-redis">Checking…</div>
+    </div>
+    <div class="component" id="comp-l2">
+      <div class="indicator loading"></div>
+      <div>
+        <div class="component-name">Blockchain L2</div>
+        <div class="component-desc">Base Sepolia — On-chain anchoring</div>
+      </div>
+      <div class="component-status status-loading" id="status-l2">Checking…</div>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div class="meta-left">
+      Auto-refreshes every 60s — <button class="refresh-btn" onclick="checkStatus()">↻ Refresh now</button>
+    </div>
+    <div class="meta-right">
+      <a href="https://github.com/Sebas-Solver/Res-ex-Machina" target="_blank" rel="noopener">GitHub</a>
+      ·
+      <a href="https://res-ex-machina-api.onrender.com/v1/health" target="_blank" rel="noopener">Raw JSON</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>Res ex Machina — The neutral registry for AI generation events.</p>
+    <p style="margin-top:6px"><a href="https://res-ex-machina-api.onrender.com" target="_blank" rel="noopener">API</a> · <a href="https://github.com/Sebas-Solver/Res-ex-Machina" target="_blank" rel="noopener">GitHub</a> · <a href="https://www.npmjs.com/package/@res-ex-machina/sdk" target="_blank" rel="noopener">SDK on npm</a></p>
+  </footer>
+
+  <script>
+    const API = 'https://res-ex-machina-api.onrender.com/v1/health';
+    let countdown = 60;
+    let timer;
+
+    function setComponent(id, state, label) {
+      const comp = document.getElementById('comp-' + id);
+      const dot = comp.querySelector('.indicator');
+      const badge = document.getElementById('status-' + id);
+
+      dot.className = 'indicator ' + state;
+      badge.className = 'component-status status-' + state;
+      badge.textContent = label;
+    }
+
+    function setOverall(state, text) {
+      const el = document.getElementById('overall-status');
+      const span = document.getElementById('overall-text');
+      el.className = 'overall-status ' + state;
+      span.textContent = text;
+    }
+
+    async function checkStatus() {
+      // Reset to loading
+      setOverall('loading', 'Checking status…');
+      ['api', 'db', 'redis', 'l2'].forEach(id => setComponent(id, 'loading', 'Checking…'));
+
+      const start = Date.now();
+
+      try {
+        const res = await fetch(API, { signal: AbortSignal.timeout(12000) });
+        const latency = Date.now() - start;
+        const data = await res.json();
+
+        // API itself is responding
+        setComponent('api', 'ok', 'Operational');
+
+        // DB
+        const dbOk = data.database?.status === 'ok' || data.db === 'ok';
+        setComponent('db', dbOk ? 'ok' : 'error', dbOk ? 'Operational' : 'Degraded');
+
+        // Redis
+        const redisOk = data.redis?.status === 'ok' || data.redis === 'ok';
+        setComponent('redis', redisOk ? 'ok' : 'error', redisOk ? 'Operational' : 'Degraded');
+
+        // L2
+        const l2Ok = data.blockchain?.status === 'ok' || data.l2 === 'ok' || data.chain === 'ok';
+        setComponent('l2', l2Ok ? 'ok' : 'error', l2Ok ? 'Operational' : 'Degraded');
+
+        // Overall
+        const allOk = dbOk && redisOk && l2Ok;
+        setOverall(allOk ? 'ok' : 'error',
+          allOk ? 'All systems operational' : 'Partial outage — one or more systems degraded');
+
+        // Latency
+        const latEl = document.getElementById('metric-latency');
+        latEl.textContent = latency + 'ms';
+        latEl.className = 'metric-value ' + (latency < 1000 ? 'good' : latency < 3000 ? 'warn' : '');
+
+      } catch (err) {
+        setOverall('error', 'API is not responding');
+        ['api', 'db', 'redis', 'l2'].forEach(id => setComponent(id, 'error', 'Unreachable'));
+
+        const latEl = document.getElementById('metric-latency');
+        latEl.textContent = '—';
+        latEl.className = 'metric-value';
+      }
+
+      // Last checked
+      document.getElementById('metric-checked').textContent =
+        new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+      // Reset countdown
+      countdown = 60;
+    }
+
+    function startTimer() {
+      clearInterval(timer);
+      timer = setInterval(() => {
+        countdown--;
+        document.getElementById('countdown').textContent = countdown;
+        if (countdown <= 0) {
+          checkStatus();
+        }
+      }, 1000);
+    }
+
+    // Initial load
+    checkStatus();
+    startTimer();
+  </script>
+
+</body>
+</html>
