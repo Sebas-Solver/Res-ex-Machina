@@ -213,3 +213,10 @@ curl http://localhost:3000/v1/health
 | Queue failed | `redis-cli LLEN bull:anchor:failed` | > 0 |
 | Anchors ok/failed | DB: `SELECT state, COUNT(*) FROM records GROUP BY state`| failed > 5% |
 | Health check | `GET /v1/health` | degraded > 5 min |
+
+### Public Status Page
+
+**URL:** [`https://sebas-solver.github.io/Res-ex-Machina/`](https://sebas-solver.github.io/Res-ex-Machina/)
+
+- For humans: real-time dashboard with colored indicators
+- For bots/agents: `GET /v1/health` returns JSON (HTTP 200 = healthy, 503 = degraded)

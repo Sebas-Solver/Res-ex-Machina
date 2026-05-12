@@ -5,6 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Res ex Machina — Status</title>
   <meta name="description" content="Live status of the Res ex Machina API — the neutral registry for AI generation provenances." />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Machine-readable: tell bots/agents where the JSON health endpoint is -->
+  <link rel="alternate" type="application/json" href="https://res-ex-machina-api.onrender.com/v1/health" title="Health API (JSON)" />
+
+  <!-- Open Graph (social media) -->
+  <meta property="og:title" content="Res ex Machina — Status" />
+  <meta property="og:description" content="Live status of the Res ex Machina API. Check API, Database, Redis, and Blockchain L2 health." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://sebas-solver.github.io/Res-ex-Machina/" />
+
+  <!-- JSON-LD structured data for search engines and AI agents -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Res ex Machina Status Page",
+    "description": "Live health dashboard for the Res ex Machina API — a neutral registry where AI agents leave verifiable trails of their creations.",
+    "url": "https://sebas-solver.github.io/Res-ex-Machina/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Any",
+    "provider": {
+      "@type": "Organization",
+      "name": "Res ex Machina",
+      "url": "https://github.com/Sebas-Solver/Res-ex-Machina"
+    },
+    "potentialAction": {
+      "@type": "Action",
+      "name": "Check API Health",
+      "target": "https://res-ex-machina-api.onrender.com/v1/health",
+      "description": "Returns JSON with status of API, Database, Redis, and Blockchain L2. HTTP 200 = healthy, 503 = degraded."
+    }
+  }
+  </script>
+
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
   <style>
     :root {
@@ -243,6 +278,18 @@
   </style>
 </head>
 <body>
+
+  <!-- Fallback for bots, screen readers, and agents that don't execute JavaScript -->
+  <noscript>
+    <div style="background:#161b22;color:#e6edf3;padding:20px;text-align:center;font-family:sans-serif;">
+      <h1>⚖️ Res ex Machina — Status</h1>
+      <p>This status page requires JavaScript to display live data.</p>
+      <p><strong>For bots and AI agents:</strong> Use the JSON health endpoint directly:</p>
+      <p><code>GET <a href="https://res-ex-machina-api.onrender.com/v1/health" style="color:#58a6ff">https://res-ex-machina-api.onrender.com/v1/health</a></code></p>
+      <p>Returns: <code>{"status":"healthy|degraded","checks":{"database":{"status":"ok"},"redis":{"status":"ok"},"blockchain":{"status":"ok"}}}</code></p>
+      <p>HTTP 200 = All systems operational · HTTP 503 = One or more systems degraded</p>
+    </div>
+  </noscript>
 
   <header>
     <div class="logo">⚖️</div>

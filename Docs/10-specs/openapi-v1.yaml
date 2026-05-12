@@ -14,8 +14,14 @@ info:
     url: https://github.com/Sebas-Solver/Res-ex-Machina/blob/main/LICENSE
 
 servers:
+  - url: https://res-ex-machina-api.onrender.com/v1
+    description: Alpha (Render)
   - url: https://api.resexmachina.xyz/v1
     description: Production (TBD)
+
+externalDocs:
+  description: Live Status Page
+  url: https://sebas-solver.github.io/Res-ex-Machina/
 
 tags:
   - name: health

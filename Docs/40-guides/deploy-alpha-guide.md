@@ -146,6 +146,28 @@ Open in browser:
 
 1. **`https://res-ex-machina-api.onrender.com/`** — Should show welcome JSON
 2. **`https://res-ex-machina-api.onrender.com/v1/health`** — Should show all 3 checks as "ok"
+3. **`https://sebas-solver.github.io/Res-ex-Machina/`** — Live status page (shows components in real-time)
+
+---
+
+## Public Status Page
+
+A live health dashboard is hosted on **GitHub Pages** at:
+
+**URL:** [`https://sebas-solver.github.io/Res-ex-Machina/`](https://sebas-solver.github.io/Res-ex-Machina/)
+
+### For humans
+- Shows status of API, Database, Redis, and Blockchain L2 with colored indicators
+- Auto-refreshes every 60 seconds
+
+### For bots and AI agents
+- Use the JSON endpoint directly: `GET https://res-ex-machina-api.onrender.com/v1/health`
+- HTTP 200 = `healthy`, HTTP 503 = `degraded`
+- The status page includes `<link rel="alternate" type="application/json">` pointing to the health endpoint
+- JSON-LD structured data and `<noscript>` fallback for crawlers
+
+### CORS Configuration
+The API allows cross-origin requests from `sebas-solver.github.io` so the status page can fetch health data. Additional origins can be added via the `CORS_ALLOWED_ORIGINS` environment variable (comma-separated).
 
 ---
 
@@ -158,3 +180,4 @@ Open in browser:
 ---
 
 *Document created 02/12/2026 during alpha v1.0.0-alpha.1 deploy*
+*Updated 05/12/2026: status page, CORS, horizontal scaling*

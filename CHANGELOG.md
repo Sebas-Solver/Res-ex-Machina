@@ -30,7 +30,31 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Updated
 
 - **Dependency security** — `npm audit fix` resolved 9 vulnerabilities (5 high in vite, 4 moderate in uuid/postcss/bullmq). 4 moderate remain in esbuild (drizzle-kit dev dep, no fix without breaking change)
-- **README roadmap** — Issue #35 marked as completed
+- **README roadmap** — Issues #32, #33, #35 marked as completed
+
+### Public Status Page — Issue #32 ✅ Closed
+
+- **`docs/index.html`** — Live health dashboard hosted on GitHub Pages
+  - Real-time monitoring of API, Database, Redis, and Blockchain L2
+  - Auto-refresh every 60 seconds with latency display
+  - Dark theme (GitHub-inspired), zero dependencies
+  - Machine-readable: JSON-LD structured data, `<link rel="alternate">` to JSON endpoint, `<noscript>` fallback for bots/agents
+  - URL: `https://sebas-solver.github.io/Res-ex-Machina/`
+
+### Public Narrative — Issue #33 ✅ Closed
+
+- **`Docs/narrative.md`** — Complete public pitch document
+  - Elevator pitch (1 paragraph)
+  - "Why now?" section: EU AI Act, agent proliferation, L2 cost reduction
+  - Competitive positioning vs C2PA, Arweave, OpenAI metadata, watermarking
+  - 3 target user segments with acquisition channels
+
+### CORS & Helmet Fix
+
+- **CORS** — Enabled `Access-Control-Allow-Origin` for `sebas-solver.github.io` in production (was `false`)
+- **CORS** — Added `CORS_ALLOWED_ORIGINS` env var for custom origins
+- **Helmet** — Changed `crossOriginResourcePolicy` to `cross-origin` to allow fetch from status page
+- **Lint** — Removed unused `anchorAccount` import in `anchor.ts`
 
 ### Horizontal Scaling — Issue #35 ✅ Closed
 

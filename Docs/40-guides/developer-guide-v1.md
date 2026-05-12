@@ -588,6 +588,21 @@ Health check results are **cached for 30 seconds** (in-memory TTL cache) to redu
 | 200 | `healthy` | All subsystems operational |
 | 503 | `degraded` | One or more subsystems down |
 
+### Public Status Page
+
+A live dashboard is available at **[https://sebas-solver.github.io/Res-ex-Machina/](https://sebas-solver.github.io/Res-ex-Machina/)**.
+
+**For humans:** Shows real-time status of all 4 components (API, DB, Redis, L2) with colored indicators and auto-refresh every 60s.
+
+**For bots/agents:** Use the JSON endpoint directly:
+```bash
+curl https://res-ex-machina-api.onrender.com/v1/health
+# → {"status":"healthy","checks":{"database":{"status":"ok"},"redis":{"status":"ok"},"blockchain":{"status":"ok"}}}
+```
+- HTTP `200` = healthy, HTTP `503` = degraded
+- The status page includes `<link rel="alternate" type="application/json">` pointing to the health endpoint
+- JSON-LD structured data for search engines and AI crawlers
+
 ---
 
 ## Degraded Mode (Resilience)
