@@ -5,6 +5,37 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — v2.0 Prep
+
+### Security Hardening (Public Repo Audit)
+
+#### Fixed
+
+- **CRITICAL: PAT in git remote** — Removed GitHub Personal Access Token embedded in `.git/config` remote URL. Configured `credential.helper` to use `$GITHUB_TOKEN` environment variable instead
+- **HIGH: Hardcoded private key** — Replaced Anvil account #0 private key in `.env.example` with placeholder `0x_YOUR_PRIVATE_KEY_HERE`. Key documented in comment for dev reference only
+- **MEDIUM: Hardcoded DB password** — Parameterized `POSTGRES_PASSWORD` in `docker-compose.yml` using `${POSTGRES_PASSWORD:-rexm_dev_password}` pattern
+- **MEDIUM: Email exposure** — Removed personal email from `README.md`, replaced with GitHub Issues/Profile links
+
+#### Added
+
+- **`docker-compose.prod.yml`** — Production Docker Compose with API and Worker as separate, independently scalable services (Issue #35)
+  - API runs with `START_INLINE_WORKER=false` (HTTP only)
+  - Worker runs `anchor.worker.js` (anchoring only)
+  - Scalable: `docker compose up --scale worker=N`
+  - Redis with `appendonly yes` + `noeviction` for durability
+  - Healthchecks on API, PostgreSQL, and Redis
+- **`.env.production.example`** — Template with all production environment variables
+- **Horizontal scaling docs** — Updated `horizontal-scaling-guide.md` with Docker Compose self-hosted section
+
+#### Updated
+
+- **Dependency security** — `npm audit fix` resolved 9 vulnerabilities (5 high in vite, 4 moderate in uuid/postcss/bullmq). 4 moderate remain in esbuild (drizzle-kit dev dep, no fix without breaking change)
+- **README roadmap** — Issue #35 marked as completed
+
+### Horizontal Scaling — Issue #35 ✅ Closed
+
+---
+
 ## [Unreleased] — Production Readiness
 
 ### Code Audit Fixes (Session 2)

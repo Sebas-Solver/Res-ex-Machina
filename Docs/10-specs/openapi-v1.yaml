@@ -8,10 +8,10 @@ info:
     and anchors them on an EVM L2 blockchain.
   contact:
     name: Res ex Machina
-    email: sebas.solver@gmail.com
+    url: https://github.com/Sebas-Solver/Res-ex-Machina/issues
   license:
-    name: TBD
-    url: https://github.com/Sebas-Solver/Res-ex-Machina
+    name: Apache-2.0
+    url: https://github.com/Sebas-Solver/Res-ex-Machina/blob/main/LICENSE
 
 servers:
   - url: https://api.resexmachina.xyz/v1

@@ -679,13 +679,10 @@ docker compose ps  # all should be "healthy"
 # 4. Apply database schema
 npx drizzle-kit push
 
-# 5. Start API server
+# 5. Start API + inline worker
 npm run dev
 
-# 6. Start anchor worker (separate terminal)
-npm run worker:anchor
-
-# 7. Verify
+# 6. Verify
 curl http://localhost:3000/v1/health
 ```
 
@@ -720,7 +717,7 @@ ANCHOR_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae78
 | `npm run dev` | Start API (dev mode with pino-pretty) |
 | `npm run worker:anchor` | Start anchor worker |
 | `npm run check` | TypeScript + ESLint + Tests (all checks) |
-| `npm test` | Run 167 tests |
+| `npm test` | Run 169 tests |
 | `npx drizzle-kit push` | Apply schema to database |
 | `npm run alpha:happy` | Run Agent A happy path test |
 | `npm run alpha:adversarial` | Run Agent D adversarial test |
@@ -1083,22 +1080,58 @@ const verified = await rxm.verify(contentHash);
 const exported = await rxm.export(recordId);
 ```
 
-For full documentation, see [`packages/sdk/README.md`](../packages/sdk/README.md).
+For full documentation, see [`packages/sdk/README.md`](../../packages/sdk/README.md).
+
+---
+
+## Production Deployment
+
+### Docker Compose (Self-Hosted)
+
+For production, use the dedicated `docker-compose.prod.yml` which separates API and Worker into independent, scalable services:
+
+```bash
+# 1. Configure environment
+cp .env.production.example .env.production
+# Edit .env.production with real values (DATABASE_URL, REDIS_URL, etc.)
+
+# 2. Start all services
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# 3. Scale workers independently
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --scale worker=3
+
+# 4. Check status
+docker compose -f docker-compose.prod.yml ps
+```
+
+**Architecture:**
+- **API** runs with `START_INLINE_WORKER=false` — handles HTTP only
+- **Worker** runs `anchor.worker.js` — processes anchoring jobs only
+- Both share the same `DATABASE_URL` and `REDIS_URL`
+- Workers can be scaled to N replicas; BullMQ distributes jobs automatically
+
+For full details, see the [Horizontal Scaling Guide](../60-operations/horizontal-scaling-guide.md).
+
+### Render (Cloud)
+
+See the [Alpha Deploy Guide](deploy-alpha-guide.md) for Render + Neon + Upstash deployment.
 
 ---
 
 ## Changelog
 
-See [CHANGELOG.md](../CHANGELOG.md) for the full release history.
+See [CHANGELOG.md](../../CHANGELOG.md) for the full release history.
 
-Current version: **v1.0.0-alpha.2** (2026-03-05)
+Current version: **v1.0.0-alpha.2** (2026-05-12)
 
 ## Further Reading
 
-- [PoG v1 Specification](10-specs/pog-v1-spec.md) — Full schema, EIP-712 types, verification algorithm
-- [Fee Flow v1](10-specs/fee-flow-v1.md) — Fee payment and verification details
-- [Error Catalog](10-specs/error-catalog.md) — Complete error code reference
-- [OpenAPI v1](10-specs/openapi-v1.yaml) — Machine-readable API spec
-- [Runbook](runbook.md) — Operations guide for troubleshooting
-- [Alpha Test Report](alpha-test-report.md) — Test results and regression data
+- [PoG v1 Specification](../10-specs/pog-v1-spec.md) — Full schema, EIP-712 types, verification algorithm
+- [Fee Flow v1](../10-specs/fee-flow-v1.md) — Fee payment and verification details
+- [Error Catalog](../10-specs/error-catalog.md) — Complete error code reference
+- [OpenAPI v1](../10-specs/openapi-v1.yaml) — Machine-readable API spec
+- [Runbook](../60-operations/runbook.md) — Operations guide for troubleshooting
+- [Horizontal Scaling Guide](../60-operations/horizontal-scaling-guide.md) — API/Worker separation
+- [Alpha Test Report](../50-testing/alpha-test-report.md) — Test results and regression data
 

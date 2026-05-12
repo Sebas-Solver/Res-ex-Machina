@@ -3,7 +3,7 @@
 ## Contact
 
 - **Responsible**: @Sebas-Solver
-- **Email**: sebas.solver@gmail.com
+- **Contact**: [GitHub Profile](https://github.com/Sebas-Solver) / [Open an Issue](https://github.com/Sebas-Solver/Res-ex-Machina/issues)
 
 ---
 
@@ -164,6 +164,8 @@
 
 ## 6. Clean start from scratch
 
+### Development (single process)
+
 ```bash
 # 1. Bring up infra
 docker compose up -d
@@ -174,13 +176,28 @@ docker compose ps  # all "healthy"
 # 3. Apply migrations
 npm run db:push
 
-# 4. Start API
+# 4. Start API + inline worker
 npm run dev
 
-# 5. Start worker
-npm run worker:anchor
+# 5. Verify
+curl http://localhost:3000/v1/health
+```
 
-# 6. Verify
+### Production (separate services)
+
+```bash
+# 1. Configure environment
+cp .env.production.example .env.production
+# Edit .env.production with real values
+
+# 2. Start all services (API + Workers)
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+
+# 3. Scale workers if needed
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --scale worker=3
+
+# 4. Verify
+docker compose -f docker-compose.prod.yml ps
 curl http://localhost:3000/v1/health
 ```
 
