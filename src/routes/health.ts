@@ -1,21 +1,17 @@
 import type { FastifyInstance } from 'fastify';
+import { timingSafeEqual } from 'node:crypto';
 import { db } from '../db/index.js';
 import { sql } from 'drizzle-orm';
 import { createHealthRedisClient } from '../config/redis.js';
 import { publicClient as l2HealthClient } from '../config/blockchain.js';
 
 /**
- * Health check detallado — GET /v1/health
+ * Health check — GET /v1/health
  *
- * Verifica el estado de las 3 dependencias:
- * - PostgreSQL (query SELECT 1)
- * - Redis (PING via ioredis)
- * - L2 blockchain (getBlockNumber)
- *
- * Returns status per component for quick diagnostics.
- *
- * Redis usa factory de config/redis.ts, blockchain usa publicClient
- * compartido de config/blockchain.ts (Issue #16).
+ * L-03: Two-tier response:
+ * - Public:  { status, version, timestamp } (no infra details)
+ * - Admin:   Full diagnostics with latencies and block number
+ *            (requires X-Admin-Key header)
  */
 
 // --- Cliente Redis singleton para health check ---
@@ -25,8 +21,6 @@ let redisClient: ReturnType<typeof createHealthRedisClient> | null = null;
 function getRedisClient() {
     if (!redisClient) {
         redisClient = createHealthRedisClient();
-
-        // If the connection is lost, invalidate to recreate on the next check
         redisClient.on('error', () => {
             redisClient?.disconnect();
             redisClient = null;
@@ -36,18 +30,28 @@ function getRedisClient() {
 }
 
 // --- Health cache (Issue #16) ---
-// Cachea el resultado del health check 30 segundos para reducir
-// calls to Upstash (free tier: 10K cmd/day) and blockchain RPC.
-
 const HEALTH_CACHE_TTL_MS = 30_000;
 let cachedHealth: { body: Record<string, unknown>; statusCode: number } | null = null;
 let cachedAt = 0;
 
+/**
+ * Timing-safe admin key check for health endpoint.
+ * Returns true if key matches, false otherwise.
+ */
+function isAdminAuthenticated(headerValue: string | string[] | undefined, adminKey: string | undefined): boolean {
+    if (!adminKey || !headerValue || typeof headerValue !== 'string') return false;
+    if (headerValue.length !== adminKey.length) return false;
+    try {
+        return timingSafeEqual(Buffer.from(headerValue), Buffer.from(adminKey));
+    } catch {
+        return false;
+    }
+}
 
 // --- Routes ---
 
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
-    app.get('/health', async (_request, reply) => {
+    app.get('/health', async (request, reply) => {
         // Return cache if valid
         const now = Date.now();
         if (cachedHealth && (now - cachedAt) < HEALTH_CACHE_TTL_MS) {
@@ -69,19 +73,27 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
         const l2Status = checks[2].status === 'fulfilled' ? checks[2].value : { status: 'error', error: formatError(checks[2].reason) };
 
         const allHealthy = dbStatus.status === 'ok' && redisStatus.status === 'ok' && l2Status.status === 'ok';
-
         const statusCode = allHealthy ? 200 : 503;
 
-        const body = {
+        // L-03: Check if requester is admin (has valid X-Admin-Key)
+        const adminKey = process.env.ADMIN_API_KEY;
+        const isAdmin = isAdminAuthenticated(request.headers['x-admin-key'], adminKey);
+
+        // Build response — detailed info only for admins
+        const body: Record<string, unknown> = {
             status: allHealthy ? 'ok' : 'degraded',
             version: 'v1',
             timestamp: new Date().toISOString(),
-            checks: {
+        };
+
+        if (isAdmin) {
+            // Full diagnostics for admin
+            body.checks = {
                 database: dbStatus,
                 redis: redisStatus,
                 blockchain: l2Status,
-            },
-        };
+            };
+        }
 
         // Guardar en cache
         cachedHealth = { body, statusCode };
@@ -92,7 +104,6 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
             'X-Cache': 'MISS',
         };
 
-        // Issue #22: Retry-After when there is degradation
         if (statusCode === 503) {
             headers['Retry-After'] = '30';
         }

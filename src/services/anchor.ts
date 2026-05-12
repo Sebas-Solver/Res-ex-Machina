@@ -6,6 +6,7 @@ import { records } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import { enqueueWebhookDispatch } from './webhookDispatcher.js';
 import { logger } from '../utils/logger.js';
+import { Sentry } from '../config/monitoring.js';
 
 
 /**
@@ -30,7 +31,6 @@ export interface AnchorResult {
  */
 export async function anchorRecord(
     recordId: string,
-    _contentHash: string,
     receiptHash: string,
     agentWallet?: string,
 ): Promise<AnchorResult> {
@@ -117,6 +117,9 @@ export async function anchorRecord(
 /**
  * Marca un record como anchor_failed en la DB.
  * Se llama cuando se agotan todos los reintentos.
+ *
+ * L-01: Emite alerta Sentry para que los operadores
+ * detecten acumulación de fallos (posible problema RPC/L2).
  */
 export async function markAnchorFailed(
     recordId: string,
@@ -131,6 +134,15 @@ export async function markAnchorFailed(
             anchorRetries: retries,
         })
         .where(eq(records.recordId, recordId));
+
+    // L-01: Alertar via Sentry (solo si está configurado)
+    Sentry.captureMessage(`Anchor failed: ${recordId}`, {
+        level: 'warning',
+        tags: { component: 'anchor', recordId },
+        extra: { reason, retries },
+    });
+
+    logger.error({ recordId, reason, retries }, '❌ Record anchor permanently failed');
 
     // Disparar webhooks (async, no bloquea) — Issue #13
     try {

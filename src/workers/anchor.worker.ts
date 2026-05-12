@@ -27,7 +27,7 @@ const worker = new Worker<AnchorJobData>(
         logger.info({ recordId, attempt: job.attemptsMade + 1 }, '⚓ Anchoring record');
 
         try {
-            const result = await anchorRecord(recordId, '', receiptHash, agentWallet);
+            const result = await anchorRecord(recordId, receiptHash, agentWallet);
             logger.info({ recordId, txHash: result.txHash, block: result.block }, '✅ Record anchored');
             return result;
         } catch (error) {

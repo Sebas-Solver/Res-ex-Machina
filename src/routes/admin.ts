@@ -4,6 +4,7 @@ import { db } from '../db/index.js';
 import { records, webhooks } from '../db/schema.js';
 import { sql, eq, desc, count } from 'drizzle-orm';
 import { env } from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Admin routes — protected by X-Admin-Key header.
@@ -11,14 +12,14 @@ import { env } from '../config/env.js';
  * Provides platform-wide statistics, record listing,
  * agent activity, and extended health checks for the
  * admin dashboard.
+ *
+ * L-06: All admin actions are audit-logged with request metadata.
  */
 
 // --- Auth middleware ---
 
 /**
  * Timing-safe comparison of admin API key.
- * Prevents side-channel attacks that could brute-force
- * the key by measuring response time differences.
  */
 function safeCompareKey(provided: string, expected: string): boolean {
     if (provided.length !== expected.length) return false;
@@ -38,10 +39,28 @@ async function requireAdminKey(request: FastifyRequest, reply: FastifyReply) {
 
     const key = request.headers['x-admin-key'];
     if (!key || typeof key !== 'string' || !safeCompareKey(key, env.ADMIN_API_KEY)) {
+        // L-06: Log failed admin auth attempts
+        logger.warn({
+            action: 'admin_auth_failed',
+            ip: request.ip,
+            url: request.url,
+            method: request.method,
+        }, '🔒 Admin auth attempt failed');
+
         return reply.status(401).send({
             error: { code: 'unauthorized', message: 'Invalid or missing X-Admin-Key header' },
         });
     }
+
+    // L-06: Log successful admin access with key fingerprint
+    const keyFingerprint = `${key.slice(0, 4)}...${key.slice(-4)}`;
+    logger.info({
+        action: 'admin_access',
+        ip: request.ip,
+        url: request.url,
+        method: request.method,
+        keyFingerprint,
+    }, '🔑 Admin access granted');
 }
 
 // --- Routes ---
@@ -65,8 +84,7 @@ export default async function adminRoutes(app: FastifyInstance): Promise<void> {
         }
     });
 
-    // Auth config applied per-route via preHandler (not global hook,
-    // because Fastify hooks apply to all routes in the plugin scope)
+    // Auth config applied per-route via preHandler
     const authOpts = { preHandler: requireAdminKey };
 
     /**
