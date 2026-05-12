@@ -83,12 +83,12 @@ Client (AI Agent)
 
 ### Rate Limits
 
-| Scope | Limit | Window | Backend |
-|-------|-------|--------|--------|
-| Global (all endpoints) | 100 req | 1 min | Redis (with `skipOnError` fallback) |
-| POST /records (per wallet) | 10 req | 1 min | Redis (with `skipOnError` fallback) |
+| Scope | Limit | Window |
+|-------|-------|--------|
+| Global (all endpoints) | 100 req | 1 min |
+| POST /records (per wallet) | 10 req | 1 min |
 
-> **Note:** Rate limiting is backed by Redis (`@fastify/rate-limit` with `ioredis`). If Redis is temporarily unavailable, rate limiting is bypassed (`skipOnError: true`) to ensure API availability. This is a deliberate degraded-mode tradeoff.
+> **Note:** Rate limiting is backed by Redis. Exceeding the limit returns HTTP 429 with a `Retry-After` header.
 
 ---
 
@@ -488,7 +488,7 @@ Additionally, `fee_tx_hash` uniqueness is enforced by a UNIQUE DB constraint —
 
 ```
 pending_anchor  →  anchored       (success: tx mined on L2)
-pending_anchor  →  anchor_failed  (after 5 retries with exponential backoff)
+pending_anchor  →  anchor_failed  (after retries exhausted)
 ```
 
 | State | Meaning | Anchor data |
@@ -497,7 +497,7 @@ pending_anchor  →  anchor_failed  (after 5 retries with exponential backoff)
 | `anchored` | Record permanently stored on-chain | `anchor: { tx_hash, block, chain_id, anchored_at }` |
 | `anchor_failed` | All retry attempts exhausted | `anchor_error_reason` populated |
 
-The anchor worker uses BullMQ with exponential backoff: 5s → 10s → 20s → 40s → 80s (5 attempts max, concurrency 3).
+The anchor worker retries failed anchoring jobs with exponential backoff before marking them as `anchor_failed`.
 
 ---
 
@@ -605,27 +605,14 @@ curl https://res-ex-machina-api.onrender.com/v1/health
 
 ---
 
-## Degraded Mode (Resilience)
+## Resilience
 
-The API is designed to remain functional even when external services (Redis, L2 blockchain) are temporarily unavailable.
+The API is designed to remain functional even when external services are temporarily unavailable. Check `GET /v1/health` for current system status — a `degraded` response with `Retry-After` header indicates partial availability.
 
-### How it works
-
-| Service Down | Impact | Failsafe |
-|-------------|--------|----------|
-| **Redis** | Rate limiting disabled | `skipOnError: true` — requests are allowed without rate limiting |
-| **Redis** | Anchor job can't be enqueued | `try/catch` — record saved to DB with `state: pending_anchor`; job will be enqueued when Redis reconnects |
-| **Redis** | Health check shows `degraded` | Cached for 30s; `Retry-After: 30` header returned |
-| **L2 blockchain** | Fee verification fails | POST /records returns 402 (expected) |
-| **L2 blockchain** | Anchoring fails | Worker retries up to 5 times with exponential backoff |
-| **L2 blockchain** | Health check shows `degraded` | Cached for 30s; `Retry-After: 30` header |
-
-### Key design decisions
-
-- **Availability over strictness:** When Redis goes down, it's better to serve requests without rate limiting than to return 500 errors to all users.
-- **Records are always saved:** Even if the anchor job can't be enqueued, the record is persisted in PostgreSQL. No data is lost.
-- **Workers are passive:** The anchor worker reconnects automatically when Redis comes back. Pending jobs are processed.
-- **Health cache reduces blast radius:** A 30s cache prevents cascading failures when external services are slow or unreachable.
+**Key guarantees:**
+- Records are always persisted in PostgreSQL, even if anchoring is delayed.
+- Failed anchor jobs are retried automatically.
+- No data is lost during transient failures.
 
 ---
 
@@ -721,8 +708,8 @@ L2_CHAIN_ID=31337
 FEE_RECEIVER_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 FEE_MINIMUM_AMOUNT=0.01
 
-# Anchoring (Anvil default account #0)
-ANCHOR_WALLET_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+# Anchoring (use a dev-only wallet — never production keys)
+ANCHOR_WALLET_PRIVATE_KEY=0x_YOUR_DEV_PRIVATE_KEY_HERE
 ```
 
 ### Available npm Scripts
@@ -964,7 +951,7 @@ Receive HTTP push notifications when a record's state changes (`pending_anchor` 
 | **Payload Signing** | HMAC-SHA256 in `X-RxM-Signature` header. Secret is server-generated (32 bytes hex) |
 | **Deduplication** | Each delivery includes `delivery_id` (UUID) and `attempt` number |
 | **Async Dispatch** | BullMQ queue — webhook delivery never blocks the anchoring process |
-| **Retries** | 3 attempts with custom backoff: 5s → 30s → 120s |
+| **Retries** | Multiple attempts with exponential backoff |
 | **Timeout** | 5-second timeout per HTTP request |
 | **Limits** | Maximum 5 active webhooks per wallet |
 
@@ -1128,9 +1115,9 @@ docker compose -f docker-compose.prod.yml ps
 
 For full details, see the [Horizontal Scaling Guide](../60-operations/horizontal-scaling-guide.md).
 
-### Render (Cloud)
+### Cloud Deployment
 
-See the [Alpha Deploy Guide](deploy-alpha-guide.md) for Render + Neon + Upstash deployment.
+For production cloud deployment instructions, contact the RxM team.
 
 ---
 
