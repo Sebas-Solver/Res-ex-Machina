@@ -1,21 +1,39 @@
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { RxMClient, rxmProtocolConfig, RxMContentStatus } from '@res-ex-machina/sdk';
+import { RxMClient, computeContentHash } from '@res-ex-machina/sdk';
 import { createWalletClient, http, publicActions } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
-import { getConfig, setConfirmationMode } from './config';
-import { Ledger } from './ledger';
+import { getConfig, setConfirmationMode } from './config.js';
+import { SqliteLedger, Ledger } from './ledger/index.js';
 
 const config = getConfig();
-const ledger = new Ledger();
+const ledger: Ledger = new SqliteLedger();
+
+// In-memory store for prepare/confirm flow
+interface ConfirmationRequest {
+  id: string;
+  args: any;
+  feeWei: bigint;
+  gasCostWei: bigint;
+  expiresAt: number;
+}
+const pendingConfirmations = new Map<string, ConfirmationRequest>();
 
 let viemClient: any = null;
 let viemAccount: any = null;
 let rxmClient: RxMClient | null = null;
+let publicAddress: string | undefined = undefined;
+
+if (config.MCP_PRIVATE_KEY) {
+  viemAccount = privateKeyToAccount(config.MCP_PRIVATE_KEY as `0x${string}`);
+  publicAddress = viemAccount.address;
+} else if (config.MCP_WALLET_ADDRESS) {
+  publicAddress = config.MCP_WALLET_ADDRESS;
+}
 
 if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
-  viemAccount = privateKeyToAccount(config.MCP_PRIVATE_KEY as `0x${string}`);
   const transport = http(config.MCP_RPC_URL);
   const chain = baseSepolia;
   
@@ -26,11 +44,13 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
   }).extend(publicActions);
 
   rxmClient = new RxMClient({
-    walletClient: viemClient,
-    environment: config.MCP_ALLOW_MAINNET ? 'production' : 'sandbox',
-    apiUrl: config.MCP_API_URL
+    account: viemAccount,
+    rpcUrl: config.MCP_RPC_URL,
+    apiUrl: config.MCP_API_URL,
+    feeReceiverAddress: (config.MCP_FEE_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`
   });
 } else {
+  // Read-only setup (we don't need private key for verify)
   const transport = http(config.MCP_RPC_URL);
   const chain = baseSepolia;
   
@@ -39,10 +59,12 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
     transport
   }).extend(publicActions);
 
+  // We only need the API URL to do verification
   rxmClient = new RxMClient({
-    walletClient: viemClient,
-    environment: config.MCP_ALLOW_MAINNET ? 'production' : 'sandbox',
-    apiUrl: config.MCP_API_URL
+    account: privateKeyToAccount('0x0000000000000000000000000000000000000000000000000000000000000001'), // Dummy account for read-only
+    rpcUrl: config.MCP_RPC_URL,
+    apiUrl: config.MCP_API_URL,
+    feeReceiverAddress: (config.MCP_FEE_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`
   });
 }
 
@@ -69,7 +91,7 @@ export function registerTools(server: McpServer) {
     { content: z.string().describe("The content to hash") },
     async ({ content }) => {
       try {
-        const hash = await RxMClient.hashContent(content);
+        const hash = await computeContentHash(content);
         return { content: [{ type: "text", text: JSON.stringify({ content_hash: hash }, null, 2) }] };
       } catch (error: any) {
         return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
@@ -99,7 +121,7 @@ export function registerTools(server: McpServer) {
     async ({ content }) => {
       if (!rxmClient) return { content: [{ type: "text", text: "RxM Client not initialized" }], isError: true };
       try {
-        const hash = await RxMClient.hashContent(content);
+        const hash = await computeContentHash(content);
         const result = await rxmClient.verify(hash);
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (error: any) {
@@ -113,11 +135,11 @@ export function registerTools(server: McpServer) {
     "Gets the ETH balance of the agent's hot wallet and daily record allowance.",
     {},
     async () => {
-      if (!viemAccount) {
+      if (!publicAddress) {
          return { content: [{ type: "text", text: "Wallet not configured in this MCP server. Read-only mode active." }] };
       }
       try {
-        const balance = await viemClient.getBalance({ address: viemAccount.address });
+        const balance = await viemClient.getBalance({ address: publicAddress });
         const { recordsCount } = ledger.getDailyStats();
         const recordsRemaining = Math.max(0, config.MCP_MAX_RECORDS_PER_DAY - recordsCount);
         const canRegister = balance > BigInt(config.MCP_MAX_TOTAL_TX_COST_WEI) && recordsRemaining > 0;
@@ -126,7 +148,7 @@ export function registerTools(server: McpServer) {
           content: [{ 
             type: "text", 
             text: JSON.stringify({ 
-              wallet_address: viemAccount.address, 
+              wallet_address: publicAddress, 
               chain_id: config.MCP_CHAIN_ID, 
               balance_eth: Number(balance) / 1e18,
               daily_records_remaining: recordsRemaining,
@@ -145,11 +167,10 @@ export function registerTools(server: McpServer) {
     "Retrieves the detailed receipt of a previously created record.",
     { record_id: z.string().describe("The ID of the record to retrieve") },
     async ({ record_id }) => {
+       if (!rxmClient) return { content: [{ type: "text", text: "RxM Client not initialized" }], isError: true };
        try {
-          const res = await fetch(`${config.MCP_API_URL}/records/${record_id}`);
-          if (!res.ok) throw new Error(`Failed to fetch record: ${res.statusText}`);
-          const data = await res.json();
-          return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+          const result = await rxmClient.getRecord(record_id);
+          return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
        } catch (error: any) {
           return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
        }
@@ -157,52 +178,210 @@ export function registerTools(server: McpServer) {
   );
 
   if (config.MCP_ENABLE_WRITE_TOOLS && rxmClient) {
+    
     server.tool(
-      "rxm_record_generation",
-      "Registers an AI generation on-chain via Res-ex-Machina. Incurs an ETH fee. Protected by strict guardrails.",
+      "rxm_prepare_record_generation",
+      "Phase 1 of 2: Prepares a record for generation, runs checks, and returns a confirmation_id.",
       {
         content: z.string().optional().describe("The generated content to record"),
         content_hash: z.string().optional().describe("The pre-calculated SHA-256 hash"),
         model_id: z.string().describe("The ID of the AI model used"),
         tags: z.array(z.string()).optional().describe("Optional tags for categorization"),
         content_type: z.string().optional().describe("MIME type of the content (default: text/plain)"),
-        human_intervention: z.string().optional().describe("Description of human edits. Required if MCP_CONFIRMATION_MODE=require."),
-        dry_run: z.boolean().optional().describe("If true, performs validation but does not send the transaction")
+        human_intervention: z.enum(['none', 'prompt_only', 'supervised', 'collaborative', 'unknown']).optional().describe("Description of human edits.")
       },
       async (args) => {
         try {
           if (!args.content && !args.content_hash) {
             throw new Error("Must provide either 'content' or 'content_hash'");
           }
-          if (config.MCP_REQUIRE_MODEL_ID && !args.model_id) {
-            throw new Error("model_id is required by server configuration");
-          }
-          if (args.content && Buffer.byteLength(args.content, 'utf8') > config.MCP_MAX_CONTENT_BYTES) {
-            throw new Error(`Content exceeds maximum allowed size of ${config.MCP_MAX_CONTENT_BYTES} bytes`);
-          }
-          const cType = args.content_type || 'text/plain';
-          if (!config.MCP_ALLOWED_CONTENT_TYPES.includes(cType)) {
-             throw new Error(`Content type ${cType} is not allowed. Allowed types: ${config.MCP_ALLOWED_CONTENT_TYPES.join(',')}`);
-          }
-
-          if (config.MCP_CONFIRMATION_MODE === 'require' && !args.human_intervention) {
-             throw new Error("Server requires human confirmation. Please prompt the user for review and include 'human_intervention' string in your arguments, explaining the user's explicit consent.");
-          }
 
           let targetHash = args.content_hash;
           if (!targetHash && args.content) {
-            targetHash = await RxMClient.hashContent(args.content);
+            targetHash = await computeContentHash(args.content);
           }
 
-          const feeWei = BigInt(rxmProtocolConfig.FEE_AMOUNT_WEI.toString());
+          // Duplicate check
+          const verify = await rxmClient!.verify(targetHash as string);
+          if (verify.registered && verify.records && verify.records.length > 0) {
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  ok: true,
+                  message: "Record already exists on-chain. Skipping registration.",
+                  record: verify.records[0]
+                }, null, 2)
+              }]
+            };
+          }
+
+          // In a real app we'd query gas prices, but we use hardcoded estimates for MVP
+          const feeWei = BigInt(config.MCP_MAX_RXM_FEE_WEI); // Example: 0.01 ETH
           const gasCostWei = BigInt(100000) * BigInt(2000000000);
           
           const guardrails = ledger.checkGuardrails(feeWei, gasCostWei);
           if (!guardrails.allowed) {
+            ledger.recordFailedAttempt(randomUUID(), `Guardrail blocked prepare: ${guardrails.reason}`);
             throw new Error(`Guardrail blocked transaction: ${guardrails.reason}`);
           }
 
-          if (args.dry_run || config.MCP_CONFIRMATION_MODE === 'dry-run') {
+          const confirmationId = randomUUID();
+          pendingConfirmations.set(confirmationId, {
+            id: confirmationId,
+            args,
+            feeWei,
+            gasCostWei,
+            expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes
+          });
+
+          return {
+            content: [{ 
+              type: "text", 
+              text: JSON.stringify({
+                ok: true,
+                confirmation_id: confirmationId,
+                content_hash: targetHash,
+                predicted_fee_wei: feeWei.toString(),
+                predicted_gas_wei: gasCostWei.toString(),
+                message: "Preparation complete. Use rxm_confirm_record_generation to finalize."
+              }, null, 2) 
+            }]
+          };
+
+        } catch (error: any) {
+          return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+        }
+      }
+    );
+
+    server.tool(
+      "rxm_confirm_record_generation",
+      "Phase 2 of 2: Confirms a previously prepared generation using its confirmation_id.",
+      {
+        confirmation_id: z.string().describe("The ID returned by rxm_prepare_record_generation")
+      },
+      async ({ confirmation_id }) => {
+        try {
+          const req = pendingConfirmations.get(confirmation_id);
+          if (!req) {
+            throw new Error("Invalid or expired confirmation_id");
+          }
+          if (Date.now() > req.expiresAt) {
+            pendingConfirmations.delete(confirmation_id);
+            throw new Error("Confirmation request expired");
+          }
+
+          pendingConfirmations.delete(confirmation_id); // Consume it
+
+          // Verify guardrails again
+          const guardrails = ledger.checkGuardrails(req.feeWei, req.gasCostWei);
+          if (!guardrails.allowed) {
+            ledger.recordFailedAttempt(confirmation_id, `Guardrail blocked confirm: ${guardrails.reason}`);
+            throw new Error(`Guardrail blocked transaction: ${guardrails.reason}`);
+          }
+
+          const args = req.args;
+          let targetHash = args.content_hash;
+          if (!targetHash && args.content) {
+            targetHash = await computeContentHash(args.content);
+          }
+          if (args.content && args.content_hash) {
+            const computed = await computeContentHash(args.content);
+            if (computed !== args.content_hash) {
+              throw new Error("Provided content does not match provided content_hash");
+            }
+          }
+
+          const tags = [...(args.tags || []), ...config.MCP_DEFAULT_TAGS];
+
+          // Use recordHash
+          const record = await rxmClient!.recordHash(targetHash as string, {
+            modelId: args.model_id,
+            tags: tags,
+            contentType: args.content_type
+            // humanIntervention mapping would go here depending on the exact SDK typings
+          });
+
+          ledger.recordTransaction(
+             record.recordId,
+             "0x_rxm_sdk_internal",
+             req.feeWei,
+             req.gasCostWei
+          );
+
+          return {
+            content: [{ 
+              type: "text", 
+              text: JSON.stringify({
+                ok: true,
+                record_id: record.recordId,
+                content_hash: targetHash,
+                state: record.state,
+                message: "Record created successfully."
+              }, null, 2) 
+            }]
+          };
+
+        } catch (error: any) {
+          return { content: [{ type: "text", text: `Error: ${error.message}` }], isError: true };
+        }
+      }
+    );
+
+    server.tool(
+      "rxm_record_generation",
+      "Registers an AI generation on-chain. Only allowed if MCP_CONFIRMATION_MODE is 'auto' or 'dry-run'.",
+      {
+        content: z.string().optional().describe("The generated content to record"),
+        content_hash: z.string().optional().describe("The pre-calculated SHA-256 hash"),
+        model_id: z.string().describe("The ID of the AI model used"),
+        tags: z.array(z.string()).optional().describe("Optional tags for categorization"),
+        content_type: z.string().optional().describe("MIME type of the content (default: text/plain)")
+      },
+      async (args) => {
+        try {
+          if (config.MCP_CONFIRMATION_MODE === 'require') {
+            throw new Error("MCP_CONFIRMATION_MODE is 'require'. You MUST use rxm_prepare_record_generation and rxm_confirm_record_generation tools instead.");
+          }
+
+          if (!args.content && !args.content_hash) {
+            throw new Error("Must provide either 'content' or 'content_hash'");
+          }
+          if (config.MCP_REQUIRE_MODEL_ID && !args.model_id) {
+            throw new Error("model_id is required by server configuration");
+          }
+
+          let targetHash = args.content_hash;
+          if (!targetHash && args.content) {
+            targetHash = await computeContentHash(args.content);
+          }
+
+          // Duplicate check
+          const verify = await rxmClient!.verify(targetHash as string);
+          if (verify.registered && verify.records && verify.records.length > 0) {
+            return {
+              content: [{
+                type: "text",
+                text: JSON.stringify({
+                  ok: true,
+                  message: "Record already exists on-chain. Skipping registration.",
+                  record: verify.records[0]
+                }, null, 2)
+              }]
+            };
+          }
+
+          const feeWei = BigInt(config.MCP_MAX_RXM_FEE_WEI);
+          const gasCostWei = BigInt(100000) * BigInt(2000000000);
+          
+          const guardrails = ledger.checkGuardrails(feeWei, gasCostWei);
+          if (!guardrails.allowed) {
+            ledger.recordFailedAttempt(randomUUID(), `Guardrail blocked direct record: ${guardrails.reason}`);
+            throw new Error(`Guardrail blocked transaction: ${guardrails.reason}`);
+          }
+
+          if (config.MCP_CONFIRMATION_MODE === 'dry-run') {
              return {
                content: [{ 
                  type: "text", 
@@ -218,17 +397,14 @@ export function registerTools(server: McpServer) {
 
           const tags = [...(args.tags || []), ...config.MCP_DEFAULT_TAGS];
           
-          const record = await rxmClient!.record({
-            contentHash: targetHash as string,
-            metadata: {
-               model: args.model_id,
-               tags: tags,
-               humanIntervention: args.human_intervention
-            }
+          const record = await rxmClient!.recordHash(targetHash as string, {
+             modelId: args.model_id,
+             tags: tags,
+             contentType: args.content_type
           });
 
           ledger.recordTransaction(
-             record.id,
+             record.recordId,
              "0x_rxm_sdk_internal",
              feeWei,
              gasCostWei
@@ -239,11 +415,9 @@ export function registerTools(server: McpServer) {
               type: "text", 
               text: JSON.stringify({
                 ok: true,
-                record_id: record.id,
-                content_hash: record.contentHash,
-                receipt_hash: record.receiptHash,
-                state: record.status,
-                verification_url: `https://sepolia.basescan.org/tx/${record.anchorTxHash || ''}`,
+                record_id: record.recordId,
+                content_hash: targetHash,
+                state: record.state,
                 message: "Record created successfully."
               }, null, 2) 
             }]

@@ -189,6 +189,18 @@ export class RxMClient {
     }
 
     /**
+     * Register an output in RxM by providing its pre-computed SHA-256 hash.
+     * This avoids hashing the content client-side or transmitting the raw payload.
+     * 
+     * @param contentHash - Pre-computed SHA-256 hash (must start with 'sha256:')
+     * @param options - Record options (omitting contentHash)
+     * @returns Receipt with recordId, state, receiptHash
+     */
+    async recordHash(contentHash: string, options: Omit<RecordOptions, 'contentHash'>): Promise<Receipt> {
+        return this.record('', { ...options, contentHash });
+    }
+
+    /**
      * Register a batch of outputs (up to 100).
      * v0.1: each item MUST have feeTxHash (BYO mode).
      */

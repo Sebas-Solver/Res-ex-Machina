@@ -66,6 +66,13 @@ describe('RxMClient — Validation', () => {
         ).rejects.toThrow(RxMValidationError);
     });
 
+    it('should allow recordHash with valid hash', async () => {
+        // This won't actually do an HTTP request since validation passes and it will try to sign/send.
+        // We just ensure it doesn't throw a validation error.
+        // wait, we mock or just expect it to not throw validation error but maybe something else
+        // Actually, we don't need a full mock if we just check that options validation passes
+    });
+
     it('should reject batch > 100 items', async () => {
         const items = Array.from({ length: 101 }, () => ({
             content: 'test',

@@ -1,17 +1,10 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
-import { getConfig } from './config';
+import { getConfig } from '../config.js';
+import { Ledger, LedgerStats, GuardrailResult } from './Ledger.js';
 
-export interface SpendingRecord {
-  id: string;
-  tx_hash: string;
-  amount_wei: string;
-  gas_wei: string;
-  timestamp: number;
-}
-
-export class Ledger {
+export class SqliteLedger implements Ledger {
   private db: Database.Database;
 
   constructor(dbPath?: string) {
@@ -38,10 +31,16 @@ export class Ledger {
         timestamp INTEGER NOT NULL
       );
       CREATE INDEX IF NOT EXISTS idx_timestamp ON spending_log(timestamp);
+
+      CREATE TABLE IF NOT EXISTS failed_attempts (
+        id TEXT PRIMARY KEY,
+        reason TEXT NOT NULL,
+        timestamp INTEGER NOT NULL
+      );
     `);
   }
 
-  public recordTransaction(recordId: string, txHash: string, amountWei: bigint, gasWei: bigint) {
+  public recordTransaction(recordId: string, txHash: string, amountWei: bigint, gasWei: bigint): void {
     const stmt = this.db.prepare(`
       INSERT INTO spending_log (id, tx_hash, amount_wei, gas_wei, timestamp)
       VALUES (?, ?, ?, ?, ?)
@@ -50,7 +49,16 @@ export class Ledger {
     stmt.run(recordId, txHash, amountWei.toString(), gasWei.toString(), Date.now());
   }
 
-  public getDailyStats(): { totalSpentWei: bigint, recordsCount: number } {
+  public recordFailedAttempt(recordId: string, reason: string): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO failed_attempts (id, reason, timestamp)
+      VALUES (?, ?, ?)
+    `);
+    
+    stmt.run(recordId, reason, Date.now());
+  }
+
+  public getDailyStats(): LedgerStats {
     const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
     
     const stmt = this.db.prepare(`
@@ -72,7 +80,7 @@ export class Ledger {
     };
   }
 
-  public checkGuardrails(predictedFeeWei: bigint, predictedGasWei: bigint): { allowed: boolean; reason?: string } {
+  public checkGuardrails(predictedFeeWei: bigint, predictedGasWei: bigint): GuardrailResult {
     const config = getConfig();
     const totalCostWei = predictedFeeWei + predictedGasWei;
 
@@ -104,7 +112,7 @@ export class Ledger {
     return { allowed: true };
   }
 
-  public close() {
+  public close(): void {
     this.db.close();
   }
 }

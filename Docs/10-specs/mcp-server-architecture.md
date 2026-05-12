@@ -125,8 +125,42 @@ Para cumplir con las guías de seguridad MCP (OWASP) sobre confirmación humana 
 
 ---
 
-## 5. Próximos Pasos en la Implementación
+## 5. Registro Masivo (Batch) y Escalabilidad
+
+El MCP soportará **registro individual en v0.1** y **registro batch controlado en v0.2**.
+
+No se debe implementar el registro masivo como un bucle del LLM llamando a `rxm_record_generation`. Eso sería lento, frágil, caro y difícil de controlar para el LLM. En su lugar, se implementará una tool batch explícita con deduplicación previa, cálculo de coste, límites de tamaño, ledger persistente y resumen por item.
+
+### Configuración para Batch (v0.2)
+Para evitar gasto accidental, las herramientas batch estarán desactivadas por defecto o fuertemente limitadas:
+```env
+MCP_ENABLE_BATCH_TOOLS=false
+MCP_MAX_BATCH_SIZE=20
+MCP_BATCH_DEDUP_BEFORE_PAY=true
+MCP_BATCH_REQUIRE_DRY_RUN=true
+```
+
+### Arquitectura Correcta para Batch en MCP
+
+El flujo de `rxm_prepare_batch` y `rxm_confirm_batch` será el siguiente:
+1. LLM llama a `rxm_prepare_batch` con un array de items.
+2. MCP valida límites (`MCP_MAX_BATCH_SIZE`), calcula hashes y hace **deduplicación obligatoria** llamando a `verify_hash` para cada uno. Separa los duplicados para no pagar fee por ellos.
+3. MCP calcula el coste estimado total y devuelve el resumen al LLM (dry run).
+4. El LLM llama a `rxm_confirm_batch`.
+5. El servidor MCP hace un pago individual por cada registro nuevo (Modelo A: un fee tx por record, en el futuro se podrá explorar un fee pool).
+6. Llama al SDK `recordBatch()`, que a su vez llama a la API `POST /records/batch`.
+7. El servidor MCP devuelve un resumen detallado con los items creados, fallidos y duplicados.
+
+### Modelo de Datos del Ledger para Batch
+El SQLite Ledger se extenderá para guardar el estado del lote:
+- `batch_jobs`: `batch_id`, `created_at`, `total_items`, `status`, `estimated_cost`, `actual_cost`.
+- `batch_items`: `batch_id`, `content_hash`, `record_id`, `fee_tx_hash`, `status`, `error_code`.
+
+---
+
+## 6. Próximos Pasos en la Implementación
 1. Implementar `rxm.recordHash()` en el SDK oficial.
 2. Refactorizar el servidor MCP para separar el `Ledger` en interfaces abstractas.
 3. Añadir middleware HTTP seguro para soporte remoto opcional y blindado.
 4. Extender la suite de tests unitarios del paquete `mcp-server`.
+5. *(Para v0.2)* Implementar `rxm_prepare_batch` y `rxm_confirm_batch` con lógica de deduplicación previa.

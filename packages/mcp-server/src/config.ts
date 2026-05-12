@@ -7,7 +7,7 @@ import os from 'os';
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
 export const envSchema = z.object({
-  MCP_TRANSPORT: z.enum(['stdio']).default('stdio'),
+  MCP_TRANSPORT: z.enum(['stdio', 'sse']).default('stdio'),
   MCP_API_URL: z.string().url().default('https://res-ex-machina-api.onrender.com/v1'),
   MCP_RPC_URL: z.string().url().default('https://sepolia.base.org'),
   MCP_CHAIN_ID: z.coerce.number().default(84532),
@@ -16,7 +16,10 @@ export const envSchema = z.object({
   MCP_FEE_RECEIVER_ADDRESS: z.string().startsWith('0x').optional(),
   
   // Auth & Permissions
+  MCP_HTTP_AUTH_TOKEN: z.string().optional(),
+  MCP_ALLOW_REMOTE_HTTP: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
   MCP_PRIVATE_KEY: z.string().startsWith('0x').optional(),
+  MCP_WALLET_ADDRESS: z.string().startsWith('0x').optional(),
   MCP_ENABLE_WRITE_TOOLS: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
   MCP_CONFIRMATION_MODE: z.enum(['require', 'auto', 'dry-run']).default('require'),
   MCP_RECORDING_POLICY: z.enum(['explicit', 'implicit']).default('explicit'),
