@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Queue } from 'bullmq';
 import { redisConnectionConfig } from '../config/redis.js';
 

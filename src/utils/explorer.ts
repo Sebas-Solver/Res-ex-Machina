@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Mapeo de chain IDs a explorers de blockchain.
  *

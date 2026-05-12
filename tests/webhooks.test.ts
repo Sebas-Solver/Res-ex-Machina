@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect, vi } from 'vitest';
 import { createWebhookSchema } from '../src/routes/schemas/webhookSchema.js';
 import { signPayload } from '../src/services/webhookDispatcher.js';

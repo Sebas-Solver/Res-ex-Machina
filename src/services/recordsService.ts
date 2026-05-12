@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { eq, and, sql, desc, asc, gte, lte, arrayContains } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';

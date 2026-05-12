@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { env } from './env.js';
 import { Redis } from 'ioredis';
 

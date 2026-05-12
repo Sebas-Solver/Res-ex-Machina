@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Queue, Worker, type Job } from 'bullmq';
 import { createHmac, randomUUID } from 'node:crypto';
 import { redisConnectionConfig } from '../config/redis.js';

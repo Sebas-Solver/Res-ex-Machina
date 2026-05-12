@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import rateLimit from '@fastify/rate-limit';
 import type { FastifyInstance } from 'fastify';
 import { createRateLimitRedisClient } from '../config/redis.js';

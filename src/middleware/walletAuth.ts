@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import type { FastifyRequest } from 'fastify';
 import { verifyMessage, type Hex, type Address } from 'viem';
 import {

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { env } from '../config/env.js';
 import { getStateInfo } from './stateInfo.js';
 import { getExplorerTxUrl, getNetworkName } from './explorer.js';

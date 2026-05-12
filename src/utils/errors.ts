@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { Sentry } from '../config/monitoring.js';
 

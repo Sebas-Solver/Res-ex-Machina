@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { Worker, type Job } from 'bullmq';
 import { redisConnectionConfig } from '../config/redis.js';
 import { anchorRecord, markAnchorFailed } from '../services/anchor.js';

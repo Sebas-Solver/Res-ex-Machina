@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { z } from 'zod';
 
 const ETH_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/;

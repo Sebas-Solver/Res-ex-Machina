@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 // Issue #19: Sentry must be initialized BEFORE any other import
 import { initMonitoring } from './config/monitoring.js';
 initMonitoring();

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { describe, it, expect } from 'vitest';
 import { getStateInfo } from '../src/utils/stateInfo.js';
 import { getExplorerTxUrl, getNetworkName } from '../src/utils/explorer.js';

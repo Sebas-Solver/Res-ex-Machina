@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 /**
  * @res-ex-machina/sdk — Official Res ex Machina SDK
  *

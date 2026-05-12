@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { verifyTypedData, type Hex, type Address } from 'viem';
 import { invalidSignature, signerMismatch } from '../utils/errors.js';
 import type { PogBundle } from '../routes/schemas/index.js';

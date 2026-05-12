@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * 🔥 Smoke Test — Res ex Machina SDK E2E against Live API
  *

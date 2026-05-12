@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { resolve4, resolve6 } from 'node:dns/promises';
 
 /**
