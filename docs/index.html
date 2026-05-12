@@ -11,6 +11,10 @@
   <link rel="alternate" type="application/json" href="https://res-ex-machina-api.onrender.com/v1/health" title="Health API (JSON)" />
 
   <!-- Open Graph (social media) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
   <meta property="og:title" content="Res ex Machina — Status" />
   <meta property="og:description" content="Live status of the Res ex Machina API. Check API, Database, Redis, and Blockchain L2 health." />
   <meta property="og:type" content="website" />
@@ -40,13 +44,13 @@
   }
   </script>
 
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
+  <link rel="icon" href="assets/logo.png" />
   <style>
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
+      --bg: #0F1115; /* Charcoal */
+      --surface: #1a1d24; /* Adjusted for contrast with Charcoal */
       --surface2: #21262d;
-      --border: #30363d;
+      --border: #6B7280; /* Slate Gray */
       --text: #e6edf3;
       --text-muted: #8b949e;
       --green: #3fb950;
@@ -55,10 +59,10 @@
       --red-dim: #3d1418;
       --yellow: #d29922;
       --yellow-dim: #3d2f0a;
-      --blue: #388bfd;
-      --accent: #58a6ff;
+      --blue: #0066FF; /* Electric Blue */
+      --accent: #0066FF; /* Electric Blue */
       --radius: 8px;
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -281,8 +285,8 @@
 
   <!-- Fallback for bots, screen readers, and agents that don't execute JavaScript -->
   <noscript>
-    <div style="background:#161b22;color:#e6edf3;padding:20px;text-align:center;font-family:sans-serif;">
-      <h1>⚖️ Res ex Machina — Status</h1>
+    <div style="background:#0F1115;color:#e6edf3;padding:20px;text-align:center;font-family:'Sora', sans-serif;">
+      <h1><img src="assets/logo.png" alt="Res ex Machina" style="height: 32px; vertical-align: middle; margin-right: 12px;"/>Res ex Machina — Status</h1>
       <p>This status page requires JavaScript to display live data.</p>
       <p><strong>For bots and AI agents:</strong> Use the JSON health endpoint directly:</p>
       <p><code>GET <a href="https://res-ex-machina-api.onrender.com/v1/health" style="color:#58a6ff">https://res-ex-machina-api.onrender.com/v1/health</a></code></p>
@@ -292,7 +296,7 @@
   </noscript>
 
   <header>
-    <div class="logo">⚖️</div>
+    <div class="logo"><img src="assets/logo.png" alt="Res ex Machina Logo" style="height: 64px;" /></div>
     <h1>Res ex Machina — Status</h1>
     <p>
       Live status of the <a href="https://res-ex-machina-api.onrender.com" target="_blank" rel="noopener">API</a>.
