@@ -1,0 +1,32 @@
+{
+  "name": "@res-ex-machina/mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Res-ex-Machina - Secure sidecar for LLM agents",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.5.0",
+    "@res-ex-machina/sdk": "^0.1.0",
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "viem": "^2.22.17",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.5",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "license": "Apache-2.0"
+}
