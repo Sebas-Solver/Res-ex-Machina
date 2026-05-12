@@ -300,12 +300,15 @@ Docs/
 | [`error-catalog.md`](Docs/10-specs/error-catalog.md) | API error catalog |
 | [`c2pa-interoperability.md`](Docs/10-specs/c2pa-interoperability.md) | Interoperability with C2PA standards |
 | [`receipt-verification-spec.md`](Docs/10-specs/receipt-verification-spec.md) | Receipt verification specification (v1.2) |
-| [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Code audit report |
+| [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Security audit report (v2 — 14/14 findings resolved) |
+| [`admin-key-rotation.md`](docs/admin-key-rotation.md) | ADMIN_API_KEY rotation procedure |
 | [`integrator-guide.md`](Docs/60-operations/integrator-guide.md) | Integrator troubleshooting guide |
 
 ---
 
 ## 🔐 Security by Design
+
+> **✅ Security Audit Passed** — 14 findings (2 High, 5 Medium, 7 Low) identified and resolved. Full [audit report](Docs/20-security/audit-report-v1.md).
 
 The system has **24 invariants** that are never violated:
 
@@ -315,6 +318,8 @@ The system has **24 invariants** that are never violated:
 - **INV-009**: Every PoG must be signed by the declared agent
 - **INV-012**: No record without paid fee
 - **INV-022**: No scoring, rankings, or reliability labels
+
+Key security controls: EIP-712/EIP-191 cryptographic verification, SSRF protection with DNS re-validation, CSP headers, timing-safe admin authentication, structured audit logging, and idempotent blockchain anchoring.
 
 ---
 

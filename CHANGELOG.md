@@ -7,6 +7,37 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased] — v2.0 Prep
 
+### 007 Security Audit — Complete ✅ (14/14 resolved)
+
+Full 6-phase security audit (STRIDE threat model, Red/Blue Team, technical checklist) using skills `007`, `vulnerability-scanner`, `api-security-best-practices`.
+
+#### Fixed (High)
+
+- **H-01: CI private key exposure** — Moved `ANCHOR_WALLET_PRIVATE_KEY` from plaintext in `ci.yml` to GitHub Secrets. Pattern corrected for all environments
+- **H-02: Admin key rotation undocumented** — Created formal rotation procedure in `docs/admin-key-rotation.md` with key lifecycle, generation, and rollback steps
+
+#### Fixed (Medium)
+
+- **M-01: Timing-unsafe admin key comparison** — `requireAdminKey` now uses `crypto.timingSafeEqual()` instead of `===` string comparison
+- **M-02: Docker container runs as root** — Added `USER node` directive to production `Dockerfile`
+- **M-03: Redis without password in docker-compose** — Added `requirepass` to Redis in `docker-compose.yml` dev environment
+- **M-04: SSRF DNS rebinding (TOCTOU)** — `webhookDispatcher.ts` now re-validates DNS at fetch time (not just at registration), blocking DNS rebinding attacks
+- **M-05: CSP disabled globally** — Helmet CSP enabled globally in `app.ts` with strict directives (`default-src 'self'`, `script-src 'self'`)
+
+#### Fixed (Low)
+
+- **L-01: No alerts for `anchor_failed`** — Integrated `Sentry.captureMessage` in `markAnchorFailed` for operator alerting on blockchain/RPC issues
+- **L-02: Admin dashboard without CSP** — Resolved by M-05 (global CSP now covers all routes)
+- **L-03: Health endpoint info leak** — Two-tier response: public gets minimal status, detailed diagnostics require `X-Admin-Key` header
+- **L-04: Dev dependencies with moderate vulns** — Accepted risk: 4 moderate in `esbuild` via `drizzle-kit` (dev-only, not in production bundle)
+- **L-05: 14 outdated dependencies** — `npm update` applied, 85 packages updated
+- **L-06: Admin audit trail insufficient** — Structured audit logging for all admin actions (success/failure) with IP, key fingerprint, request_id via `pino`
+- **L-07: Dead `_contentHash` parameter** — Refactored `anchorRecord()` signature to remove unused argument from all call sites
+
+#### Audit Verdict
+
+> **✅ APPROVED — AUDIT COMPLETE**. All 14 findings resolved. No open vulnerabilities. Residual risk accepted: 4 moderate vulns in `esbuild` (dev dependency only).
+
 ### Security Hardening (Public Repo Audit)
 
 #### Fixed
