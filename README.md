@@ -86,59 +86,33 @@ NON-CUSTODIAL    → The agent controls its identity (wallet).
 
 ---
 
-## 🛠️ Architecture (v1)
+## 🛠️ Overview
 
 ```
-AI Agent ──────────── REST API ──────────── PostgreSQL
-  (wallet)    EIP-712     │                    (records)
-                          │
-                     Redis (queue)
-                          │
-                    Anchor Worker ────── Blockchain L2
-                     (BullMQ)            (anchoring)
+AI Agent ──── EIP-712 ────► REST API ──── anchor ────► Blockchain L2
+  (wallet)                  (records)                  (immutable proof)
 ```
 
-### Tech Stack
+### Key Endpoints
 
-| Component | Technology |
-|---|---|
-| API | Fastify + TypeScript (ESM) |
-| Database | PostgreSQL + Drizzle ORM |
-| Job Queue | Redis + BullMQ |
-| Blockchain | viem + L2 EVM (Base Sepolia testnet / multi-chain) |
-| Signatures | EIP-712 (verifyTypedData) |
-| Tests | Vitest (167 tests, 13 suites) + v8 coverage |
-| CI/CD | GitHub Actions (Node 20+22, coverage) |
-| Security | Helmet, CORS, Rate Limit |
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/v1/records` | Register a generation event |
+| `GET` | `/v1/records/{id}` | Query by ID |
+| `GET` | `/v1/records/verify?content_hash=` | Verify by hash |
+| `GET` | `/v1/records/{id}/export` | Export verifiable receipt |
+| `POST` | `/v1/records/batch` | Create up to 100 records in a single call |
+| `POST` | `/v1/webhooks` | Register notification webhook |
+| `GET` | `/v1/health` | System health status |
 
-### Endpoints
+Full API reference: [`openapi-v1.yaml`](Docs/10-specs/openapi-v1.yaml)
 
-| Method | Path | Auth | Description |
-|---|---|---|---|
-| `GET` | `/v1/health` | — | System status (DB, Redis, L2) |
-| `POST` | `/v1/records` | Wallet (EIP-712) | Register a generation event |
-| `POST` | `/v1/records?wait_for_anchor=true` | Wallet (EIP-712) | Create + wait for anchoring (max 25s) |
-| `GET` | `/v1/records/{id}` | — | Query by ID |
-| `GET` | `/v1/records/verify?content_hash=` | — | Verify by hash |
-| `GET` | `/v1/records` | — | List records by wallet (filters, pagination, sort) |
-| `GET` | `/v1/records/mine` | Wallet (EIP-191) | List agent's own records |
-| `GET` | `/v1/records/{id}/export` | — | Export verifiable receipt |
-| `GET` | `/v1/records/{id}/export?mode=compact` | — | Compact receipt (verification only) |
-| `POST` | `/v1/records/batch` | Wallet (EIP-712) | Create up to 100 records in a single call |
-| `POST` | `/v1/webhooks` | Wallet (EIP-191) | Register notification webhook |
-| `GET` | `/v1/webhooks` | Wallet (EIP-191) | List own webhooks |
-| `DELETE` | `/v1/webhooks/{id}` | Wallet (EIP-191) | Deactivate webhook |
+### Security
 
-### Anti-Abuse Measures
-- **On-chain fee** required — verified with 5 checks (exists, confirmed, amount, recipient, recent)
-- **Rate limiting** — 100 req/min global, 10 req/min POST /records
-- **Idempotency** — content_hash unique (409)
-- **Unique nonce** — per wallet, anti-replay (409)
-- **Body limit** — 64KB maximum
-- **Helmet** — Automatic security headers
-- **SSRF** — Webhooks HTTPS-only, private/localhost IPs blocked (IPv4 + IPv6)
-- **HMAC-SHA256** — Webhook payload signing
-- **Structured logging** — Pino JSON logs (workers + services)
+- **On-chain fee** — Anti-spam, verified on-chain before record creation
+- **EIP-712 signatures** — Cryptographic proof of authorship
+- **Rate limiting** — Per-IP and per-endpoint
+- **Webhook security** — HMAC-SHA256 signed payloads
 
 ---
 
@@ -320,23 +294,15 @@ Docs/
 | [`quick-start.md`](Docs/40-guides/quick-start.md) | Zero to first record in 5 minutes |
 | [`human-guide-v1.md`](Docs/40-guides/human-guide-v1.md) | Guide for non-technical users |
 | [`developer-guide-v1.md`](Docs/40-guides/developer-guide-v1.md) | Full developer guide |
-| [`deploy-alpha-guide.md`](Docs/40-guides/deploy-alpha-guide.md) | Alpha deployment guide |
 | [`api-examples.md`](Docs/40-guides/api-examples.md) | curl examples for all endpoints |
-| [`prd-v1.md`](Docs/10-specs/prd-v1.md) | Product Requirements Document |
 | [`pog-v1-spec.md`](Docs/10-specs/pog-v1-spec.md) | Proof of Generation v1 specification |
 | [`fee-flow-v1.md`](Docs/10-specs/fee-flow-v1.md) | On-chain fee verification flow |
 | [`openapi-v1.yaml`](Docs/10-specs/openapi-v1.yaml) | OpenAPI (Swagger) specification |
 | [`error-catalog.md`](Docs/10-specs/error-catalog.md) | API error catalog |
 | [`c2pa-interoperability.md`](Docs/10-specs/c2pa-interoperability.md) | Interoperability with C2PA standards |
 | [`receipt-verification-spec.md`](Docs/10-specs/receipt-verification-spec.md) | Receipt verification specification (v1.2) |
-| [`threat-model.md`](Docs/20-security/threat-model.md) | STRIDE Threat Model + Attack Trees |
 | [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Code audit report |
-| [`ADR-001-tech-stack.md`](Docs/30-adr/ADR-001-tech-stack.md) | Architecture Decision Record |
-| [`testing-quickstart.md`](Docs/50-testing/testing-quickstart.md) | Testing quickstart guide |
-| [`alpha-pilot-plan.md`](Docs/50-testing/alpha-pilot-plan.md) | Alpha pilot plan |
-| [`runbook.md`](Docs/60-operations/runbook.md) | Operations runbook |
-| [`horizontal-scaling-guide.md`](Docs/60-operations/horizontal-scaling-guide.md) | Horizontal scaling guide (API + Worker separation) |
-| [`production-cost-analysis.md`](Docs/60-operations/production-cost-analysis.md) | Production cost analysis and break-even |
+| [`integrator-guide.md`](Docs/60-operations/integrator-guide.md) | Integrator troubleshooting guide |
 
 ---
 
@@ -344,25 +310,12 @@ Docs/
 
 The system has **24 invariants** that are never violated:
 
-- **INV-001**: Records are permanent — cannot be deleted (DELETE → 405)
+- **INV-001**: Records are permanent — cannot be deleted
 - **INV-005**: No human validates or invalidates a record
 - **INV-007**: The platform does NOT custody private keys
 - **INV-009**: Every PoG must be signed by the declared agent
 - **INV-012**: No record without paid fee
 - **INV-022**: No scoring, rankings, or reliability labels
-
-### Implemented Measures
-
-| Measure | Implementation |
-|---|---|
-| Security headers | `@fastify/helmet` |
-| CORS | `@fastify/cors` (disabled in prod) |
-| Rate limiting | `@fastify/rate-limit` per IP |
-| Body limit | 64KB maximum |
-| Error sanitization | Never exposes stack traces |
-| Digital signatures | EIP-712 (verifyTypedData) |
-| Fee verification | 5 on-chain checks |
-| Idempotency | UNIQUE constraints in DB |
 
 ---
 
@@ -423,7 +376,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). **169 tests in 13 suites (100% passing)**, CI/CD (GitHub Actions, Node 20+22, ESLint). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). Batch endpoint (`POST /v1/records/batch`, up to 100 records, parallel processing). Status webhooks with SSRF (IPv4+IPv6) + HMAC-SHA256 security + async BullMQ dispatch. Dual temporal attestation (`pki_timestamp`). Wallet authentication (EIP-191). 30s health cache. Redis rate limiting. Graceful degradation. `provenance_metadata` (C2PA/IPTC/XMP). Sentry error monitoring. Structured Pino logging. Anchor idempotency protection. Agent Skill for AI integrators. E2E smoke test: **10/10 endpoints OK**. Horizontal scaling (docker-compose.prod.yml). Public narrative + status page. 3 open issues, 29 closed.
+🟢 **v1.0.0-alpha.2** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). **169 tests** (100% passing). Batch endpoint, webhooks, dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
 
 ---
 
@@ -431,3 +384,11 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 - **Author**: [@Sebas-Solver](https://github.com/Sebas-Solver)
 - **Contact**: Via [GitHub Issues](https://github.com/Sebas-Solver/Res-ex-Machina/issues) or [GitHub Profile](https://github.com/Sebas-Solver)
+
+---
+
+## 📜 License & Trademark
+
+Source code licensed under [Apache-2.0](./LICENSE). Trademark terms apply — see [TRADEMARK.md](./TRADEMARK.md).
+
+*"Res ex Machina", "RxM", and "Proof of Generation" are protected marks. The code is open; the brand is not.*

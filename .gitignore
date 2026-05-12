@@ -36,3 +36,6 @@ semgrep-results.json
 
 # Internal docs (not published)
 Docs/_internal/
+
+# Private repo (separate git, proprietary)
+private/
