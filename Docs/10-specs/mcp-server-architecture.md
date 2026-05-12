@@ -127,29 +127,27 @@ Para cumplir con las guías de seguridad MCP (OWASP) sobre confirmación humana 
 
 ## 5. Registro Masivo (Batch) y Escalabilidad
 
-El MCP soportará **registro individual en v0.1** y **registro batch controlado en v0.2**.
+El MCP soporta **registro individual** y **registro batch controlado**, ambos disponibles desde v0.1.
 
-No se debe implementar el registro masivo como un bucle del LLM llamando a `rxm_record_generation`. Eso sería lento, frágil, caro y difícil de controlar para el LLM. En su lugar, se implementará una tool batch explícita con deduplicación previa, cálculo de coste, límites de tamaño, ledger persistente y resumen por item.
+No se debe implementar el registro masivo como un bucle del LLM llamando a `rxm_record_generation`. Eso sería lento, frágil, caro y difícil de controlar para el LLM. En su lugar, el MCP expone una tool batch explícita con deduplicación previa, cálculo de coste, límites de tamaño, ledger persistente y resumen por item.
 
-### Configuración para Batch (v0.2)
-Para evitar gasto accidental, las herramientas batch estarán desactivadas por defecto o fuertemente limitadas:
+### Configuración para Batch
+Para evitar gasto accidental, las herramientas batch están desactivadas por defecto:
 ```env
 MCP_ENABLE_BATCH_TOOLS=false
 MCP_MAX_BATCH_SIZE=20
 MCP_BATCH_DEDUP_BEFORE_PAY=true
-MCP_BATCH_REQUIRE_DRY_RUN=true
 ```
 
-### Arquitectura Correcta para Batch en MCP
+### Arquitectura del Batch en MCP
 
-El flujo de `rxm_prepare_batch` y `rxm_confirm_batch` será el siguiente:
-1. LLM llama a `rxm_prepare_batch` con un array de items.
-2. MCP valida límites (`MCP_MAX_BATCH_SIZE`), calcula hashes y hace **deduplicación obligatoria** llamando a `verify_hash` para cada uno. Separa los duplicados para no pagar fee por ellos.
-3. MCP calcula el coste estimado total y devuelve el resumen al LLM (dry run).
-4. El LLM llama a `rxm_confirm_batch`.
-5. El servidor MCP hace un pago individual por cada registro nuevo (Modelo A: un fee tx por record, en el futuro se podrá explorar un fee pool).
-6. Llama al SDK `recordBatch()`, que a su vez llama a la API `POST /records/batch`.
-7. El servidor MCP devuelve un resumen detallado con los items creados, fallidos y duplicados.
+10. **`rxm_prepare_batch`** (Fase 1 de 2)
+   - **Input**: array de items (1-100) con `content`/`content_hash`, `model_id`, `tags`, etc.
+   - **Lógica**: Valida `MCP_MAX_BATCH_SIZE`, calcula hashes, deduplica con `verify` para cada uno, valida guardrails agregados (`checkBatchGuardrails`), y devuelve un `batch_confirmation_id` con estimación de coste.
+
+11. **`rxm_confirm_batch`** (Fase 2 de 2)
+   - **Input**: `batch_confirmation_id`.
+   - **Lógica**: Re-valida guardrails, crea un batch job en el ledger, procesa cada item nuevo vía `recordHash()`, registra resultados individuales (éxito/fallo/duplicado) y devuelve un resumen detallado.
 
 ### Modelo de Datos del Ledger para Batch
 El SQLite Ledger se extenderá para guardar el estado del lote:
@@ -158,9 +156,10 @@ El SQLite Ledger se extenderá para guardar el estado del lote:
 
 ---
 
-## 6. Próximos Pasos en la Implementación
-1. Implementar `rxm.recordHash()` en el SDK oficial.
-2. Refactorizar el servidor MCP para separar el `Ledger` en interfaces abstractas.
-3. Añadir middleware HTTP seguro para soporte remoto opcional y blindado.
-4. Extender la suite de tests unitarios del paquete `mcp-server`.
-5. *(Para v0.2)* Implementar `rxm_prepare_batch` y `rxm_confirm_batch` con lógica de deduplicación previa.
+## 6. Próximos Pasos
+
+1. **Testing end-to-end**: Conectar el MCP a un cliente LLM real (Claude Desktop, Gemini) y verificar las tools contra la testnet de Base Sepolia.
+2. **Preparación para publicación**: Configurar `package.json` con entry points, scripts de build y bin para CLI (`npx @rxm/mcp-server`).
+3. **Auditoría de seguridad final**: Revisión completa del código antes de publicar la versión alpha.
+4. **Suite de tests unitarios**: Ampliar cobertura del paquete `mcp-server` con tests para guardrails, batch, y flujo prepare/confirm.
+5. **Monitorización**: Implementar métricas básicas de uso (opcional).

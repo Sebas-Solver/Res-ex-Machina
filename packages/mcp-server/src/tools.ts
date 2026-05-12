@@ -214,14 +214,14 @@ export function registerTools(server: McpServer) {
 
           // Duplicate check
           const verify = await rxmClient!.verify(targetHash as string);
-          if (verify.registered && verify.records && verify.records.length > 0) {
+          if (verify.exists) {
             return {
               content: [{
                 type: "text",
                 text: JSON.stringify({
                   ok: true,
                   message: "Record already exists on-chain. Skipping registration.",
-                  record: verify.records[0]
+                  record: { recordId: verify.recordId, state: verify.state, receiptHash: verify.receiptHash }
                 }, null, 2)
               }]
             };
@@ -370,14 +370,14 @@ export function registerTools(server: McpServer) {
 
           // Duplicate check
           const verify = await rxmClient!.verify(targetHash as string);
-          if (verify.registered && verify.records && verify.records.length > 0) {
+          if (verify.exists) {
             return {
               content: [{
                 type: "text",
                 text: JSON.stringify({
                   ok: true,
                   message: "Record already exists on-chain. Skipping registration.",
-                  record: verify.records[0]
+                  record: { recordId: verify.recordId, state: verify.state, receiptHash: verify.receiptHash }
                 }, null, 2)
               }]
             };
@@ -481,7 +481,7 @@ export function registerTools(server: McpServer) {
               // Dedup check
               if (config.MCP_BATCH_DEDUP_BEFORE_PAY) {
                 const verify = await rxmClient!.verify(hash as string);
-                if (verify.registered && verify.records && verify.records.length > 0) {
+                if (verify.exists) {
                   duplicateHashes.push(hash as string);
                   continue;
                 }
