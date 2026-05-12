@@ -45,7 +45,7 @@ services:
     environment:
       POSTGRES_DB: rexm
       POSTGRES_USER: rexm
-      POSTGRES_PASSWORD: rexm_dev_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rexm_dev_password}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

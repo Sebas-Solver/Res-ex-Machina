@@ -429,4 +429,4 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 ## 📫 Contact
 
 - **Author**: [@Sebas-Solver](https://github.com/Sebas-Solver)
-- **Email**: sebas.solver@gmail.com
+- **Contact**: Via [GitHub Issues](https://github.com/Sebas-Solver/Res-ex-Machina/issues) or [GitHub Profile](https://github.com/Sebas-Solver)
