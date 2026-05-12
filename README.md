@@ -337,7 +337,6 @@ Docs/
 | [`runbook.md`](Docs/60-operations/runbook.md) | Operations runbook |
 | [`horizontal-scaling-guide.md`](Docs/60-operations/horizontal-scaling-guide.md) | Horizontal scaling guide (API + Worker separation) |
 | [`production-cost-analysis.md`](Docs/60-operations/production-cost-analysis.md) | Production cost analysis and break-even |
-| [`narrative.md`](Docs/narrative.md) | Public narrative — Elevator pitch, why now, competitive positioning |
 
 ---
 
