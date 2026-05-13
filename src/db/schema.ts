@@ -16,6 +16,7 @@ import {
     check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import { relations } from 'drizzle-orm';
 
 /**
  * Main table: records
@@ -75,6 +76,9 @@ export const records = pgTable(
         /** Provenance metadata (C2PA, IPTC, XMP, Schema.org) — Issue #11 */
         provenanceMetadata: jsonb('provenance_metadata'),
 
+        /** Payment Attempt ID this record belongs to */
+        paymentAttemptId: uuid('payment_attempt_id'),
+
         // --- Fee ---
         /** Amount of the paid fee */
         feeAmount: numeric('fee_amount', { precision: 18, scale: 8 }).notNull(),
@@ -121,6 +125,7 @@ export const records = pgTable(
         index('idx_records_state').on(table.state),
         index('idx_records_created').on(table.createdAt),
         index('idx_records_fee_tx').on(table.feeTxHash),
+        index('idx_records_payment_attempt').on(table.paymentAttemptId),
 
         // --- CHECK constraints ---
         /** content_hash must follow the format sha256:{64 hex chars} */
@@ -145,6 +150,13 @@ export type DbRecord = typeof records.$inferSelect;
 
 /** Inferred type for inserting a new record (INSERT) */
 export type NewRecord = typeof records.$inferInsert;
+
+export const recordsRelations = relations(records, ({ one }) => ({
+    paymentAttempt: one(paymentAttempts, {
+        fields: [records.paymentAttemptId],
+        references: [paymentAttempts.id],
+    }),
+}));
 
 // =============================================
 // Tabla: webhooks (Issue #13)
@@ -193,4 +205,57 @@ export type Webhook = typeof webhooks.$inferSelect;
 
 /** Inferred type for inserting a new webhook (INSERT) */
 export type NewWebhook = typeof webhooks.$inferInsert;
+
+// =============================================
+// Tabla: payment_attempts
+// =============================================
+
+/**
+ * Payment Attempts table.
+ * 
+ * Separates the payment lifecycle from the final record creation,
+ * ensuring INV-012: No record without accepted payment evidence.
+ */
+export const paymentAttempts = pgTable(
+    'payment_attempts',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        idempotencyKey: varchar('idempotency_key', { length: 255 }).unique(), // Opcional, legacy
+        paymentIdentifier: varchar('payment_identifier', { length: 255 }), // Obligatorio para x402
+        method: varchar('method', { length: 50 }).notNull(), // 'legacy_eth', 'x402_usdc'
+        status: varchar('status', { length: 50 }).notNull(), // 'pending', 'settled', 'failed'
+        
+        // Vínculo con el futuro/existente record
+        contentHash: varchar('content_hash', { length: 128 }).notNull(),
+        recordId: uuid('record_id'), // Referencia opcional antes de crear el record
+        
+        // Evidencia
+        amountAtomic: varchar('amount_atomic', { length: 255 }),
+        decimals: varchar('decimals', { length: 10 }),
+        currency: varchar('currency', { length: 50 }),
+        txHash: varchar('tx_hash', { length: 255 }),
+        receipt: jsonb('receipt'),
+        
+        error: text('error'),
+        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    },
+    (table) => [
+        // Composite unique index para idempotencia estricta en x402
+        unique('idx_pa_payment_identifier')
+            .on(table.paymentIdentifier)
+            .nullsNotDistinct() // Dependiendo de versión PG o Drizzle, a veces se usa where
+    ]
+);
+
+export const paymentAttemptsRelations = relations(paymentAttempts, ({ one }) => ({
+    record: one(records, {
+        fields: [paymentAttempts.recordId],
+        references: [records.recordId],
+    }),
+}));
+
+export type PaymentAttempt = typeof paymentAttempts.$inferSelect;
+export type NewPaymentAttempt = typeof paymentAttempts.$inferInsert;
+
 
