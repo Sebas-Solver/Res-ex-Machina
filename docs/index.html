@@ -84,8 +84,16 @@
     }
 
     header .logo {
-      font-size: 2rem;
-      margin-bottom: 8px;
+      margin-bottom: 24px;
+    }
+
+    header .logo img {
+      background-color: #ffffff;
+      padding: 16px 32px;
+      border-radius: 12px;
+      height: 90px;
+      object-fit: contain;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
     header h1 {
@@ -286,7 +294,7 @@
   <!-- Fallback for bots, screen readers, and agents that don't execute JavaScript -->
   <noscript>
     <div style="background:#0F1115;color:#e6edf3;padding:20px;text-align:center;font-family:'Sora', sans-serif;">
-      <h1><img src="assets/Logo%20lazo%20-%20RxM.png" alt="Res ex Machina" style="height: 32px; vertical-align: middle; margin-right: 12px;"/>Res ex Machina — Status</h1>
+      <h1><img src="assets/Solo%20lazo%20-%20RxM.png" alt="Res ex Machina" style="height: 32px; vertical-align: middle; margin-right: 12px; border-radius: 4px;"/>System Status</h1>
       <p>This status page requires JavaScript to display live data.</p>
       <p><strong>For bots and AI agents:</strong> Use the JSON health endpoint directly:</p>
       <p><code>GET <a href="https://res-ex-machina-api.onrender.com/v1/health" style="color:#58a6ff">https://res-ex-machina-api.onrender.com/v1/health</a></code></p>
@@ -296,8 +304,8 @@
   </noscript>
 
   <header>
-    <div class="logo"><img src="assets/Logo%20lazo%20-%20RxM.png" alt="Res ex Machina Logo" style="height: 64px;" /></div>
-    <h1>Res ex Machina — Status</h1>
+    <div class="logo"><img src="assets/Logo%20lazo%20-%20RxM.png" alt="Res ex Machina Logo" /></div>
+    <h1>System Status</h1>
     <p>
       Live status of the <a href="https://res-ex-machina-api.onrender.com" target="_blank" rel="noopener">API</a>.
       Updates every 60 seconds.
