@@ -439,30 +439,38 @@
         // API itself is responding if we got here
         setComponent('api', 'ok', 'Operational');
 
-        // DB — key is "database" in the real response
-        const dbStatus = getCheckStatus(data, 'database') || getCheckStatus(data, 'db');
-        const dbOk = dbStatus === 'ok';
+        let dbOk = false;
+        let redisOk = false;
+        let l2Ok = false;
+
+        if (data.checks) {
+            // Admin/Detailed response
+            const dbStatus = getCheckStatus(data, 'database') || getCheckStatus(data, 'db');
+            dbOk = dbStatus === 'ok';
+
+            const redisStatus = getCheckStatus(data, 'redis');
+            redisOk = redisStatus === 'ok';
+
+            const l2Status = getCheckStatus(data, 'blockchain') || getCheckStatus(data, 'l2') || getCheckStatus(data, 'chain');
+            l2Ok = l2Status === 'ok';
+        } else {
+            // Public response (no infra details)
+            // If overall is ok, all are ok. If degraded, we assume all are degraded for the UI since we don't know which one failed.
+            const isOk = data.status === 'ok';
+            dbOk = isOk;
+            redisOk = isOk;
+            l2Ok = isOk;
+        }
+
         setComponent('db', dbOk ? 'ok' : 'error', dbOk ? 'Operational' : 'Degraded');
-
-        // Redis
-        const redisStatus = getCheckStatus(data, 'redis');
-        const redisOk = redisStatus === 'ok';
         setComponent('redis', redisOk ? 'ok' : 'error', redisOk ? 'Operational' : 'Degraded');
-
-        // L2 Blockchain — key is "blockchain" in the real response
-        const l2Status = getCheckStatus(data, 'blockchain') || getCheckStatus(data, 'l2') || getCheckStatus(data, 'chain');
-        const l2Ok = l2Status === 'ok';
         setComponent('l2', l2Ok ? 'ok' : 'error', l2Ok ? 'Operational' : 'Degraded');
 
         // Overall
-        const allOk = dbOk && redisOk && l2Ok;
-        const noneOk = !dbOk && !redisOk && !l2Ok;
-
-        if (allOk) {
+        if (data.status === 'ok') {
           setOverall('ok', 'All systems operational');
-        } else if (noneOk) {
-          setOverall('error', 'Major outage — all systems degraded');
         } else {
+          // If public API returns degraded, we show partial outage since at least one system is down.
           setOverall('degraded', 'Partial outage — one or more systems degraded');
         }
 
