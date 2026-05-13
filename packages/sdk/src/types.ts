@@ -55,6 +55,8 @@ export interface RecordOptions {
     contentHash?: string;
     /** If true, wait for the record to be anchored on-chain */
     waitForAnchor?: boolean;
+    /** Payment mode: 'legacy' (ETH fee_tx_hash) or 'x402' (USDC signature) */
+    paymentMode?: 'legacy' | 'x402';
 }
 
 // ─── Batch ─────────────────────────────────────────────────────

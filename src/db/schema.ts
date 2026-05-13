@@ -87,7 +87,7 @@ export const records = pgTable(
         feeCurrency: varchar('fee_currency', { length: 8 }).notNull(),
 
         /** Fee payment transaction hash — 1:1 with record, non-reusable */
-        feeTxHash: varchar('fee_tx_hash', { length: 66 }).notNull().unique(),
+        feeTxHash: varchar('fee_tx_hash', { length: 66 }).unique(),
 
         /** Block number where the fee was confirmed (Issue #23) */
         feeBlock: bigint('fee_block', { mode: 'number' }),

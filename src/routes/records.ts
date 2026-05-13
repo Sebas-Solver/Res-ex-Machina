@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
+import type { PaymentEvidence } from '../types/payment.js';
 import { env } from '../config/env.js';
 import {
     validateAndParseInput,
@@ -11,6 +12,7 @@ import {
     createRecord,
     listRecords,
 } from '../services/recordsService.js';
+import { paymentVerifier } from '../services/paymentVerifier.js';
 import { verifyPoGSignature } from '../services/signature.js';
 import { verifyFee } from '../services/fee.js';
 import { waitForAnchor } from '../services/waitForAnchor.js';
@@ -22,6 +24,7 @@ import {
     missingAgentWallet,
     invalidQueryParam,
     batchInvalidPayload,
+    duplicateContentHash,
 } from '../utils/errors.js';
 import { ApiError } from '../utils/errors.js';
 import { listRecordsQuerySchema } from './schemas/listRecordsSchema.js';
@@ -119,24 +122,71 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         // 2. Verificar firma EIP-712
         await verifyPoGSignature(pog_bundle);
 
-        // 3. Checks de duplicados (content_hash, nonce, fee_tx_hash) en paralelo
-        //    + verify fee on-chain — independent of each other
-        const [, feeVerification] = await Promise.all([
-            checkDuplicates(
-                pog_bundle.content_hash,
-                pog_bundle.agent_wallet,
-                pog_bundle.nonce,
-                input.fee_tx_hash,
-            ),
-            verifyFee(input.fee_tx_hash),
-        ]);
+        // 3. PreCheck Deduplicación estricta y cacheo
+        const paymentIdentifier = request.headers['payment-identifier'] as string | undefined;
+        const paymentSignature = request.headers['payment-signature'] as string | undefined;
+        const preCheckResult = await paymentVerifier.preCheck(pog_bundle.content_hash, paymentIdentifier);
 
-        // 4. Crear record (INSERT DB + enqueue anchor)
-        //    Issue #23: pasar datos enriquecidos de fee (block + confirmed_at)
-        const result = await createRecord(input, {
-            feeBlock: Number(feeVerification.blockNumber),
-            feeConfirmedAt: feeVerification.confirmedAt,
-        });
+        if (preCheckResult.status === 'duplicate_conflict') {
+            throw duplicateContentHash({ record_id: preCheckResult.recordId });
+        }
+        if (preCheckResult.status === 'cached_response') {
+            return reply.status(200).send(preCheckResult.recordData); // o 201 según queramos
+        }
+
+        let evidence: PaymentEvidence;
+
+        if (paymentSignature) {
+            evidence = {
+                method: 'x402_usdc',
+                paymentSignature,
+                paymentIdentifier: paymentIdentifier ?? 'unknown',
+            };
+        } else if (input.fee_tx_hash) {
+            evidence = {
+                method: 'legacy_eth',
+                txHash: input.fee_tx_hash,
+            };
+        } else if (env.X402_ENABLED) {
+            const { x402Verifier } = await import('../services/x402Verifier.js');
+            const reqs = x402Verifier.getPaymentRequirements();
+            const termsStr = Buffer.from(JSON.stringify(reqs)).toString('base64');
+            reply.header('PAYMENT-REQUIRED', `x402 terms="${termsStr}"`);
+            return reply.status(402).send({
+                error: {
+                    code: 'payment_required',
+                    message: 'Payment required to anchor this record',
+                    details: { requirements: reqs }
+                }
+            });
+        } else {
+            throw invalidQueryParam({ field: 'fee_tx_hash', issue: 'fee_tx_hash is required when x402 is disabled' });
+        }
+
+        // 4. Checks de duplicados (nonce, fee_tx_hash) en paralelo
+        await checkDuplicates(
+            pog_bundle.agent_wallet,
+            pog_bundle.nonce,
+            evidence.method === 'legacy_eth' ? evidence.txHash : undefined,
+        );
+
+        // 5. Verificar y Liquidar Pago
+        const attempt = await paymentVerifier.verifyAndSettle(
+            evidence,
+            pog_bundle.content_hash
+        );
+
+        // 6. Crear record (INSERT DB + enqueue anchor)
+        const result = await createRecord(input, attempt);
+
+        // 7. Enlazar Record al Attempt
+        await paymentVerifier.linkRecord(attempt.id, result.record_id);
+
+        if (evidence.method === 'x402_usdc' && attempt.receipt) {
+            const paymentResponse = { receipt: attempt.receipt };
+            const receiptStr = Buffer.from(JSON.stringify(paymentResponse)).toString('base64');
+            reply.header('PAYMENT-RESPONSE', `x402 receipt="${receiptStr}"`);
+        }
 
         // 5. Si wait_for_anchor=true, esperar al anchoring (max 25s)
         const shouldWait = request.query.wait_for_anchor === 'true';
@@ -228,22 +278,35 @@ export default async function recordRoutes(fastify: FastifyInstance) {
                 // Verificar firma EIP-712
                 await verifyPoGSignature(pog_bundle);
 
-                // Checks de duplicados + fee en paralelo
-                const [, feeVerification] = await Promise.all([
-                    checkDuplicates(
-                        pog_bundle.content_hash,
-                        pog_bundle.agent_wallet,
-                        pog_bundle.nonce,
-                        item.fee_tx_hash,
-                    ),
-                    verifyFee(item.fee_tx_hash),
-                ]);
+                // PreCheck
+                const paymentIdentifier = undefined; // Batch via HTTP request no soporta un header global diferente por item, asumimos legacy
+                const preCheckResult = await paymentVerifier.preCheck(pog_bundle.content_hash, paymentIdentifier);
+
+                if (preCheckResult.status === 'duplicate_conflict') {
+                    throw duplicateContentHash();
+                }
+
+                // Checks de duplicados en paralelo
+                await checkDuplicates(
+                    pog_bundle.agent_wallet,
+                    pog_bundle.nonce,
+                    item.fee_tx_hash,
+                );
+
+                if (!item.fee_tx_hash) {
+                    throw invalidQueryParam({ field: 'fee_tx_hash', issue: 'fee_tx_hash is required for batch records' });
+                }
+
+                // Verificar y liquidar pago
+                const attempt = await paymentVerifier.verifyAndSettle(
+                    { method: 'legacy_eth', txHash: item.fee_tx_hash },
+                    pog_bundle.content_hash
+                );
 
                 // Crear record
-                const result = await createRecord(item, {
-                    feeBlock: Number(feeVerification.blockNumber),
-                    feeConfirmedAt: feeVerification.confirmedAt,
-                });
+                const result = await createRecord(item, attempt);
+
+                await paymentVerifier.linkRecord(attempt.id, result.record_id);
 
                 return { index: i, result };
             }),

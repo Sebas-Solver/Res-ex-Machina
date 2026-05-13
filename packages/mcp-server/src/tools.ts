@@ -310,7 +310,8 @@ export function registerTools(server: McpServer) {
           const record = await rxmClient!.recordHash(targetHash as string, {
             modelId: args.model_id,
             tags: tags,
-            contentType: args.content_type
+            contentType: args.content_type,
+            paymentMode: config.MCP_PAYMENT_MODE as "legacy" | "x402"
             // humanIntervention mapping would go here depending on the exact SDK typings
           });
 
@@ -411,7 +412,8 @@ export function registerTools(server: McpServer) {
           const record = await rxmClient!.recordHash(targetHash as string, {
              modelId: args.model_id,
              tags: tags,
-             contentType: args.content_type
+             contentType: args.content_type,
+             paymentMode: config.MCP_PAYMENT_MODE as "legacy" | "x402"
           });
 
           ledger.recordTransaction(
@@ -577,6 +579,7 @@ export function registerTools(server: McpServer) {
                   modelId: item.args.model_id,
                   tags,
                   contentType: item.args.content_type,
+                  paymentMode: config.MCP_PAYMENT_MODE as "legacy" | "x402"
                 });
 
                 ledger.recordTransaction(record.recordId, "0x_rxm_sdk_batch", req.perItemFeeWei, req.perItemGasWei);

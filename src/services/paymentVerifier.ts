@@ -78,8 +78,26 @@ export class PaymentVerifier {
           } 
         };
       } else if (evidence.method === 'x402_usdc') {
-        // Implementación x402 en la fase 1 (PR 2)
-        throw new Error('x402_usdc method not fully implemented yet');
+        const { x402Verifier } = await import('./x402Verifier.js');
+        const result = await x402Verifier.verifyAndSettle(evidence.paymentSignature);
+        
+        // Update payment_attempt to settled
+        const [updatedAttempt] = await db.update(paymentAttempts)
+          .set({ 
+            status: 'settled',
+            amountAtomic: result.amount, 
+            currency: 'USDC', // As per our x402 setup
+            receipt: {
+               transaction: result.transaction,
+               network: result.network,
+               payer: result.payer,
+            },
+            updatedAt: new Date(),
+          })
+          .where(eq(paymentAttempts.id, attempt.id))
+          .returning();
+          
+        return updatedAttempt;
       }
       
       throw new Error('Unknown payment method');

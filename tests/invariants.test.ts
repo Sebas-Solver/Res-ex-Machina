@@ -40,7 +40,6 @@ vi.mock('../src/config/env.js', () => ({
 const mockVerifyPoGSignature = vi.fn();
 const mockVerifyFee = vi.fn();
 const mockEnqueueAnchorJob = vi.fn();
-const mockDbInsert = vi.fn(() => ({ values: vi.fn() }));
 
 // Mocks para las queries de idempotencia
 let mockSelectResults: any[] = [];
@@ -66,15 +65,23 @@ vi.mock('../src/utils/uuid.js', () => ({
 }));
 
 // Mock de drizzle DB
+const mockReturning = vi.fn(() => [{ id: 'mock-id', record_id: 'mock-record-id', state: 'pending_anchor', receipt_hash: 'sha256:abcd', created_at: new Date().toISOString() }]);
 const mockLimit = vi.fn(() => mockSelectResults);
-const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+const mockWhere = vi.fn(() => ({ limit: mockLimit, returning: mockReturning }));
 const mockFrom = vi.fn(() => ({ where: mockWhere }));
 const mockSelect = vi.fn(() => ({ from: mockFrom }));
+
+const mockValues = vi.fn(() => ({ returning: mockReturning }));
+const mockDbInsert = vi.fn(() => ({ values: mockValues }));
+
+const mockSet = vi.fn(() => ({ where: mockWhere }));
+const mockUpdate = vi.fn(() => ({ set: mockSet }));
 
 vi.mock('../src/db/index.js', () => ({
     db: {
         select: () => mockSelect(),
         insert: () => mockDbInsert(),
+        update: () => mockUpdate(),
     },
 }));
 
@@ -87,6 +94,9 @@ vi.mock('../src/db/schema.js', () => ({
         feeTxHash: 'fee_tx_hash',
         state: 'state',
     },
+    paymentAttempts: {
+        id: 'id',
+    }
 }));
 
 // --- App Fastify ---
@@ -238,6 +248,7 @@ describe('INV-005: Firma EIP-712', () => {
 // =============================================
 describe('INV-012: Fee verification', () => {
     it('POST sin fee_tx_hash → 400', async () => {
+        mockVerifyPoGSignature.mockResolvedValue(undefined);
         const body = { ...VALID_POST_BODY };
         delete (body as any).fee_tx_hash;
 

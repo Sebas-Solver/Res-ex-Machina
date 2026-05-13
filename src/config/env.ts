@@ -37,6 +37,13 @@ const envSchema = z.object({
 
     // Admin dashboard
     ADMIN_API_KEY: z.string().min(32).optional(),
+
+    // x402
+    X402_ENABLED: z.coerce.boolean().default(false),
+    X402_REQUIRE_PAYMENT_IDENTIFIER: z.coerce.boolean().default(true),
+    X402_FACILITATOR_URL: z.string().url().default('https://x402.org/facilitator'),
+    X402_USDC_ADDRESS: z.string().regex(/^0x[a-fA-F0-9]{40}$/).default('0x036CbD53842c5426634e7929541eC2318f3dCF7e'),
+    X402_RECEIVER_PRIVATE_KEY: z.string().regex(/^0x[a-fA-F0-9]{64}$/).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

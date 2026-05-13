@@ -127,9 +127,9 @@ export class RxMClient {
         // 5. EIP-712 signature
         const signature = await signPoGBundle(this.account, pogMessage);
 
-        // 6. Fee (skip if BYO)
+        // 6. Fee (skip if BYO or x402)
         let feeTxHash = options.feeTxHash;
-        if (!feeTxHash) {
+        if (!feeTxHash && options.paymentMode !== 'x402') {
             const feeConfig: FeeConfig = {
                 account: this.account,
                 rpcUrl: this.rpcUrl,
@@ -166,6 +166,10 @@ export class RxMClient {
             fee_tx_hash: feeTxHash,
         };
 
+        if (options.paymentMode === 'x402') {
+            return this.recordX402(body, options);
+        }
+
         const response = await this.http.post<{
             record_id: string;
             state: string;
@@ -186,6 +190,88 @@ export class RxMClient {
         }
 
         return receipt;
+    }
+
+    private async recordX402(body: any, options: RecordOptions): Promise<Receipt> {
+        const paymentIdentifier = crypto.randomUUID();
+        
+        let response: any;
+        let paymentRequiredTerms: string | undefined;
+
+        try {
+            // Primer intento sin firma x402
+            response = await this.http.post('/v1/records', body, {
+                'PAYMENT-IDENTIFIER': paymentIdentifier
+            });
+        } catch (error: any) {
+            if (error.code === 'payment_required' && error.details?.requirements) {
+                paymentRequiredTerms = Buffer.from(JSON.stringify(error.details.requirements)).toString('base64');
+            } else {
+                throw error;
+            }
+        }
+
+        if (paymentRequiredTerms) {
+            // Interactuar con la wallet para firmar el pago (simulado por ahora para el SDK si no tenemos evm client)
+            // En un entorno de producción, esto usará el cliente EVM de x402 para firmar o transferir USDC.
+            const signature = await this.signX402Payment(paymentRequiredTerms);
+            
+            // Reintento Idempotente
+            response = await this.http.post('/v1/records', body, {
+                'PAYMENT-IDENTIFIER': paymentIdentifier,
+                'PAYMENT-SIGNATURE': signature
+            });
+        }
+
+        const receipt: Receipt = {
+            recordId: response.record_id,
+            state: response.state,
+            receiptHash: response.receipt_hash,
+            createdAt: response.created_at,
+        };
+
+        if (options.waitForAnchor) {
+            return this.waitForRecord(receipt.recordId);
+        }
+
+        return receipt;
+    }
+
+    private async signX402Payment(termsBase64: string): Promise<string> {
+        // Parse the requirements from the 402 response
+        const reqs = JSON.parse(Buffer.from(termsBase64, 'base64').toString('utf8'));
+        console.log("Parsed reqs:", JSON.stringify(reqs, null, 2));
+        
+        // Dynamically import x402 modules to keep the SDK lightweight if x402 is not used
+        const { ExactEvmScheme, toClientEvmSigner } = await import('@x402/evm');
+        const { createPublicClient, http } = await import('viem');
+
+        // Create a public client for read-only operations (like checking nonce or allowance)
+        const publicClient = createPublicClient({
+            transport: http(this.rpcUrl),
+        });
+
+        // Adapt viem Account to ClientEvmSigner
+        const baseSigner = {
+            address: this.account.address,
+            signTypedData: async (args: any) => {
+                if (!this.account.signTypedData) {
+                    throw new Error('Account must support signTypedData for x402 payments');
+                }
+                return this.account.signTypedData(args);
+            }
+        };
+
+        const signer = toClientEvmSigner(baseSigner, publicClient);
+        
+        // Initialize the Exact EVM Scheme client
+        const schemeClient = new ExactEvmScheme(signer);
+
+        // Create the payment payload
+        const payloadResult = await schemeClient.createPaymentPayload(1, reqs);
+        
+        // Return base64 encoded payload as the signature header
+        return Buffer.from(JSON.stringify(payloadResult.payload)).toString('base64');
     }
 
     /**

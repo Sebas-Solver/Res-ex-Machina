@@ -5,7 +5,42 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — x402 Protocol Integration (Agent Economy)
+
+### x402 Native Payment Support — Epic #42
+
+Implements native HTTP `402 Payment Required` support for machine-to-machine (M2M) payments, following the [x402 protocol standard](https://x402.org). Agents can now pay for registration automatically without manual fee transactions.
+
+> **Status:** Code complete, TypeScript compilation clean (0 errors). Pending: E2E test on Base Sepolia testnet. Feature is **disabled by default** (`X402_ENABLED=false`).
+
+#### Added
+
+- **`X402_ENABLED` flag** — New environment variable (default `false`) to enable x402 payment mode. Legacy fee flow (`fee_tx_hash`) remains the default and is unaffected
+- **`src/services/x402Verifier.ts`** — New service: validates payment signatures and settles payments via external x402 facilitator. Correctly implements `PaymentRequirements` shape from `@x402/core` (no `x402Version` in requirements — that belongs in `PaymentRequired`)
+- **`src/services/paymentVerifier.ts`** — New abstraction layer: unified `PaymentEvidence` type discriminating between `legacy_eth` and `x402_usdc` payment methods. Handles `payment_attempts` lifecycle (create → settle → link to record)
+- **`X402_FACILITATOR_URL`** and **`X402_USDC_ADDRESS`** — New env vars for facilitator endpoint and USDC contract address (Base)
+- **SDK x402 mode** (`packages/sdk/src/client.ts`) — `RxMClient` now accepts `paymentMode: 'x402'`. On 402 response: reads `PaymentRequired`, signs payment with agent wallet, retries with `PAYMENT-SIGNATURE` and `PAYMENT-IDENTIFIER` headers
+- **MCP Server auto-pay** (`packages/mcp-server`) — `rxm_record` tool transparently handles 402 responses via SDK x402 mode. LLM (Claude) never sees keys or payment details
+
+#### Changed
+
+- **`POST /v1/records`** — Now checks for x402 headers (`PAYMENT-SIGNATURE`, `PAYMENT-IDENTIFIER`) before falling back to `fee_tx_hash`. Returns `402 Payment Required` with `PAYMENT-REQUIRED` header if x402 is enabled and no payment provided
+- **`POST /v1/records/batch`** — Same x402 awareness added to batch endpoint
+- **`src/utils/formatters.ts`** (`buildFeeBlock`) — `explorer_url` is now `null` when `feeTxHash` is null (x402 path before settlement)
+- **Payment flow invariant preserved** — Record is only inserted *after* settlement is confirmed by facilitator. No records created with pending/unconfirmed payment evidence
+
+#### Fixed
+
+- **TypeScript: `PaymentRequirements` shape** — Removed illegal `x402Version` field from `PaymentRequirements` (it belongs in the `PaymentRequired` wrapper, not in individual requirements)
+- **TypeScript: `verify`/`settle` argument type** — Fixed `facilitatorClient.verify(payload, reqs[])` (was passing array) to `verify(payload, req)` (single `PaymentRequirements` object, as per `FacilitatorClient` interface)
+- **TypeScript: `VerifyResponse` properties** — Fixed `verifyResult.success` (does not exist) → `verifyResult.isValid` and `verifyResult.invalidReason`/`invalidMessage`
+- **TypeScript: `ApiError` constructor** — Fixed missing `code` argument (constructor requires `statusCode`, `code`, `message`)
+- **TypeScript: `createRecord` argument count** — Fixed `createRecord(input, feeData, id)` (3 args) → `createRecord(input, attempt)` (2 args, matching refactored service signature)
+
+---
+
 ## [Unreleased] — Open-Core Compliance
+
 
 ### Open-Core Sanitization — Advisor Review ✅
 

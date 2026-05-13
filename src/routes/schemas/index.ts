@@ -78,9 +78,9 @@ export const createRecordSchema = z.object({
         .default([]),
     external_ref: z.string().url().max(512).optional(),
     provenance_metadata: provenanceMetadataSchema.optional(),
-    fee_amount: z.number().positive(),
-    fee_currency: z.string().min(1).max(8),
-    fee_tx_hash: z.string().regex(TX_HASH_REGEX, 'Must be valid transaction hash'),
+    fee_amount: z.number().positive().optional(),
+    fee_currency: z.string().min(1).max(8).optional(),
+    fee_tx_hash: z.string().regex(TX_HASH_REGEX, 'Must be valid transaction hash').optional(),
 });
 
 export type CreateRecordInput = z.infer<typeof createRecordSchema>;

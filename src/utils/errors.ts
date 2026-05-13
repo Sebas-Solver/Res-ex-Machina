@@ -81,8 +81,8 @@ export const feeTxExpired = () =>
 export const feeTxReused = () =>
     new ApiError(409, 'fee_tx_reused', 'Fee transaction has already been used for another record');
 
-export const duplicateContentHash = () =>
-    new ApiError(409, 'duplicate_content_hash', 'A record with this content_hash already exists');
+export const duplicateContentHash = (details?: Record<string, unknown>) =>
+    new ApiError(409, 'duplicate_content_hash', 'A record with this content_hash already exists', details);
 
 export const duplicateNonce = () =>
     new ApiError(409, 'duplicate_nonce', 'This nonce has already been used by this wallet');

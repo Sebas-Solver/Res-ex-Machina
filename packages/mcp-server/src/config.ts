@@ -22,6 +22,7 @@ export const envSchema = z.object({
   MCP_WALLET_ADDRESS: z.string().startsWith('0x').optional(),
   MCP_ENABLE_WRITE_TOOLS: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
   MCP_CONFIRMATION_MODE: z.enum(['require', 'auto', 'dry-run']).default('require'),
+  MCP_PAYMENT_MODE: z.enum(['legacy', 'x402']).default('x402'),
   MCP_RECORDING_POLICY: z.enum(['explicit', 'implicit']).default('explicit'),
 
   // Financial Guardrails (in WEI strings to prevent precision loss, parsed as BigInt)

@@ -58,7 +58,7 @@ export function buildFeeBlock(record: DbRecord) {
         chain_id: env.L2_CHAIN_ID,
         to: env.FEE_RECEIVER_ADDRESS,
         network_name: getNetworkName(env.L2_CHAIN_ID),
-        explorer_url: getExplorerTxUrl(env.L2_CHAIN_ID, record.feeTxHash),
+        explorer_url: record.feeTxHash ? getExplorerTxUrl(env.L2_CHAIN_ID, record.feeTxHash) : null,
     };
 }
 
