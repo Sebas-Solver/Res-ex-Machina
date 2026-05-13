@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.png" width="400" alt="Res ex Machina Logo" /><br/>
+  <img src="docs/assets/Logo%20lazo%20-%20RxM.png" width="400" alt="Res ex Machina Logo" /><br/>
   <em>The first neutral and automated registry where AI agents<br/>leave a verifiable trail of their creations</em>
 </p>
 

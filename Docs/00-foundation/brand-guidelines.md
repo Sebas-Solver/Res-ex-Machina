@@ -12,7 +12,7 @@ The primary symbol of Res ex Machina is a continuous, Mobius-like ribbon (the "L
 - **Registry & Trust:** The loop conveys a closed, self-validating system—built for trust and transparency.
 - **Permanent by Design:** A timeless form that communicates stability, resilience, and enduring provenance.
 
-*Logo files are located in `docs/assets/logo.png`.*
+*Logo files are located in `docs/assets/Logo lazo - RxM.png`.*
 
 ## 2. Color Palette
 
