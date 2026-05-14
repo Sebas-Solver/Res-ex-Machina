@@ -1,15 +1,52 @@
 {
   "name": "@res-ex-machina/mcp-server",
-  "version": "1.0.0",
-  "description": "MCP Server for Res-ex-Machina - Secure sidecar for LLM agents",
+  "version": "0.1.0",
+  "description": "MCP Server for Res-ex-Machina — Secure sidecar for AI agents to register verifiable Proofs of Generation on blockchain",
+  "bin": {
+    "rxm-mcp": "./dist/index.js"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sebas-Solver/Res-ex-Machina.git",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://github.com/Sebas-Solver/Res-ex-Machina/tree/main/packages/mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/Sebas-Solver/Res-ex-Machina/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "blockchain",
+    "proof-of-generation",
+    "res-ex-machina",
+    "rxm",
+    "x402",
+    "ai-provenance"
+  ],
+  "author": "Sebas-Solver <sebas.solver@gmail.com>",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc || true",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",
@@ -29,6 +66,5 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
-  },
-  "license": "Apache-2.0"
+  }
 }

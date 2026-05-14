@@ -169,6 +169,36 @@ const receipt = await rxm.record('AI generated content', {
 
 ---
 
+## 🤖 MCP Server (`@res-ex-machina/mcp-server`)
+
+Connect any MCP-compatible AI client to Res ex Machina with zero friction.
+
+**Install & run:**
+```bash
+npx @res-ex-machina/mcp-server
+```
+
+**Claude Desktop** — add to `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "res-ex-machina": {
+      "command": "npx",
+      "args": ["-y", "@res-ex-machina/mcp-server"],
+      "env": { "MCP_TRANSPORT": "stdio" }
+    }
+  }
+}
+```
+
+**10 tools** available: hash, verify, register, batch, wallet balance, receipts. Write tools require explicit opt-in (`MCP_ENABLE_WRITE_TOOLS=true`) with financial guardrails.
+
+Also compatible with **Google Antigravity**, **Cursor**, **VS Code (Copilot)**, and any MCP client.
+
+📖 **[Full MCP Server documentation →](packages/mcp-server/README.md)**
+
+---
+
 ## 🧪 Test the API (Testers)
 
 Want to test the API without setting up a dev environment? → **[Testing Quickstart](Docs/50-testing/testing-quickstart.md)** (5 minutes)

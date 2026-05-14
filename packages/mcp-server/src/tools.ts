@@ -81,6 +81,7 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
 
 export function registerTools(server: McpServer) {
   
+  // @ts-expect-error — TS2589: Known MCP SDK issue with deep Zod schema inference
   server.tool(
     "rxm_set_confirmation_mode",
     "Updates the confirmation mode for the MCP server. Allowed values: 'require' (human must review), 'auto' (fully automated with guardrails), 'dry-run' (simulates transactions).",
@@ -190,6 +191,7 @@ export function registerTools(server: McpServer) {
 
   if (config.MCP_ENABLE_WRITE_TOOLS && rxmClient) {
     
+    // @ts-expect-error — TS2589: Known MCP SDK issue with deep Zod schema inference
     server.tool(
       "rxm_prepare_record_generation",
       "Phase 1 of 2: Prepares a record for generation, runs checks, and returns a confirmation_id.",
@@ -445,6 +447,7 @@ export function registerTools(server: McpServer) {
     // ─── Batch Tools ────────────────────────────────────────────
     if (config.MCP_ENABLE_BATCH_TOOLS) {
 
+      // @ts-expect-error — TS2589: Known MCP SDK issue with deep Zod schema inference
       server.tool(
         "rxm_prepare_batch",
         "Phase 1 of 2 (Batch): Prepares multiple records for registration. Deduplicates, estimates costs, and returns a batch_confirmation_id.",

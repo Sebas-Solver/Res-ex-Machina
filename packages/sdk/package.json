@@ -1,6 +1,6 @@
 {
     "name": "@res-ex-machina/sdk",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Official Res ex Machina SDK — neutral registry for AI-generated content provenance",
     "type": "module",
     "main": "dist/index.js",
