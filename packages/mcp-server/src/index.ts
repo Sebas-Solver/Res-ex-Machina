@@ -5,6 +5,7 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import { getConfig } from "./config.js";
 import { registerTools } from "./tools.js";
+import { logger } from "./logger.js";
 
 async function main() {
   // Config validates automatically on get
@@ -21,7 +22,7 @@ async function main() {
   if (config.MCP_TRANSPORT === 'stdio') {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error(`RxM MCP Server running via stdio. Write Tools Enabled: ${config.MCP_ENABLE_WRITE_TOOLS}`);
+    logger.info('MCP Server started', { transport: 'stdio', writeTools: config.MCP_ENABLE_WRITE_TOOLS });
   } else if (config.MCP_TRANSPORT === 'sse') {
     const app = express();
 
@@ -44,7 +45,7 @@ async function main() {
           return;
         }
       } else if (config.MCP_ENABLE_WRITE_TOOLS) {
-         console.error("CRITICAL SECURITY ERROR: Write tools are enabled but no MCP_HTTP_AUTH_TOKEN is provided. Refusing to start HTTP transport.");
+         logger.fatal('Write tools enabled without MCP_HTTP_AUTH_TOKEN — refusing to start HTTP transport');
          process.exit(1);
       }
       next();
@@ -67,15 +68,15 @@ async function main() {
 
     const port = process.env.MCP_HTTP_PORT || 8787;
     app.listen(port, () => {
-      console.error(`RxM MCP Server running via SSE on http://localhost:${port}/sse. Write Tools Enabled: ${config.MCP_ENABLE_WRITE_TOOLS}`);
+      logger.info('MCP Server started', { transport: 'sse', port, writeTools: config.MCP_ENABLE_WRITE_TOOLS });
     });
   } else {
-    console.error(`Unsupported transport: ${config.MCP_TRANSPORT}`);
+    logger.fatal('Unsupported transport', { transport: config.MCP_TRANSPORT });
     process.exit(1);
   }
 }
 
 main().catch((error) => {
-  console.error("Fatal error starting MCP Server:", error);
+  logger.fatal('Fatal error starting MCP Server', { error: String(error) });
   process.exit(1);
 });

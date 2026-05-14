@@ -156,7 +156,7 @@ export async function executeWebhookDelivery(job: Job<WebhookJobData>): Promise<
                 'Content-Type': 'application/json',
                 'X-RxM-Signature': `sha256=${signature}`,
                 'X-RxM-Delivery-Id': currentPayload.delivery_id,
-                'User-Agent': 'ResExMachina-Webhook/1.0',
+                'User-Agent': 'RxM-Webhook', // Audit L-03: No version info
             },
             body,
             signal: controller.signal,

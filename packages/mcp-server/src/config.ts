@@ -2,6 +2,7 @@ import { z } from 'zod';
 import dotenv from 'dotenv';
 import path from 'path';
 import os from 'os';
+import { logger } from './logger.js';
 
 // Load .env.local if present
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
@@ -53,9 +54,8 @@ export function getConfig(): EnvConfig {
   if (!cachedConfig) {
     const parsed = envSchema.safeParse(process.env);
     if (!parsed.success) {
-      console.error("Invalid environment configuration:");
-      parsed.error.errors.forEach(e => {
-        console.error(`- ${e.path.join('.')}: ${e.message}`);
+      logger.error('Invalid environment configuration', {
+        errors: parsed.error.errors.map(e => `${e.path.join('.')}: ${e.message}`),
       });
       process.exit(1);
     }
@@ -69,7 +69,7 @@ export function getConfig(): EnvConfig {
     
     // Safety check: Cannot enable write tools without a private key
     if (cachedConfig.MCP_ENABLE_WRITE_TOOLS && !cachedConfig.MCP_PRIVATE_KEY) {
-      console.error("CRITICAL ERROR: MCP_ENABLE_WRITE_TOOLS is true but MCP_PRIVATE_KEY is missing. Starting in read-only mode.");
+      logger.error('MCP_ENABLE_WRITE_TOOLS is true but MCP_PRIVATE_KEY is missing — forcing read-only mode');
       cachedConfig.MCP_ENABLE_WRITE_TOOLS = false;
     }
     
@@ -78,7 +78,7 @@ export function getConfig(): EnvConfig {
       const mainnetChains = [1, 8453, 10, 42161];
       const hasMainnet = cachedConfig.MCP_ALLOWED_CHAIN_IDS.some(id => mainnetChains.includes(id));
       if (hasMainnet || mainnetChains.includes(cachedConfig.MCP_CHAIN_ID)) {
-         console.error("CRITICAL ERROR: Mainnet chain ID detected but MCP_ALLOW_MAINNET is false.");
+         logger.fatal('Mainnet chain ID detected but MCP_ALLOW_MAINNET is false', { chainId: cachedConfig.MCP_CHAIN_ID });
          process.exit(1);
       }
     }
