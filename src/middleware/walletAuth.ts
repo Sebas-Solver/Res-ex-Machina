@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { FastifyRequest } from 'fastify';
-import { verifyMessage, type Hex, type Address } from 'viem';
+import { verifyMessage, getAddress, type Hex, type Address } from 'viem';
 import {
     missingAuthHeaders,
     invalidWalletAddress,
@@ -18,7 +18,7 @@ const AUTH_WINDOW_MS = 5 * 60 * 1000;
 /** Authentication message prefix */
 const AUTH_MESSAGE_PREFIX = 'RexAuth:';
 
-/** Regex to validate Ethereum address format */
+/** Regex to validate Ethereum address format (pre-check before checksum) */
 const WALLET_REGEX = /^0x[a-fA-F0-9]{40}$/;
 
 /**
@@ -56,8 +56,14 @@ export async function walletAuth(request: FastifyRequest): Promise<void> {
         throw missingAuthHeaders();
     }
 
-    // 2. Validate wallet format
+    // 2. Validate wallet format + EIP-55 checksum (Audit M-02)
     if (!WALLET_REGEX.test(walletAddress)) {
+        throw invalidWalletAddress();
+    }
+    let normalizedAddress: Address;
+    try {
+        normalizedAddress = getAddress(walletAddress); // Validates checksum
+    } catch {
         throw invalidWalletAddress();
     }
 
@@ -77,7 +83,7 @@ export async function walletAuth(request: FastifyRequest): Promise<void> {
 
     try {
         const isValid = await verifyMessage({
-            address: walletAddress as Address,
+            address: normalizedAddress,
             message,
             signature: signature as Hex,
         });
@@ -94,6 +100,6 @@ export async function walletAuth(request: FastifyRequest): Promise<void> {
         throw authSignatureInvalid();
     }
 
-    // 5. Inject authenticated wallet into the request
-    request.authenticatedWallet = walletAddress.toLowerCase();
+    // 5. Inject authenticated wallet into the request (normalized EIP-55)
+    request.authenticatedWallet = normalizedAddress.toLowerCase();
 }

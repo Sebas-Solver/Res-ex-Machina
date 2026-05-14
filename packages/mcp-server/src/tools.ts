@@ -32,6 +32,19 @@ interface BatchConfirmationRequest {
 }
 const pendingBatchConfirmations = new Map<string, BatchConfirmationRequest>();
 
+// Audit M-01: Periodic GC for expired confirmations + hard size limit
+const MAX_PENDING_CONFIRMATIONS = 1000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, req] of pendingConfirmations) {
+    if (now > req.expiresAt) pendingConfirmations.delete(id);
+  }
+  for (const [id, req] of pendingBatchConfirmations) {
+    if (now > req.expiresAt) pendingBatchConfirmations.delete(id);
+  }
+}, 60_000).unref(); // unref() so it doesn't prevent process exit
+
 let viemClient: any = null;
 let viemAccount: any = null;
 let rxmClient: RxMClient | null = null;
@@ -243,6 +256,9 @@ export function registerTools(server: McpServer) {
           }
 
           const confirmationId = randomUUID();
+          if (pendingConfirmations.size >= MAX_PENDING_CONFIRMATIONS) {
+            throw new Error('Too many pending confirmations. Please confirm or wait for expiration.');
+          }
           pendingConfirmations.set(confirmationId, {
             id: confirmationId,
             args,

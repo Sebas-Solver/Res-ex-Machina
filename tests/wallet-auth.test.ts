@@ -4,9 +4,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // --- Mock de viem ---
 const mockVerifyMessage = vi.fn();
-vi.mock('viem', () => ({
-    verifyMessage: (...args: unknown[]) => mockVerifyMessage(...args),
-}));
+vi.mock('viem', async () => {
+    const actual = await vi.importActual<typeof import('viem')>('viem');
+    return {
+        ...actual,
+        verifyMessage: (...args: unknown[]) => mockVerifyMessage(...args),
+    };
+});
 
 import { walletAuth } from '../src/middleware/walletAuth.js';
 

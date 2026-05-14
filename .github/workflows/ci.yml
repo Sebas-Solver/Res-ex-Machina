@@ -84,3 +84,10 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      # Audit M-04: Include MCP Server in CI pipeline
+      - name: MCP Server - Install & Type Check
+        run: |
+          cd packages/mcp-server
+          npm ci
+          npx tsc --noEmit
