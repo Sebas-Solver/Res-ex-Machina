@@ -1,5 +1,5 @@
 import { HTTPFacilitatorClient } from '@x402/core/http';
-import type { PaymentPayload, PaymentRequirements } from '@x402/core/types';
+import type { PaymentPayload, PaymentRequirements, SettleResponse } from '@x402/core/types';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/errors.js';
 
@@ -28,12 +28,12 @@ export class X402Verifier {
     ];
   }
 
-  public async verifyAndSettle(paymentSignature: string): Promise<any> {
+  public async verifyAndSettle(paymentSignature: string): Promise<SettleResponse> {
     let payload: PaymentPayload;
     try {
       // paymentSignature is expected to be base64-encoded JSON representing the PaymentPayload
       payload = JSON.parse(Buffer.from(paymentSignature, 'base64').toString('utf8')) as PaymentPayload;
-    } catch (err) {
+    } catch {
       throw new ApiError(400, 'invalid_payment_signature', 'Invalid PAYMENT-SIGNATURE format');
     }
 

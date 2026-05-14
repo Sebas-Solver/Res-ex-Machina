@@ -14,7 +14,6 @@ import {
 } from '../services/recordsService.js';
 import { paymentVerifier } from '../services/paymentVerifier.js';
 import { verifyPoGSignature } from '../services/signature.js';
-import { verifyFee } from '../services/fee.js';
 import { waitForAnchor } from '../services/waitForAnchor.js';
 import { batchRequestSchema } from './schemas/batchRecordSchema.js';
 import {

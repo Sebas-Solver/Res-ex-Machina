@@ -6,6 +6,7 @@ import { records } from '../db/schema.js';
 import { createRecordSchema } from '../routes/schemas/index.js';
 import { formatUnits } from 'viem';
 import type { PaymentAttempt } from '../db/schema.js';
+import type { LegacyFeeData } from './paymentVerifier.js';
 import type { ListRecordsQuery } from '../routes/schemas/listRecordsSchema.js';
 import { generateRecordId } from '../utils/uuid.js';
 import { computeReceiptHash } from './receipt.js';
@@ -112,7 +113,7 @@ export async function checkDuplicates(
  */
 export async function createRecord(
     input: ReturnType<typeof createRecordSchema.parse>,
-    attempt: PaymentAttempt & { __legacyFeeData?: any },
+    attempt: PaymentAttempt & { __legacyFeeData?: LegacyFeeData },
 ): Promise<CreateRecordResult> {
     const { pog_bundle } = input;
     const recordId = generateRecordId();

@@ -8,9 +8,15 @@ import type { PaymentAttempt } from '../db/schema.js';
 import { verifyFee } from './fee.js';
 import { ApiError } from '../utils/errors.js';
 
+/** Shape of the legacy ETH fee block data carried alongside the attempt. */
+export interface LegacyFeeData {
+  feeBlock: number;
+  feeConfirmedAt: Date;
+}
+
 export type PreCheckResult =
   | { status: 'duplicate_conflict'; recordId: string }
-  | { status: 'cached_response'; recordData: any }
+  | { status: 'cached_response'; recordData: Record<string, unknown> }
   | { status: 'proceed' };
 
 export class PaymentVerifier {
@@ -42,7 +48,7 @@ export class PaymentVerifier {
   /**
    * Verifica y liquida el pago.
    */
-  async verifyAndSettle(evidence: PaymentEvidence, contentHash: string): Promise<PaymentAttempt & { __legacyFeeData?: any }> {
+  async verifyAndSettle(evidence: PaymentEvidence, contentHash: string): Promise<PaymentAttempt & { __legacyFeeData?: LegacyFeeData }> {
     const paymentIdentifier = evidence.method === 'x402_usdc' ? evidence.paymentIdentifier : null;
     const txHash = evidence.method === 'legacy_eth' ? evidence.txHash : null;
 
@@ -101,7 +107,7 @@ export class PaymentVerifier {
       }
       
       throw new Error('Unknown payment method');
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Update to failed
       await db.update(paymentAttempts)
         .set({
