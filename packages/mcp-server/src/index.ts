@@ -25,6 +25,9 @@ async function main() {
   } else if (config.MCP_TRANSPORT === 'sse') {
     const app = express();
 
+    // Audit H-03: Limit request body size to prevent memory exhaustion
+    app.use(express.json({ limit: '64kb' }));
+
     app.use((req, res, next) => {
       if (!config.MCP_ALLOW_REMOTE_HTTP) {
         const clientIp = req.ip || req.socket.remoteAddress || '';

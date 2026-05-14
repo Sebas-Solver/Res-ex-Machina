@@ -44,6 +44,10 @@ export async function registerRateLimit(app: FastifyInstance): Promise<void> {
         redis: getRateLimitRedis(),
         nameSpace: 'rxm-rl:',     // Redis prefix to avoid collisions
         skipOnError: true,         // Issue #22: if Redis fails, don't block requests
+        onExceeded: (_request, key) => {
+            // Audit H-01: Log rate limit hits for security monitoring
+            console.warn(`⚠️ Rate limit exceeded for key: ${key}`);
+        },
         keyGenerator: (request) => {
             return request.ip;
         },

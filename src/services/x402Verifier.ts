@@ -1,7 +1,16 @@
 import { HTTPFacilitatorClient } from '@x402/core/http';
 import type { PaymentPayload, PaymentRequirements, SettleResponse } from '@x402/core/types';
+import { z } from 'zod';
 import { env } from '../config/env.js';
 import { ApiError } from '../utils/errors.js';
+
+// Audit H-02: Zod schema for x402 PaymentPayload validation at the boundary
+const paymentPayloadSchema = z.object({
+  x402Version: z.number().optional(),
+  scheme: z.string(),
+  network: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+}).passthrough(); // Allow additional fields from the x402 spec
 
 export class X402Verifier {
   private facilitatorClient: HTTPFacilitatorClient;
@@ -32,8 +41,15 @@ export class X402Verifier {
     let payload: PaymentPayload;
     try {
       // paymentSignature is expected to be base64-encoded JSON representing the PaymentPayload
-      payload = JSON.parse(Buffer.from(paymentSignature, 'base64').toString('utf8')) as PaymentPayload;
-    } catch {
+      const raw = JSON.parse(Buffer.from(paymentSignature, 'base64').toString('utf8'));
+      // Audit H-02: Validate structure before trusting
+      const parsed = paymentPayloadSchema.safeParse(raw);
+      if (!parsed.success) {
+        throw new ApiError(400, 'invalid_payment_payload', `Invalid payment payload structure: ${parsed.error.message}`);
+      }
+      payload = raw as PaymentPayload;
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
       throw new ApiError(400, 'invalid_payment_signature', 'Invalid PAYMENT-SIGNATURE format');
     }
 

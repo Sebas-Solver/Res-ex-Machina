@@ -61,7 +61,8 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
     feeReceiverAddress: (config.MCP_FEE_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`
   });
 } else {
-  // Read-only setup (we don't need private key for verify)
+  // Read-only setup — no private key needed (Audit C-02)
+  // Only API URL required for verify/get operations
   const transport = http(config.MCP_RPC_URL);
   const chain = baseSepolia;
   
@@ -70,9 +71,11 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
     transport
   }).extend(publicActions);
 
-  // We only need the API URL to do verification
+  // Read-only client: uses a zero-address as placeholder (never signs)
+  // The SDK's verify() and getRecord() methods only hit the HTTP API,
+  // they never use the account for signing in read-only flows
   rxmClient = new RxMClient({
-    account: privateKeyToAccount('0x0000000000000000000000000000000000000000000000000000000000000001'), // Dummy account for read-only
+    account: { address: '0x0000000000000000000000000000000000000000' } as any, // No key material
     rpcUrl: config.MCP_RPC_URL,
     apiUrl: config.MCP_API_URL,
     feeReceiverAddress: (config.MCP_FEE_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`

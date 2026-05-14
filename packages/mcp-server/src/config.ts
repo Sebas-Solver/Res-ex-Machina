@@ -61,6 +61,11 @@ export function getConfig(): EnvConfig {
     }
     
     cachedConfig = parsed.data;
+
+    // Security: Sanitize sensitive env vars after reading (Audit C-01)
+    // Prevents exposure via memory dump, /proc/environ, or error logging
+    delete process.env.MCP_PRIVATE_KEY;
+    delete process.env.MCP_HTTP_AUTH_TOKEN;
     
     // Safety check: Cannot enable write tools without a private key
     if (cachedConfig.MCP_ENABLE_WRITE_TOOLS && !cachedConfig.MCP_PRIVATE_KEY) {
