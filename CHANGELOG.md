@@ -5,7 +5,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased] — P0 Security Remediation (CTO Review)
+## [v1.0.0-alpha.2-p0] — 2026-05-15 — P0 Security Remediation ✅ CTO Approved
 
 ### P0-1: Rate Limiter Degradation Policy — H-01 Remediation
 
