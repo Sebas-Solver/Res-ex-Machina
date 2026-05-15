@@ -86,10 +86,14 @@ jobs:
         run: npm run build
 
       # Audit M-04: Include MCP Server in CI pipeline
-      - name: MCP Server - Install & Type Check
-        env:
-          NODE_OPTIONS: --max-old-space-size=8192
+      - name: MCP Server - Install
         run: |
           cd packages/mcp-server
           npm ci
+
+      - name: MCP Server - Type Check
+        env:
+          NODE_OPTIONS: --max-old-space-size=6144
+        run: |
+          cd packages/mcp-server
           npx tsc --noEmit
