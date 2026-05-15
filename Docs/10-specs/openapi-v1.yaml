@@ -141,13 +141,16 @@ paths:
       operationId: createRecord
       description: |
         Registers a new signed PoG bundle. Requires:
-        - Valid agent's EIP-712 signature
+        - Valid EIP-712 signature inside `pog_bundle.signature` (body, not header)
         - fee_tx_hash of verifiable on-chain payment (Base Sepolia)
         - Unique nonce per wallet
 
+        Authentication: via EIP-712 signature embedded in the PoG bundle body,
+        NOT via headers. The server recovers the signer from pog_bundle.signature
+        and verifies it matches pog_bundle.agent_wallet.
+
         Supports `?wait_for_anchor=true` to block until anchoring completes (max 25s).
-      security:
-        - walletSignature: []
+      security: []
       parameters:
         - name: wait_for_anchor
           in: query

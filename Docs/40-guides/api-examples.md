@@ -46,7 +46,6 @@ Admin response (with `X-Admin-Key` header):
   }
 }
 ```
-```
 
 ---
 

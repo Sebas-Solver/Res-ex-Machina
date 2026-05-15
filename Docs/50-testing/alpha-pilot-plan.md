@@ -33,7 +33,7 @@ npm run worker:anchor  # terminal 2
 
 ```bash
 curl http://localhost:3000/v1/health | jq
-# → status: "healthy"
+# → status: "ok"
 ```
 
 ### 3. Read the docs
@@ -49,7 +49,7 @@ Follow the steps in `Docs/api-examples.md`:
 1. Generate wallet (viem, ethers, eth_account in Python)
 2. Calculate SHA-256 of your content
 3. Sign PoG with EIP-712
-4. Send fee tx to Anvil (0.01 ETH minimum)
+4. Send fee tx on Base Sepolia (0.0001 ETH minimum for alpha; 0.01 ETH for local Anvil)
 5. POST /v1/records
 6. Wait anchoring
 7. GET /verify + /export
@@ -63,7 +63,7 @@ Follow the steps in `Docs/api-examples.md`:
 | 1 | Burst 20 records in a row | 0 failures, p95 < 3s | `agent-a-happy-path.ts` |
 | 2 | Same duplicated content_hash| 409 with record_id | `agent-d-adversarial.ts` |
 | 3 | Nonce replay (same wallet) | 409 anti-replay | `agent-d-adversarial.ts` |
-| 4 | Invalid fee tx | 402 fee_required | `agent-d-adversarial.ts` |
+| 4 | Invalid fee tx | 402 fee_not_verified / fee_insufficient | `agent-d-adversarial.ts` |
 | 5 | Worker down 30 min | Accepts receipts, anchors upon return | **Manual** |
 | 6 | RPC/anchoring failure | anchor_failed + export ok | **Manual** |
 

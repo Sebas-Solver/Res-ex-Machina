@@ -1099,7 +1099,7 @@ The local development setup (`docker compose up -d`) is designed for development
 
 See [CHANGELOG.md](../../CHANGELOG.md) for the full release history.
 
-Current version: **v1.0.0-alpha.2** (2026-05-12)
+Current version: **v1.0.0-alpha.3** (2026-05-15)
 
 ## Further Reading
 

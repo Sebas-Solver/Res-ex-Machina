@@ -360,7 +360,9 @@ Docs/
 
 ## 🔐 Security by Design
 
-> **✅ Security Audit Passed** — 14 findings (2 High, 5 Medium, 7 Low) identified and resolved. Full [audit report](Docs/20-security/audit-report-v1.md).
+> **✅ Alpha security audit passed** — 14 findings (2 High, 5 Medium, 7 Low) identified and resolved. P0 hardening complete. Full [audit report](Docs/20-security/audit-report-v1.md).
+>
+> ⚠️ Known pre-production security debt: webhook secrets encryption at rest (P1-1, awaiting CTO plan).
 
 The system has **24 invariants** that are never violated:
 
