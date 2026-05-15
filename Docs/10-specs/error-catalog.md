@@ -34,10 +34,10 @@ All errors follow this JSON format:
 | 400 | `invalid_payload` | Malformed or incomplete request body | Missing required field, invalid JSON |
 | 400 | `invalid_content_hash` | content_hash does not match `sha256:{64hex}` format | Incorrect format |
 | 400 | `invalid_pog_schema` | pog_bundle does not match PoG v1 schema | Missing fields, wrong types |
-| 400 | `invalid_pog_version` | schema_version of PoG is not "pog-v1" | Unsupported version |
+| 400 | `invalid_pog_version` | `schema` field of PoG is not `pog.v1` | Unsupported version |
 | 400 | `invalid_tags` | Invalid tags (more than 10, empty, or wrong type) | Malformed array |
 | 400 | `invalid_visibility` | Unallowed value for visibility | Not proof_only / input_hash_only / content_optional |
-| 400 | `payload_too_large` | Request body exceeds size limit | Body > 64KB or pog_bundle > 16KB |
+| 400 | `payload_too_large` | Request body exceeds size limit | Body > 64KB or pog_bundle > 32KB |
 | 401 | `invalid_signature` | Invalid or unverifiable EIP-712 signature | Malformed or corrupted signature |
 | 401 | `signer_mismatch` | Recovered signer ≠ agent_wallet of PoG | Signer's wallet does not match |
 | 402 | `fee_not_verified` | fee_tx_hash not verified on-chain | Tx not found or unconfirmed |
@@ -83,7 +83,8 @@ All errors follow this JSON format:
 
 | HTTP | Code | Description | When |
 |---|---|---|---|
-| — | — | This endpoint always returns 200 | Never fails (returns status: degraded if issues) |
+| 200 | — | System healthy | All checks passing |
+| 503 | — | System degraded | One or more checks failing (response includes status: degraded) |
 ### POST /v1/records/batch
 
 | HTTP | Code | Description | When |

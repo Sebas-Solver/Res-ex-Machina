@@ -24,17 +24,28 @@ npm run worker:anchor
 curl -s http://localhost:3000/v1/health | jq
 ```
 
-Expected response:
+Expected response (public):
 ```json
 {
-  "status": "healthy",
+  "status": "ok",
+  "version": "v1",
+  "timestamp": "2026-02-10T20:00:00.000Z"
+}
+```
+
+Admin response (with `X-Admin-Key` header):
+```json
+{
+  "status": "ok",
+  "version": "v1",
   "timestamp": "2026-02-10T20:00:00.000Z",
-  "services": {
-    "postgres": { "status": "healthy", "latencyMs": 2 },
-    "redis": { "status": "healthy", "latencyMs": 1 },
-    "l2_blockchain": { "status": "healthy", "latencyMs": 150 }
+  "checks": {
+    "database": { "status": "ok", "latencyMs": 2 },
+    "redis": { "status": "ok", "latencyMs": 1 },
+    "blockchain": { "status": "ok", "latencyMs": 150, "blockNumber": 12345678 }
   }
 }
+```
 ```
 
 ---
@@ -63,9 +74,9 @@ curl -X POST http://localhost:3000/v1/records \
     "content_type": "text/plain",
     "visibility": "proof_only",
     "tags": ["generated", "text"],
-    "fee_amount": 0.01,
-    "fee_currency": "MATIC",
-    "fee_tx_hash": "0x<fee payment tx hash on L2>"
+    "fee_amount": 0.0001,
+    "fee_currency": "ETH",
+    "fee_tx_hash": "0x<fee payment tx hash on Base Sepolia>"
   }' | jq
 ```
 
@@ -149,6 +160,7 @@ Response (405):
 | 402 | `fee_insufficient` | Insufficient payment |
 | 402 | `fee_wrong_recipient` | Incorrect recipient |
 | 402 | `fee_tx_expired` | Tx > 24h |
+| 409 | `fee_tx_reused` | Fee tx already used |
 | 404 | `record_not_found` | Record does not exist |
 | 405 | `method_not_allowed` | DELETE forbidden |
 | 409 | `duplicate_content_hash` | Hash already registered |

@@ -1,11 +1,11 @@
 openapi: "3.1.0"
 info:
   title: Res ex Machina API
-  version: "1.0.0"
+  version: "1.0.0-alpha.3"
   description: |
     Technical registry API of AI generation facts.
     Registers cryptographically signed Proof of Generation (PoG) bundles
-    and anchors them on an EVM L2 blockchain.
+    and anchors them on an EVM L2 blockchain (Base Sepolia).
   contact:
     name: Res ex Machina
     url: https://github.com/Sebas-Solver/Res-ex-Machina/issues
@@ -16,8 +16,8 @@ info:
 servers:
   - url: https://res-ex-machina-api.onrender.com/v1
     description: Alpha (Render)
-  - url: https://api.resexmachina.xyz/v1
-    description: Production (TBD)
+  - url: http://localhost:3000/v1
+    description: Local development
 
 externalDocs:
   description: Live Status Page
@@ -28,6 +28,8 @@ tags:
     description: System status
   - name: records
     description: Registration and query of generation facts
+  - name: webhooks
+    description: Webhook subscriptions for record events
 
 paths:
   /health:
@@ -36,15 +38,103 @@ paths:
       summary: System status
       operationId: getHealth
       security: []
+      description: |
+        Public response: `{ status, version, timestamp }`.
+        Admin response (with `X-Admin-Key` header): includes `checks` object
+        with database, redis, and blockchain diagnostics.
       responses:
         "200":
-          description: System status
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+        "503":
+          description: System degraded (one or more checks failing)
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthResponse"
 
   /records:
+    get:
+      tags: [records]
+      summary: List records by agent wallet
+      operationId: listRecords
+      security: []
+      description: |
+        Lists records filtered by `agent_wallet` (required).
+        Supports optional filters: state, content_type, tag, from, to, sort.
+        Pagination via limit/offset.
+      parameters:
+        - name: agent_wallet
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^0x[a-fA-F0-9]{40}$"
+          description: "Ethereum address of the agent (required)"
+        - name: state
+          in: query
+          schema:
+            type: string
+            enum: [pending_anchor, anchored, anchor_failed]
+        - name: content_type
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: "Start date (inclusive)"
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: "End date (inclusive)"
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [created_at, -created_at]
+            default: "-created_at"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Paginated list of records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  records:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RecordResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
     post:
       tags: [records]
       summary: Register a new generation event
@@ -52,10 +142,19 @@ paths:
       description: |
         Registers a new signed PoG bundle. Requires:
         - Valid agent's EIP-712 signature
-        - fee_tx_hash of verifiable on-chain payment transaction
+        - fee_tx_hash of verifiable on-chain payment (Base Sepolia)
         - Unique nonce per wallet
+
+        Supports `?wait_for_anchor=true` to block until anchoring completes (max 25s).
       security:
         - walletSignature: []
+      parameters:
+        - name: wait_for_anchor
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: "If true, waits up to 25s for on-chain anchoring"
       requestBody:
         required: true
         content:
@@ -79,6 +178,141 @@ paths:
           $ref: "#/components/responses/Conflict"
         "429":
           $ref: "#/components/responses/TooManyRequests"
+
+  /records/batch:
+    post:
+      tags: [records]
+      summary: Register multiple records in one call
+      operationId: createRecordBatch
+      description: |
+        Registers up to 100 records in a single request.
+        Each record is processed independently — if one fails, the rest continue.
+        Rate limited to 5 requests/minute per wallet.
+      security:
+        - walletSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [records]
+              properties:
+                records:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    $ref: "#/components/schemas/CreateRecordRequest"
+      responses:
+        "201":
+          description: All records created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchResponse"
+        "207":
+          description: Partial success (some records failed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchResponse"
+        "400":
+          description: All records failed or invalid batch structure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BatchResponse"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /records/mine:
+    get:
+      tags: [records]
+      summary: List authenticated agent's own records
+      operationId: listMyRecords
+      description: |
+        Lists records owned by the authenticated wallet.
+        Requires EIP-191 signature in headers:
+        - `X-Wallet-Address`: agent's Ethereum address
+        - `X-Timestamp`: ISO-8601 timestamp (max 5 min old)
+        - `X-Signature`: EIP-191 signature of "RexAuth:{timestamp}"
+      security:
+        - walletAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Agent's records
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wallet:
+                    type: string
+                  total:
+                    type: integer
+                  records:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RecordResponse"
+                  pagination:
+                    $ref: "#/components/schemas/PaginationInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /records/verify:
+    get:
+      tags: [records]
+      summary: Verify existence by content_hash
+      operationId: verifyRecord
+      security: []
+      parameters:
+        - name: content_hash
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: "^sha256:[a-f0-9]{64}$"
+          description: "SHA-256 hash in format sha256:{64hex}"
+      responses:
+        "200":
+          description: Record found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                    const: true
+                  record_id:
+                    type: string
+                    format: uuid
+                  state:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+                  receipt_hash:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /records/{id}:
     get:
@@ -104,32 +338,6 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
-  /records/verify:
-    get:
-      tags: [records]
-      summary: Verify existence by content_hash
-      operationId: verifyRecord
-      security: []
-      parameters:
-        - name: content_hash
-          in: query
-          required: true
-          schema:
-            type: string
-            pattern: "^sha256:[a-f0-9]{64}$"
-          description: "SHA-256 hash in format sha256:{64hex}"
-      responses:
-        "200":
-          description: Record found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/RecordResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
   /records/{id}/export:
     get:
       tags: [records]
@@ -143,6 +351,13 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: mode
+          in: query
+          schema:
+            type: string
+            enum: [full, compact]
+            default: full
+          description: "compact mode reduces size for LLM contexts"
       responses:
         "200":
           description: Exportable receipt
@@ -150,6 +365,113 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ReceiptExport"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /webhooks:
+    post:
+      tags: [webhooks]
+      summary: Register a webhook subscription
+      operationId: createWebhook
+      description: |
+        Registers a URL to receive POST notifications when record state changes.
+        Requires wallet authentication (EIP-191 headers).
+      security:
+        - walletAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, events]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: "HTTPS URL to receive webhook POSTs"
+                events:
+                  type: array
+                  items:
+                    type: string
+                    enum: [record.anchored, record.anchor_failed]
+                  description: "Events to subscribe to"
+      responses:
+        "201":
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  url:
+                    type: string
+                  events:
+                    type: array
+                    items:
+                      type: string
+                  created_at:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      tags: [webhooks]
+      summary: List webhook subscriptions
+      operationId: listWebhooks
+      security:
+        - walletAuth: []
+      responses:
+        "200":
+          description: List of webhooks for the authenticated wallet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  webhooks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        url:
+                          type: string
+                        events:
+                          type: array
+                          items:
+                            type: string
+                        created_at:
+                          type: string
+                          format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /webhooks/{id}:
+    delete:
+      tags: [webhooks]
+      summary: Delete a webhook subscription
+      operationId: deleteWebhook
+      security:
+        - walletAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Webhook deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -163,43 +485,80 @@ components:
         EIP-712 signature of the PoG bundle. The header must contain the
         signature bytes (65 bytes, hex-encoded with 0x prefix).
 
+    walletAuth:
+      type: apiKey
+      in: header
+      name: X-Signature
+      description: |
+        EIP-191 signature of "RexAuth:{timestamp}" for authenticated endpoints.
+        Also requires X-Wallet-Address and X-Timestamp headers.
+
   schemas:
     HealthResponse:
       type: object
-      required: [status, version]
+      required: [status, version, timestamp]
       properties:
         status:
           type: string
           enum: [ok, degraded]
-        db:
-          type: string
-          enum: [ok, error]
-        chain:
-          type: string
-          enum: [ok, error, degraded]
         version:
           type: string
           example: "v1"
+        timestamp:
+          type: string
+          format: date-time
+        checks:
+          type: object
+          description: "Only present for admin requests (X-Admin-Key header)"
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ok, error]
+                latencyMs:
+                  type: integer
+            redis:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ok, error]
+                latencyMs:
+                  type: integer
+            blockchain:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ok, error]
+                latencyMs:
+                  type: integer
+                blockNumber:
+                  type: integer
 
     CreateRecordRequest:
       type: object
-      required: [content_hash, pog_bundle, fee_tx_hash]
+      required: [pog_bundle]
       properties:
-        content_hash:
-          type: string
-          pattern: "^sha256:[a-f0-9]{64}$"
-          description: "SHA-256 of generated output"
-          example: "sha256:a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
         pog_bundle:
           $ref: "#/components/schemas/PoGBundleV1"
         fee_tx_hash:
           type: string
           pattern: "^0x[a-fA-F0-9]{64}$"
-          description: "Payment transaction hash for on-chain fee"
+          description: "Payment transaction hash on Base Sepolia"
+        fee_amount:
+          type: number
+          description: "Fee amount (informational)"
+        fee_currency:
+          type: string
+          maxLength: 8
+          example: "ETH"
         content_type:
           type: string
-          maxLength: 64
-          example: "image/png"
+          maxLength: 127
+          example: "text/plain"
         tags:
           type: array
           maxItems: 10
@@ -213,66 +572,115 @@ components:
         external_ref:
           type: string
           format: uri
+          maxLength: 512
           description: "URL or pointer to external content (IPFS, S3, etc.)"
+        provenance_metadata:
+          $ref: "#/components/schemas/ProvenanceMetadata"
 
     PoGBundleV1:
       type: object
+      description: |
+        Proof of Generation bundle v1. Contains the cryptographic attestation
+        that an AI agent generated specific content.
       required:
-        - schema_version
+        - schema
         - content_hash
         - agent_wallet
+        - model_id
+        - runtime_id
+        - generation_process
         - timestamp
         - nonce
-        - generation_process
         - signature
       properties:
-        schema_version:
+        schema:
           type: string
-          const: "pog-v1"
+          const: "pog.v1"
+          description: "Schema identifier (must be 'pog.v1')"
         content_hash:
           type: string
           pattern: "^sha256:[a-f0-9]{64}$"
+          description: "SHA-256 hash of generated content"
         agent_wallet:
           type: string
           pattern: "^0x[a-fA-F0-9]{40}$"
+          description: "Ethereum address of the signing agent"
+        model_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          example: "openai:gpt-4o:2024-08-06"
+          description: "Declarative model identifier (provider:model:version)"
+        runtime_id:
+          type: string
+          minLength: 1
+          maxLength: 128
+          example: "node-22.x"
+          description: "Runtime environment identifier"
+        generation_process:
+          $ref: "#/components/schemas/GenerationProcess"
         timestamp:
           type: string
           format: date-time
+          description: "ISO-8601 with timezone"
         nonce:
           type: string
-          maxLength: 64
+          minLength: 16
+          maxLength: 128
           description: "Unique per wallet. Prevents replay attacks."
-        generation_process:
-          $ref: "#/components/schemas/GenerationProcess"
-        model:
-          type: string
-          maxLength: 128
-          example: "gpt-4-turbo"
-        runtime:
-          type: string
-          maxLength: 128
-        input_hash:
-          type: string
-          pattern: "^sha256:[a-f0-9]{64}$"
         signature:
           type: string
-          description: "EIP-712 bundle signature (hex, 0x-prefixed)"
+          description: "EIP-712 bundle signature (hex, 0x-prefixed, 132 chars)"
+          pattern: "^0x[a-fA-F0-9]{130}$"
 
     GenerationProcess:
       type: object
-      required: [type, human_intervention]
+      required: [process_type, human_intervention_level, pipeline_steps]
       properties:
-        type:
+        process_type:
           type: string
-          enum: [text, image, audio, video, code, multimodal, other]
-        human_intervention:
-          type: string
-          enum: [none, prompt_only, supervised, collaborative]
+          enum: [direct, pipeline, iterative, autonomous]
+          description: "Type of generation process"
+        human_intervention_level:
+          type: integer
+          minimum: 0
+          maximum: 5
+          description: "0 = fully autonomous, 5 = heavily supervised"
         pipeline_steps:
+          type: integer
+          minimum: 1
+          description: "Number of steps in the generation pipeline"
+
+    ProvenanceMetadata:
+      type: object
+      description: "Optional provenance standard metadata (C2PA, IPTC, etc.)"
+      required: [standard, manifest_hash]
+      properties:
+        standard:
+          type: string
+          enum: [c2pa, iptc, xmp, schema_org, custom]
+        manifest_hash:
+          type: string
+          pattern: "^sha256:[a-f0-9]{64}$"
+        claim_generator:
+          type: string
+          maxLength: 256
+        issuer:
+          type: string
+          maxLength: 256
+        assertions:
           type: array
           maxItems: 20
           items:
             type: string
+            maxLength: 128
+        manifest_uri:
+          type: string
+          format: uri
+          maxLength: 1024
+        pki_timestamp:
+          type: string
+          format: date-time
 
     RecordResponse:
       type: object
@@ -283,21 +691,92 @@ components:
           format: uuid
         content_hash:
           type: string
+        content_type:
+          type: string
+        visibility:
+          type: string
         pog_bundle:
           $ref: "#/components/schemas/PoGBundleV1"
         state:
           type: string
           enum: [pending_anchor, anchored, anchor_failed]
+        state_info:
+          type: object
+          properties:
+            label:
+              type: string
+            description:
+              type: string
         created_at:
           type: string
           format: date-time
         receipt_hash:
           type: string
+        fee:
+          type: object
+          properties:
+            amount:
+              type: string
+            currency:
+              type: string
+            tx_hash:
+              type: string
+            chain_id:
+              type: integer
         anchor:
           $ref: "#/components/schemas/AnchorInfo"
-        anchor_error_reason:
+        tags:
+          type: array
+          items:
+            type: string
+        external_ref:
           type: string
-          description: "Only present if state == anchor_failed"
+
+    PaginationInfo:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+        has_more:
+          type: boolean
+
+    BatchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              index:
+                type: integer
+              record_id:
+                type: string
+                format: uuid
+              state:
+                type: string
+              receipt_hash:
+                type: string
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+        summary:
+          type: object
+          properties:
+            total:
+              type: integer
+            succeeded:
+              type: integer
+            failed:
+              type: integer
 
     AnchorInfo:
       type: object
@@ -310,14 +789,28 @@ components:
           format: int64
         chain_id:
           type: integer
+          example: 84532
+          description: "Base Sepolia chain ID"
         anchored_at:
           type: string
           format: date-time
+        network_name:
+          type: string
+          example: "Base Sepolia"
+        explorer_url:
+          type: string
+          format: uri
 
     ReceiptExport:
       type: object
-      required: [record_id, content_hash, pog_bundle, receipt_hash, state, created_at]
+      required: [schema, record_id, content_hash, pog_bundle, receipt_hash, state, created_at]
       properties:
+        schema:
+          type: string
+          const: "rex.receipt.v1"
+        spec_version:
+          type: string
+          example: "1.2"
         record_id:
           type: string
           format: uuid
@@ -327,17 +820,37 @@ components:
           $ref: "#/components/schemas/PoGBundleV1"
         receipt_hash:
           type: string
+        verification:
+          type: object
+          properties:
+            receipt_hash_algo:
+              type: string
+            receipt_canonicalization:
+              type: string
+            receipt_fields:
+              type: string
+            eip712_primary_type:
+              type: string
         state:
           type: string
         created_at:
           type: string
           format: date-time
+        fee:
+          type: object
+          properties:
+            amount:
+              type: string
+            currency:
+              type: string
+            tx_hash:
+              type: string
+            chain_id:
+              type: integer
+            to:
+              type: string
         anchor:
           $ref: "#/components/schemas/AnchorInfo"
-        verification_url:
-          type: string
-          format: uri
-          description: "URL to verify this receipt"
 
     ErrorResponse:
       type: object
@@ -365,7 +878,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
-      description: Invalid signature
+      description: Invalid signature or authentication
       content:
         application/json:
           schema:
@@ -383,7 +896,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     Conflict:
-      description: Duplicate (content_hash or nonce)
+      description: Duplicate (content_hash, nonce, or fee_tx_hash reuse)
       content:
         application/json:
           schema:

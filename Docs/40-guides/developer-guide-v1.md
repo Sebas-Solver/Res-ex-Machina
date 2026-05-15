@@ -101,25 +101,25 @@ Client (AI Agent)
 Send a native token transfer to the `fee_receiver_address` on the configured L2 chain.
 
 ```typescript
-import { createWalletClient, http, parseEther } from 'viem';
+import { createWalletClient, createPublicClient, http, parseEther } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { polygonAmoy } from 'viem/chains'; // or your L2 chain
+import { baseSepolia } from 'viem/chains';
 
 const account = privateKeyToAccount('0xYOUR_PRIVATE_KEY');
 
 const walletClient = createWalletClient({
   account,
-  chain: polygonAmoy, // L2 chain
-  transport: http('https://rpc-url'),
+  chain: baseSepolia,
+  transport: http('https://sepolia.base.org'),
 });
 
 const feeTxHash = await walletClient.sendTransaction({
   to: '0xFEE_RECEIVER_ADDRESS',    // provided by RxM
-  value: parseEther('0.01'),       // >= minimum fee
+  value: parseEther('0.0001'),     // >= minimum fee (Base Sepolia)
 });
 
 // Wait for confirmation
-const publicClient = createPublicClient({ chain: polygonAmoy, transport: http() });
+const publicClient = createPublicClient({ chain: baseSepolia, transport: http('https://sepolia.base.org') });
 await publicClient.waitForTransactionReceipt({ hash: feeTxHash });
 ```
 
@@ -138,18 +138,18 @@ const contentHash = 'sha256:' + createHash('sha256').update(content).digest('hex
 const nonce = crypto.randomUUID(); // unique per request
 
 const pogBundle = {
-  schema_version: 'pog-v1',
+  schema: 'pog.v1',
   content_hash: contentHash,
   agent_wallet: account.address,
+  model_id: 'openai:gpt-4o:2024-08-06',
+  runtime_id: 'node-22.x',
+  generation_process: {
+    process_type: 'direct',
+    human_intervention_level: 0,
+    pipeline_steps: 1,
+  },
   timestamp: new Date().toISOString(),
   nonce,
-  generation_process: {
-    type: 'text',
-    human_intervention: 'none',
-    pipeline_steps: ['gpt-4o'],
-  },
-  model: 'gpt-4o-2024-08-06',
-  runtime: 'node-22.x',
   signature: '', // filled below
 };
 
@@ -251,20 +251,19 @@ const exportData = await receipt.json();
 
 ```json
 {
-  "content_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb924...",
   "pog_bundle": {
-    "schema_version": "pog-v1",
-    "content_hash": "sha256:e3b0c44...",
+    "schema": "pog.v1",
+    "content_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb924...",
     "agent_wallet": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-    "timestamp": "2026-02-12T14:30:00.000Z",
-    "nonce": "unique-random-string",
+    "model_id": "openai:gpt-4o:2024-08-06",
+    "runtime_id": "node-22.x",
     "generation_process": {
-      "type": "text",
-      "human_intervention": "none",
-      "pipeline_steps": ["gpt-4o"]
+      "process_type": "direct",
+      "human_intervention_level": 0,
+      "pipeline_steps": 1
     },
-    "model": "gpt-4o-2024-08-06",
-    "runtime": "node-22.x",
+    "timestamp": "2026-02-12T14:30:00.000Z",
+    "nonce": "unique-random-string-min-16-chars",
     "signature": "0x1234abcd...65bytes"
   },
   "fee_tx_hash": "0xabc123...64hex",
@@ -369,7 +368,7 @@ All errors follow this format:
 | 400 | `invalid_payload` | Malformed or incomplete request body |
 | 400 | `invalid_content_hash` | Hash not matching `sha256:{64hex}` |
 | 400 | `invalid_pog_schema` | PoG bundle doesn't match v1 schema |
-| 400 | `invalid_pog_version` | `schema_version` is not `pog-v1` |
+| 400 | `invalid_pog_version` | `schema` is not `pog.v1` |
 | 400 | `invalid_tags` | Tags array > 10 items, empty strings, or wrong type |
 | 400 | `invalid_visibility` | Not one of: `proof_only`, `input_hash_only`, `content_optional` |
 | 401 | `invalid_signature` | EIP-712 signature is malformed or unverifiable |
@@ -382,7 +381,7 @@ All errors follow this format:
 | 402 | `fee_insufficient` | Fee amount < minimum required |
 | 402 | `fee_wrong_recipient` | Fee tx `to` address doesn't match `fee_receiver_address` |
 | 402 | `fee_tx_expired` | Fee tx is older than 24 hours |
-| 402 | `fee_tx_reused` | Fee tx hash already used for another record |
+| 409 | `fee_tx_reused` | Fee tx hash already used for another record |
 | 405 | `method_not_allowed` | DELETE on records (records are immutable) |
 | 409 | `duplicate_content_hash` | Record with this content_hash already exists |
 | 409 | `duplicate_nonce` | This nonce was already used by this wallet |

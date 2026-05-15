@@ -36,7 +36,7 @@ You will get a JSON like this:
   "anchor": {
     "tx_hash": "0x...",
     "block": 58123456,
-    "chain_id": 137,
+    "chain_id": 84532,
     "anchored_at": "2026-01-15T10:31:22.000Z"
   }
 }
@@ -142,18 +142,18 @@ If the record is anchored (`state: anchored`), you can verify that the `receipt_
 
 ### With an explorer
 
-1. Go to [Polygonscan](https://polygonscan.com/tx/{anchor.tx_hash})
+1. Go to [Basescan Sepolia](https://sepolia.basescan.org/tx/{anchor.tx_hash})
 2. In "Input Data", decode and verify it contains the `receipt_hash`
 
 ### With viem (programmatic)
 
 ```typescript
 import { createPublicClient, http } from 'viem';
-import { polygon } from 'viem/chains';
+import { baseSepolia } from 'viem/chains';
 
 const client = createPublicClient({
-  chain: polygon,
-  transport: http('https://polygon-rpc.com'),
+  chain: baseSepolia,
+  transport: http('https://sepolia.base.org'),
 });
 
 const tx = await client.getTransaction({ hash: receipt.anchor.tx_hash });
@@ -192,5 +192,5 @@ console.log('Content hash match:', hash === receipt.content_hash);
 |---|---|---|
 | EIP-712 Signature | The agent_wallet signed this PoG | viem / ethers.js |
 | Receipt hash | The data was not altered | SHA-256 |
-| On-chain Anchor | The record existed on that date | Polygonscan / viem |
+| On-chain Anchor | The record existed on that date | Basescan Sepolia / viem |
 | Content hash | Your content matches what is registered | sha256sum |
