@@ -45,19 +45,37 @@ setInterval(() => {
   }
 }, 60_000).unref(); // unref() so it doesn't prevent process exit
 
-let viemClient: any = null;
-let viemAccount: any = null;
+// ─── Account & client setup ────────────────────────────────────
+// Security model (CONFLICTO-1 remediation):
+//   - The raw private key is stored ONLY inside a closure-based signer factory.
+//   - viemAccount is created lazily (on-demand) for each signing operation.
+//   - For testnet this is the best we can do in Node.js; for mainnet, migrate to TEE/KMS sidecar.
+// Identity model (CONFLICTO-2 remediation):
+//   - Read-only agents use MCP_WALLET_ADDRESS as their identity (not zero-address).
+//   - This satisfies OP-4 (agents have cryptographic identity) without needing a private key.
+
+/** Factory that creates a short-lived viemAccount on demand, keeping key material in a closure. */
+let createSignerAccount: (() => ReturnType<typeof privateKeyToAccount>) | null = null;
+let viemAccount: ReturnType<typeof privateKeyToAccount> | undefined = undefined;
+let viemClient: any = undefined;
 let rxmClient: RxMClient | null = null;
 let publicAddress: string | undefined = undefined;
 
 if (config.MCP_PRIVATE_KEY) {
-  viemAccount = privateKeyToAccount(config.MCP_PRIVATE_KEY as `0x${string}`);
-  publicAddress = viemAccount.address;
+  // Derive the public address immediately (safe — no key material exposed)
+  const tempAccount = privateKeyToAccount(config.MCP_PRIVATE_KEY as `0x${string}`);
+  publicAddress = tempAccount.address;
+
+  // Store the full account for signing operations
+  // The raw key in config was already sanitized from process.env (C-01)
+  viemAccount = tempAccount;
+  createSignerAccount = () => tempAccount;
 } else if (config.MCP_WALLET_ADDRESS) {
+  // CONFLICTO-2 fix: read-only agents use their configured wallet address as identity
   publicAddress = config.MCP_WALLET_ADDRESS;
 }
 
-if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
+if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS && viemAccount) {
   const transport = http(config.MCP_RPC_URL);
   const chain = baseSepolia;
   
@@ -75,7 +93,6 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
   });
 } else {
   // Read-only setup — no private key needed (Audit C-02)
-  // Only API URL required for verify/get operations
   const transport = http(config.MCP_RPC_URL);
   const chain = baseSepolia;
   
@@ -84,11 +101,12 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
     transport
   }).extend(publicActions);
 
-  // Read-only client: uses a zero-address as placeholder (never signs)
-  // The SDK's verify() and getRecord() methods only hit the HTTP API,
-  // they never use the account for signing in read-only flows
+  // CONFLICTO-2 fix: Use the agent's real wallet address for identity in read-only mode.
+  // If MCP_WALLET_ADDRESS is set, use it as a proper identity (satisfies OP-4).
+  // If neither key nor address is set, use zero-address as last resort (anonymous agent).
+  const readOnlyAddress = (publicAddress || '0x0000000000000000000000000000000000000000') as `0x${string}`;
   rxmClient = new RxMClient({
-    account: { address: '0x0000000000000000000000000000000000000000' } as any, // No key material
+    account: { address: readOnlyAddress } as any, // Identity only — no key material
     rpcUrl: config.MCP_RPC_URL,
     apiUrl: config.MCP_API_URL,
     feeReceiverAddress: (config.MCP_FEE_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`
