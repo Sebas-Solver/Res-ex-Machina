@@ -6,7 +6,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/status-Private%20Alpha-brightgreen" alt="Status: Private Alpha"/>
   <img src="https://img.shields.io/badge/version-v1.0.0--alpha.3-blue" alt="Version: v1.0.0-alpha.3"/>
-  <img src="https://img.shields.io/badge/tests-277%20passing-brightgreen" alt="Tests: 277 passing"/>
+  <img src="https://img.shields.io/badge/tests-308%20passing-brightgreen" alt="Tests: 308 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/security-P0%20Hardening%20Complete-brightgreen" alt="Security: P0 Hardening Complete"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
@@ -119,29 +119,38 @@ Full API reference: [`openapi-v1.yaml`](Docs/10-specs/openapi-v1.yaml)
 
 ## 🧪 Tests
 
-### Server (169 tests, 13 suites)
+### Server (191 tests, 14 suites)
 ```
- ✓ errors.test.ts         (9)   — ApiError + factories
- ✓ receipt.test.ts        (4)   — SHA-256 receipt hash
- ✓ schemas.test.ts        (29)  — Zod validation (incl. provenance + pki_timestamp)
- ✓ fee.test.ts            (9)   — On-chain fee (5 checks)
- ✓ records-get.test.ts    (18)  — GET /:id, /verify, /export, DX features
- ✓ records-list.test.ts   (11)  — GET /v1/records (filters, pagination, sort)
- ✓ invariants.test.ts     (14)  — System invariants
- ✓ dx-features.test.ts    (13)  — stateInfo + explorer utilities
- ✓ wallet-auth.test.ts    (9)   — Signature-based auth middleware
- ✓ formatters.test.ts     (10)  — Response formatters
- ✓ records-batch.test.ts  (13)  — Batch endpoint (schema + errors)
- ✓ webhooks.test.ts       (18)  — Webhooks (schema, SSRF, HMAC, errors)
- ✓ eip712-sync.test.ts    (8)   — Server↔SDK constant synchronization
+ ✓ errors.test.ts             (9)   — ApiError + factories
+ ✓ receipt.test.ts            (4)   — SHA-256 receipt hash
+ ✓ schemas.test.ts            (29)  — Zod validation (incl. provenance + pki_timestamp)
+ ✓ fee.test.ts                (9)   — On-chain fee (5 checks)
+ ✓ records-get.test.ts        (18)  — GET /:id, /verify, /export, DX features
+ ✓ records-list.test.ts       (11)  — GET /v1/records (filters, pagination, sort)
+ ✓ invariants.test.ts         (14)  — System invariants
+ ✓ dx-features.test.ts        (13)  — stateInfo + explorer utilities
+ ✓ wallet-auth.test.ts        (9)   — Signature-based auth middleware
+ ✓ formatters.test.ts         (10)  — Response formatters
+ ✓ records-batch.test.ts      (13)  — Batch endpoint (schema + errors)
+ ✓ webhooks.test.ts           (18)  — Webhooks (schema, SSRF, HMAC, errors)
+ ✓ eip712-sync.test.ts        (8)   — Server↔SDK constant synchronization
+ ✓ rate-limit-policy.test.ts  (26)  — P0 rate limiter degradation policy
 ```
 
-### SDK `@res-ex-machina/sdk` (30 tests, 4 suites)
+### SDK `@res-ex-machina/sdk` (55 tests, 5 suites)
 ```
  ✓ hash.test.ts           (6)   — WebCrypto SHA-256 hashing
  ✓ sign.test.ts           (7)   — EIP-712 signing
  ✓ errors.test.ts         (7)   — Typed SDK errors
  ✓ client.test.ts         (10)  — Client validation
+ ✓ readonly.test.ts       (25)  — Read-only mode (constructor, guards, listRecords)
+```
+
+### MCP Server (62 tests, 3 suites)
+```
+ ✓ tools.test.ts          (25)  — MCP tool definitions and handlers
+ ✓ config.test.ts         (17)  — Configuration and confirmation mode
+ ✓ ledger.test.ts         (20)  — Audit event ledger CRUD
 ```
 
 ---
@@ -246,7 +255,7 @@ npm run worker:anchor    # Anchoring worker
 | Script | Description |
 |---|---|
 | `npm run dev` | Development server (tsx watch) |
-| `npm test` | Run 169 tests |
+| `npm test` | Run 191 server tests |
 | `npm run test:coverage` | Tests with coverage report (v8) |
 | `npm run build` | Production build |
 | `npx drizzle-kit push` | Apply schema to database |
@@ -341,7 +350,7 @@ Docs/
 | [`c2pa-interoperability.md`](Docs/10-specs/c2pa-interoperability.md) | Interoperability with C2PA standards |
 | [`receipt-verification-spec.md`](Docs/10-specs/receipt-verification-spec.md) | Receipt verification specification (v1.2) |
 | [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Security audit report (v2 — 14/14 findings resolved) |
-| [`admin-key-rotation.md`](docs/admin-key-rotation.md) | ADMIN_API_KEY rotation procedure |
+| `admin-key-rotation.md` | ADMIN_API_KEY rotation procedure (private repo) |
 | [`integrator-guide.md`](Docs/60-operations/integrator-guide.md) | Integrator troubleshooting guide |
 
 ---
@@ -420,7 +429,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.2** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk). **169 tests** (100% passing). Batch endpoint, webhooks, dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
+🟢 **v1.0.0-alpha.3** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk) with **read-only mode**. **308 tests** (100% passing: 191 server + 55 SDK + 62 MCP). P0 security hardening complete. Batch endpoint, webhooks, dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
 
 ---
 

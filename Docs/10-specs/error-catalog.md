@@ -127,6 +127,20 @@ All errors follow this JSON format:
 
 ---
 
+## SDK Client Errors
+
+> These errors are thrown **client-side** by `@res-ex-machina/sdk` before any API call is made.
+
+| Error Class | Code | Description | When |
+|---|---|---|---|
+| `RxMReadOnlyError` | `read_only_client` | Attempted write operation on a read-only client | Calling `record()`, `recordBatch()`, or webhook methods on a client initialized with `readOnly: true` |
+| `RxMValidationError` | `missing_agent_wallet` | `listRecords()` called without `agentWallet` on a read-only client | Read-only client has no default wallet — must pass `agentWallet` explicitly |
+| `RxMValidationError` | `invalid_readonly_config` | Conflicting constructor options | Passing `account`, `rpcUrl`, or `feeReceiverAddress` alongside `readOnly: true` |
+
+> **Note**: `RxMReadOnlyError` extends `RxMError` and can be caught with `instanceof`. These errors are part of the SDK's typed error hierarchy alongside `RxMRateLimitError`, `RxMValidationError`, and `RxMApiError`.
+
+---
+
 ## Error Principles
 
 1. **Never expose technical details** — Do not reveal stack traces, routes, SQL queries, or table names.

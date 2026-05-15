@@ -87,10 +87,37 @@ const exported = await rxm.export('record-id');
 const list = await rxm.listRecords({ state: 'anchored', limit: 10 });
 ```
 
+## Read-Only Mode
+
+For verifiers, auditors, or dashboards that only need to query public records — no wallet, private key, or RPC needed:
+
+```typescript
+const verifier = new RxMClient({
+  apiUrl: 'https://res-ex-machina-api.onrender.com',
+  readOnly: true,
+});
+
+// ✅ These work
+const record = await verifier.getRecord('record-id');
+const exists = await verifier.verify('sha256:...');
+const receipt = await verifier.export('record-id');
+const list = await verifier.listRecords({ agentWallet: '0x...' });
+
+// ❌ These throw RxMReadOnlyError
+await verifier.record('...');           // → read_only_client
+await verifier.recordBatch([...]);      // → read_only_client
+await verifier.webhooks.register('...');// → read_only_client
+```
+
+**Key rules:**
+- `readOnly: true` rejects `account`, `rpcUrl`, `feeReceiverAddress` at both compile time (TypeScript) and runtime (JavaScript)
+- `listRecords()` requires `agentWallet` parameter in read-only mode (no default wallet)
+- All write operations throw `RxMReadOnlyError` (code: `read_only_client`)
+
 ## Error Handling
 
 ```typescript
-import { RxMRateLimitError, RxMValidationError } from '@res-ex-machina/sdk';
+import { RxMRateLimitError, RxMValidationError, RxMReadOnlyError } from '@res-ex-machina/sdk';
 
 try {
   await rxm.record(content, { modelId: '...' });
@@ -103,10 +130,16 @@ try {
     // Local validation error (no API call made)
     console.error(e.code, e.message);
   }
+  if (e instanceof RxMReadOnlyError) {
+    // Attempted write operation on read-only client
+    console.error(e.code, e.message); // code: 'read_only_client'
+  }
 }
 ```
 
 ## Constructor Options
+
+### Writable Client (full capabilities)
 
 | Option | Type | Default | Description |
 |---|---|---|---|
@@ -116,6 +149,15 @@ try {
 | `feeReceiverAddress` | `Address` | — | Fee receiver address (required) |
 | `feeAmount` | `number` | `0.01` | Fee in native currency (ETH/MATIC) |
 | `chainId` | `number` | `84532` | Chain ID (Base Sepolia) |
+| `httpTimeoutMs` | `number` | `10000` | HTTP timeout in ms |
+| `httpRetries` | `number` | `3` | HTTP retries |
+
+### Read-Only Client (no wallet needed)
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `apiUrl` | `string` | — | RxM API URL (required) |
+| `readOnly` | `true` | — | Enables read-only mode (required) |
 | `httpTimeoutMs` | `number` | `10000` | HTTP timeout in ms |
 | `httpRetries` | `number` | `3` | HTTP retries |
 
