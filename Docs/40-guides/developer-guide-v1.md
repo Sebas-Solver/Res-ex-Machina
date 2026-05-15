@@ -721,7 +721,7 @@ ANCHOR_WALLET_PRIVATE_KEY=0x_YOUR_DEV_PRIVATE_KEY_HERE
 | `npm run dev` | Start API (dev mode with pino-pretty) |
 | `npm run worker:anchor` | Start anchor worker |
 | `npm run check` | TypeScript + ESLint + Tests (all checks) |
-| `npm test` | Run 169 tests |
+| `npm test` | Run 191 server tests |
 | `npx drizzle-kit push` | Apply schema to database |
 | `npm run alpha:happy` | Run Agent A happy path test |
 | `npm run alpha:adversarial` | Run Agent D adversarial test |

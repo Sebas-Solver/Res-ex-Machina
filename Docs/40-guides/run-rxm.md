@@ -116,7 +116,7 @@ docker compose down
 | Command | What it does |
 |---|---|
 | `npm run dev` | Start API in development mode (hot reload) |
-| `npm test` | Run the 169 tests |
+| `npm test` | Run the 191 server tests |
 | `npm run test:coverage` | Tests with coverage report |
 | `npm run check` | TypeScript + ESLint + Tests (all together) |
 | `npm run lint` | Check code style |
