@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { HTTPFacilitatorClient } from '@x402/core/http';
 import type { PaymentPayload, PaymentRequirements, SettleResponse } from '@x402/core/types';
 import { z } from 'zod';

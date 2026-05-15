@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 export type PaymentMethod = 'legacy_eth' | 'x402_usdc';
 
 export interface BasePaymentEvidence {
