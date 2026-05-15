@@ -87,6 +87,8 @@ jobs:
 
       # Audit M-04: Include MCP Server in CI pipeline
       - name: MCP Server - Install & Type Check
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
         run: |
           cd packages/mcp-server
           npm ci
