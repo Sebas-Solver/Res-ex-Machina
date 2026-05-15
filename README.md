@@ -62,6 +62,8 @@ VERIFIABILITY    → Everything is cryptographically verifiable.
 NON-CUSTODIAL    → The agent controls its identity (wallet).
 ```
 
+📖 **[Full Foundational Principles — 10 principles + 14 operational rules →](Docs/00-foundation/foundational-principles.md)**
+
 ---
 
 > 🚀 **[Quick Start — Zero to first record in 5 minutes →](Docs/40-guides/quick-start.md)**
@@ -339,6 +341,7 @@ Docs/
 
 | Document | Description |
 |---|---|
+| [`foundational-principles.md`](Docs/00-foundation/foundational-principles.md) | 10 foundational principles + 14 operational rules |
 | [`quick-start.md`](Docs/40-guides/quick-start.md) | Zero to first record in 5 minutes |
 | [`human-guide-v1.md`](Docs/40-guides/human-guide-v1.md) | Guide for non-technical users |
 | [`developer-guide-v1.md`](Docs/40-guides/developer-guide-v1.md) | Full developer guide |
