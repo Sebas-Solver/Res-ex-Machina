@@ -68,7 +68,7 @@ You should see all 3 checks (`database`, `redis`, `blockchain`) as `"ok"`.
 | Command | What it does |
 |---|---|
 | `npm run dev` | Start API with hot reload (tsx watch) |
-| `npm test` | Run all 169 tests |
+| `npm test` | Run all server tests (191) |
 | `npm run test:watch` | Tests in watch mode |
 | `npm run test:coverage` | Tests with v8 coverage report |
 | `npm run lint` | ESLint code quality check |
