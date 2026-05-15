@@ -183,7 +183,13 @@ export const webhooks = pgTable(
         url: text('url').notNull(),
 
         /** Server-generated HMAC-SHA256 secret (64 hex chars) */
-        secret: varchar('secret', { length: 128 }).notNull(),
+        secret: varchar('secret', { length: 128 }),
+
+        /** P1-1: AES-256-GCM Encrypted Secret (null for legacy unmigrated) */
+        secretCiphertext: text('secret_ciphertext'),
+        secretIv: varchar('secret_iv', { length: 24 }),
+        secretAuthTag: varchar('secret_auth_tag', { length: 32 }),
+        secretKeyVersion: integer('secret_key_version'),
 
         /** Subscribed events */
         events: text('events').array().notNull().default(sql`ARRAY['state_changed']::text[]`),

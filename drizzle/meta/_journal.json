@@ -29,6 +29,13 @@
       "when": 1778630801052,
       "tag": "0003_tiny_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778877594235,
+      "tag": "0004_organic_ghost_rider",
+      "breakpoints": true
     }
   ]
 }

@@ -15,6 +15,7 @@ import {
     webhookForbidden,
 } from '../utils/errors.js';
 import { ApiError } from '../utils/errors.js';
+import { encryptSecret } from '../services/secretCrypto.js';
 
 /**
  * Webhook Routes — Issue #13
@@ -78,12 +79,17 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
 
         // 5. Create webhook
         const webhookId = randomUUID();
+        const encrypted = encryptSecret(secret, webhookId, wallet);
 
         await db.insert(webhooks).values({
             webhookId,
             agentWallet: wallet,
             url,
-            secret,
+            secret: null, // P1-1: Plaintext secret is null for new webhooks
+            secretCiphertext: encrypted.ciphertext,
+            secretIv: encrypted.iv,
+            secretAuthTag: encrypted.authTag,
+            secretKeyVersion: encrypted.keyVersion,
             events,
             active: true,
         });
