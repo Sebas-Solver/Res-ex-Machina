@@ -89,6 +89,8 @@ Client (AI Agent)
 | POST /records (per wallet) | 10 req | 1 min |
 
 > **Note:** Rate limiting is backed by Redis. Exceeding the limit returns HTTP 429 with a `Retry-After` header.
+>
+> **Redis unavailable:** If Redis is down, write endpoints (POST) return `503 service_degraded` in production. Read endpoints (GET) fall back to a conservative in-memory limit (30 req/min per instance). See [Error Catalog](../10-specs/error-catalog.md) for the `service_degraded` error shape.
 
 ---
 

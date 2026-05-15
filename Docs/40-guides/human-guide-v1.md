@@ -126,7 +126,7 @@ RxM is designed to **keep working** even when parts of the system have problems.
 
 | What happens | What RxM does |
 |----------|-------------|
-| The speed control (rate limit) stops working | **It is temporarily disabled** — all requests are allowed without limit until it returns |
+| The speed control (rate limit) switches to degraded mode | **Write operations (registration) are blocked** with a 503 error. Read operations (query, verify, export) continue with a conservative local limit. This prevents abuse during infrastructure issues |
 | The blockchain anchoring cannot be queued | **The record is saved anyway** in the database. When Redis returns, anchoring will process |
 | The health check shows "degraded" | Normal. It says `Retry-After: 30` so clients know when to try again |
 
