@@ -44,7 +44,7 @@ paths:
         with database, redis, and blockchain diagnostics.
       responses:
         "200":
-          description: System healthy
+          description: System ok
           content:
             application/json:
               schema:

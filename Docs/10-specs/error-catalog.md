@@ -83,7 +83,7 @@ All errors follow this JSON format:
 
 | HTTP | Code | Description | When |
 |---|---|---|---|
-| 200 | — | System healthy | All checks passing |
+| 200 | — | System ok | All checks passing |
 | 503 | — | System degraded | One or more checks failing (response includes status: degraded) |
 ### POST /v1/records/batch
 

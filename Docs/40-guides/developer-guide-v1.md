@@ -270,9 +270,15 @@ const exportData = await receipt.json();
   "content_type": "text/plain",
   "visibility": "proof_only",
   "tags": ["tag1", "tag2"],
-  "external_ref": "ipfs://Qm..."
+  "external_ref": "ipfs://Qm...",
+  "fee_amount": 0.0001,
+  "fee_currency": "ETH"
 }
 ```
+
+> ⚠️ **`fee_amount` and `fee_currency`** are optional client-side metadata fields. They are **not trusted** for payment validation. The source of truth is always `fee_tx_hash` verified on-chain.
+>
+> ⚠️ **`external_ref`** is optional and may reveal the location of the content. Omit it if the generated content should remain private. RxM does not store or access the content itself — only the hash.
 
 ### 201 Created — Response
 
@@ -287,7 +293,7 @@ const exportData = await receipt.json();
   "created_at": "2026-02-12T14:30:01.234Z",
   "receipt_hash": "sha256:...",
   "fee": {
-    "amount": "0.01000000",
+    "amount": "0.00010000",
     "currency": "ETH",
     "tx_hash": "0xabc123..."
   },
@@ -586,7 +592,7 @@ Health check results are **cached for 30 seconds** (in-memory TTL cache) to redu
 
 | HTTP | `status` field | Meaning |
 |------|----------------|-------|
-| 200 | `healthy` | All subsystems operational |
+| 200 | `ok` | All subsystems operational |
 | 503 | `degraded` | One or more subsystems down |
 
 ### Public Status Page
@@ -598,9 +604,9 @@ A live dashboard is available at **[https://sebas-solver.github.io/Res-ex-Machin
 **For bots/agents:** Use the JSON endpoint directly:
 ```bash
 curl https://res-ex-machina-api.onrender.com/v1/health
-# → {"status":"healthy","checks":{"database":{"status":"ok"},"redis":{"status":"ok"},"blockchain":{"status":"ok"}}}
+# → {"status":"ok","checks":{"database":{"status":"ok"},"redis":{"status":"ok"},"blockchain":{"status":"ok"}}}
 ```
-- HTTP `200` = healthy, HTTP `503` = degraded
+- HTTP `200` = ok, HTTP `503` = degraded
 - The status page includes `<link rel="alternate" type="application/json">` pointing to the health endpoint
 - JSON-LD structured data for search engines and AI crawlers
 

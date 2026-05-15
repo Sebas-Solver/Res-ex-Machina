@@ -79,6 +79,8 @@ curl -X POST http://localhost:3000/v1/records \
   }' | jq
 ```
 
+> ⚠️ `fee_amount` and `fee_currency` are optional client-side metadata. They are **not trusted** for payment validation — the source of truth is always `fee_tx_hash` verified on-chain.
+
 Response (201 Created):
 ```json
 {

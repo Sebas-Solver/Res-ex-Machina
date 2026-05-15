@@ -10,13 +10,13 @@
 
 | HTTP Code | `status` field | Meaning |
 |---|---|---|
-| 200 | `healthy` | All subsystems operational |
+| 200 | `ok` | All subsystems operational |
 | 503 | `degraded` | One or more subsystems down |
 
 **Response structure:**
 ```json
 {
-  "status": "healthy",
+  "status": "ok",
   "version": "v1",
   "timestamp": "2026-05-12T17:31:22.407Z",
   "checks": {
