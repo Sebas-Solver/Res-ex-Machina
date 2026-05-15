@@ -36,9 +36,8 @@ export const webhookQueue = new Queue('webhook_dispatch', {
     },
 });
 
-/** Webhook job data
- * @security TODO (Audit M-03): The `secret` field is stored in plaintext in DB and Redis.
- * Encrypt with a derived key from ADMIN_API_KEY before persisting. Requires schema migration.
+/** Webhook job data — P1-1: secret removed from job payload.
+ * The dispatcher loads and decrypts the secret from DB at delivery time.
  */
 export interface WebhookJobData {
     webhookId: string;
