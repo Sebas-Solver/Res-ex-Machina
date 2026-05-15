@@ -1,8 +1,11 @@
 import type { Address, Hex, Account } from 'viem';
 
-// ─── Constructor options ───────────────────────────────────────
+// ─── Constructor options (discriminated union) ─────────────────
 
-export interface RxMClientOptions {
+/** Writable client — requires wallet, RPC, and fee configuration. */
+export interface RxMWritableClientOptions {
+    /** Explicitly not read-only (can be omitted). */
+    readOnly?: false;
     /** viem Account (LocalAccount from privateKeyToAccount, mnemonicToAccount, etc.) */
     account: Account;
     /** L2 RPC URL for paying fees (e.g., https://sepolia.base.org) */
@@ -20,6 +23,21 @@ export interface RxMClientOptions {
     /** Number of HTTP retries (default: 3) */
     httpRetries?: number;
 }
+
+/** Read-only client — only requires API URL. No wallet, no signing, no fees. */
+export interface RxMReadOnlyClientOptions {
+    /** Must be true to create a read-only client. */
+    readOnly: true;
+    /** RxM API base URL (e.g., https://res-ex-machina-api.onrender.com) */
+    apiUrl: string;
+    /** HTTP request timeout in ms (default: 10000) */
+    httpTimeoutMs?: number;
+    /** Number of HTTP retries (default: 3) */
+    httpRetries?: number;
+}
+
+/** SDK constructor options — writable or read-only. */
+export type RxMClientOptions = RxMWritableClientOptions | RxMReadOnlyClientOptions;
 
 // ─── Record options ────────────────────────────────────────────
 
@@ -121,6 +139,8 @@ export interface ExportData {
 }
 
 export interface ListRecordsOptions {
+    /** Wallet address to filter by. Required in read-only mode; defaults to account.address in writable mode. */
+    agentWallet?: string;
     state?: string;
     limit?: number;
     offset?: number;

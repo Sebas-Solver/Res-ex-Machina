@@ -5,7 +5,7 @@
  * Neutral registry for AI-generated content provenance.
  * Works with any provider: OpenAI, Anthropic, Google, local models.
  *
- * @example
+ * @example Writable client (register + verify)
  * ```typescript
  * import { RxMClient } from '@res-ex-machina/sdk';
  * import { privateKeyToAccount } from 'viem/accounts';
@@ -17,10 +17,18 @@
  *   apiUrl: 'https://res-ex-machina-api.onrender.com',
  *   feeReceiverAddress: '0x...',
  * });
- *
  * const receipt = await rxm.record('AI-generated content', {
  *   modelId: 'openai:gpt-4o:2026-01',
  * });
+ * ```
+ *
+ * @example Read-only client (verify + query only)
+ * ```typescript
+ * const reader = new RxMClient({
+ *   apiUrl: 'https://res-ex-machina-api.onrender.com',
+ *   readOnly: true,
+ * });
+ * const result = await reader.verify('sha256:abc...');
  * ```
  *
  * @packageDocumentation
@@ -32,6 +40,8 @@ export { RxMClient } from './client.js';
 // ─── Public types ──────────────────────────────────────────────
 export type {
     RxMClientOptions,
+    RxMWritableClientOptions,
+    RxMReadOnlyClientOptions,
     RecordOptions,
     ProcessType,
     Visibility,
@@ -55,6 +65,7 @@ export {
     RxMRateLimitError,
     RxMNetworkError,
     RxMValidationError,
+    RxMReadOnlyError,
 } from './errors.js';
 
 // ─── Utilities (for advanced integrators) ──────────────────────

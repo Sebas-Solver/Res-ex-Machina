@@ -1,14 +1,17 @@
 /**
  * RxMClient — Main SDK orchestrator.
  *
- * Principles:
- * - Smart defaults: an agent registers outputs without knowing EIP-712 or fees
- * - BYO options: advanced integrators control everything (feeTxHash, contentHash)
- * - Fail-safe: on failure, typed errors enable programmatic retry
+ * Supports two modes:
+ * - **Writable**: requires account, rpcUrl, feeReceiverAddress. Can register, sign, pay.
+ * - **Read-only**: requires only apiUrl. Can verify, query, export. Cannot write.
  *
- * Minimal usage:
+ * Minimal usage (writable):
  *   const rxm = new RxMClient({ account, rpcUrl, apiUrl, feeReceiverAddress });
  *   const receipt = await rxm.record(content, { modelId: 'openai:gpt-4o:2026-01' });
+ *
+ * Minimal usage (read-only):
+ *   const rxm = new RxMClient({ apiUrl: 'https://...', readOnly: true });
+ *   const result = await rxm.verify('sha256:abc...');
  */
 import type { Address, Hex, Account } from 'viem';
 import { RxMHttpClient } from './http.js';
@@ -16,7 +19,7 @@ import { computeContentHash } from './hash.js';
 import { signPoGBundle, type PoGSignatureMessage } from './sign.js';
 import { payFee, type FeeConfig } from './fee.js';
 import { WebhooksClient } from './webhooks.js';
-import { RxMValidationError } from './errors.js';
+import { RxMValidationError, RxMReadOnlyError } from './errors.js';
 import type {
     RxMClientOptions,
     RecordOptions,
@@ -47,32 +50,69 @@ function detectRuntime(): string {
 declare const Deno: { version?: { deno: string } } | undefined;
 
 export class RxMClient {
-    private readonly account: Account;
-    private readonly rpcUrl: string;
-    private readonly apiUrl: string;
-    private readonly feeReceiverAddress: Address;
-    private readonly feeAmount: number;
-    private readonly chainId: number;
-    private readonly http: RxMHttpClient;
+    private _readOnly: boolean;
+    protected account: Account | null;
+    protected rpcUrl: string | null;
+    protected apiUrl: string;
+    protected feeReceiverAddress: Address | null;
+    protected feeAmount: number;
+    protected chainId: number;
+    protected http: RxMHttpClient;
 
     /** Webhooks subclient (register, list, delete) */
     public readonly webhooks: WebhooksClient;
 
     constructor(options: RxMClientOptions) {
-        this.account = options.account;
-        this.rpcUrl = options.rpcUrl;
-        this.apiUrl = options.apiUrl;
-        this.feeReceiverAddress = options.feeReceiverAddress;
-        this.feeAmount = options.feeAmount ?? 0.01;
-        this.chainId = options.chainId ?? 84532; // Base Sepolia default
+        if (options.readOnly) {
+            // Read-only mode — no wallet, no signing, no fees
+            this._readOnly = true;
+            this.account = null;
+            this.rpcUrl = null;
+            this.feeReceiverAddress = null;
+            this.feeAmount = 0;
+            this.chainId = 0;
+            this.apiUrl = options.apiUrl;
 
-        this.http = new RxMHttpClient(
-            options.apiUrl,
-            options.httpTimeoutMs ?? 10_000,
-            options.httpRetries ?? 3,
-        );
+            this.http = new RxMHttpClient(
+                options.apiUrl,
+                options.httpTimeoutMs ?? 10_000,
+                options.httpRetries ?? 3,
+            );
 
-        this.webhooks = new WebhooksClient(this.http, this.account);
+            // Webhooks: pass null account → all methods throw RxMReadOnlyError
+            this.webhooks = new WebhooksClient(this.http, null);
+        } else {
+            // Writable mode — full capabilities
+            this._readOnly = false;
+            this.account = options.account;
+            this.rpcUrl = options.rpcUrl;
+            this.apiUrl = options.apiUrl;
+            this.feeReceiverAddress = options.feeReceiverAddress;
+            this.feeAmount = options.feeAmount ?? 0.01;
+            this.chainId = options.chainId ?? 84532; // Base Sepolia default
+
+            this.http = new RxMHttpClient(
+                options.apiUrl,
+                options.httpTimeoutMs ?? 10_000,
+                options.httpRetries ?? 3,
+            );
+
+            this.webhooks = new WebhooksClient(this.http, options.account);
+        }
+    }
+
+    /** Returns true if this client is in read-only mode. */
+    get readOnly(): boolean {
+        return this._readOnly;
+    }
+
+    /**
+     * Guard: throws RxMReadOnlyError if client is read-only.
+     */
+    private assertWritable(operation: string): asserts this is { account: Account; rpcUrl: string; feeReceiverAddress: Address } {
+        if (this._readOnly) {
+            throw new RxMReadOnlyError(operation);
+        }
     }
 
     // ─── RECORD ───────────────────────────────────────────────
@@ -97,6 +137,8 @@ export class RxMClient {
      * @returns Receipt with recordId, state, receiptHash
      */
     async record(content: string | Buffer | Uint8Array, options: RecordOptions): Promise<Receipt> {
+        this.assertWritable('record');
+
         // Local validation (fail before calling the API)
         this.validateRecordOptions(options);
 
@@ -114,7 +156,7 @@ export class RxMClient {
         const pogMessage: PoGSignatureMessage = {
             schema: 'pog.v1',
             content_hash: contentHash,
-            agent_wallet: this.account.address,
+            agent_wallet: this.account!.address,
             model_id: options.modelId,
             runtime_id: options.runtimeId ?? detectRuntime(),
             process_type: options.processType ?? 'direct',
@@ -125,16 +167,16 @@ export class RxMClient {
         };
 
         // 5. EIP-712 signature
-        const signature = await signPoGBundle(this.account, pogMessage);
+        const signature = await signPoGBundle(this.account!, pogMessage);
 
         // 6. Fee (skip if BYO or x402)
         let feeTxHash = options.feeTxHash;
         if (!feeTxHash && options.paymentMode !== 'x402') {
             const feeConfig: FeeConfig = {
-                account: this.account,
-                rpcUrl: this.rpcUrl,
+                account: this.account!,
+                rpcUrl: this.rpcUrl!,
                 chainId: this.chainId,
-                feeReceiverAddress: this.feeReceiverAddress,
+                feeReceiverAddress: this.feeReceiverAddress!,
                 feeAmount: this.feeAmount,
             };
             feeTxHash = await payFee(feeConfig);
@@ -145,7 +187,7 @@ export class RxMClient {
             pog_bundle: {
                 schema: 'pog.v1',
                 content_hash: contentHash,
-                agent_wallet: this.account.address,
+                agent_wallet: this.account!.address,
                 model_id: options.modelId,
                 runtime_id: pogMessage.runtime_id,
                 generation_process: {
@@ -248,17 +290,17 @@ export class RxMClient {
 
         // Create a public client for read-only operations (like checking nonce or allowance)
         const publicClient = createPublicClient({
-            transport: http(this.rpcUrl),
+            transport: http(this.rpcUrl!),
         });
 
         // Adapt viem Account to ClientEvmSigner
         const baseSigner = {
-            address: this.account.address,
+            address: this.account!.address,
             signTypedData: async (args: any) => {
-                if (!this.account.signTypedData) {
+                if (!this.account!.signTypedData) {
                     throw new Error('Account must support signTypedData for x402 payments');
                 }
-                return this.account.signTypedData(args);
+                return this.account!.signTypedData(args);
             }
         };
 
@@ -283,6 +325,7 @@ export class RxMClient {
      * @returns Receipt with recordId, state, receiptHash
      */
     async recordHash(contentHash: string, options: Omit<RecordOptions, 'contentHash'>): Promise<Receipt> {
+        this.assertWritable('recordHash');
         return this.record('', { ...options, contentHash });
     }
 
@@ -291,6 +334,8 @@ export class RxMClient {
      * v0.1: each item MUST have feeTxHash (BYO mode).
      */
     async recordBatch(items: BatchItem[]): Promise<BatchResult> {
+        this.assertWritable('recordBatch');
+
         if (items.length === 0) {
             throw new RxMValidationError('Batch cannot be empty');
         }
@@ -309,7 +354,7 @@ export class RxMClient {
                 const pogMessage: PoGSignatureMessage = {
                     schema: 'pog.v1',
                     content_hash: contentHash,
-                    agent_wallet: this.account.address,
+                    agent_wallet: this.account!.address,
                     model_id: item.options.modelId,
                     runtime_id: item.options.runtimeId ?? detectRuntime(),
                     process_type: item.options.processType ?? 'direct',
@@ -319,13 +364,13 @@ export class RxMClient {
                     nonce,
                 };
 
-                const signature = await signPoGBundle(this.account, pogMessage);
+                const signature = await signPoGBundle(this.account!, pogMessage);
 
                 return {
                     pog_bundle: {
                         schema: 'pog.v1',
                         content_hash: contentHash,
-                        agent_wallet: this.account.address,
+                        agent_wallet: this.account!.address,
                         model_id: item.options.modelId,
                         runtime_id: pogMessage.runtime_id,
                         generation_process: {
@@ -354,6 +399,7 @@ export class RxMClient {
 
     /**
      * Verify whether content (or hash) is already registered.
+     * Available in both writable and read-only modes.
      */
     async verify(contentOrHash: string): Promise<VerifyResult> {
         const hash = contentOrHash.startsWith('sha256:')
@@ -365,6 +411,7 @@ export class RxMClient {
 
     /**
      * Get record details by ID.
+     * Available in both writable and read-only modes.
      */
     async getRecord(recordId: string): Promise<RecordDetail> {
         return this.http.get<RecordDetail>(`/v1/records/${recordId}`);
@@ -372,17 +419,38 @@ export class RxMClient {
 
     /**
      * Export an offline-verifiable receipt.
+     * Available in both writable and read-only modes.
      */
     async export(recordId: string): Promise<ExportData> {
         return this.http.get<ExportData>(`/v1/records/${recordId}/export`);
     }
 
     /**
-     * List records from the current wallet with filters.
+     * List records with filters.
+     *
+     * In writable mode: defaults to the client's account address.
+     * In read-only mode: `agentWallet` is required.
+     * In writable mode: `agentWallet` can query another wallet (endpoint is public).
      */
     async listRecords(options?: ListRecordsOptions): Promise<ListRecordsResult> {
+        let wallet: string;
+
+        if (options?.agentWallet) {
+            // Explicit wallet — works in both modes
+            wallet = options.agentWallet;
+        } else if (this.account) {
+            // Writable mode — default to own wallet
+            wallet = this.account.address;
+        } else {
+            // Read-only mode without agentWallet
+            throw new RxMValidationError(
+                'listRecords() requires agentWallet when the client is initialized in read-only mode.',
+                { code: 'missing_agent_wallet' },
+            );
+        }
+
         const params = new URLSearchParams();
-        params.set('agent_wallet', this.account.address);
+        params.set('agent_wallet', wallet);
         if (options?.state) params.set('state', options.state);
         if (options?.limit) params.set('limit', options.limit.toString());
         if (options?.offset) params.set('offset', options.offset.toString());
@@ -395,6 +463,7 @@ export class RxMClient {
 
     /**
      * Wait for a record to be anchored on-chain (polling).
+     * Available in both writable and read-only modes (read-only polling).
      *
      * @param recordId - Record ID
      * @param timeoutMs - Maximum timeout (default: 30s)
