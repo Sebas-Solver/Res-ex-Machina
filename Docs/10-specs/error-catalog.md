@@ -120,8 +120,10 @@ All errors follow this JSON format:
 |---|---|---|---|
 | 405 | `method_not_allowed` | HTTP method not supported | DELETE on any endpoint, PUT on records |
 | 415 | `unsupported_media_type` | Content-Type is not application/json | Incorrect header |
+| 429 | `rate_limit_exceeded` | Too many requests | Rate limit per window exceeded (Redis or in-memory) |
 | 500 | `internal_error` | Internal server error | Unexpected error (never exposes details) |
 | 503 | `service_unavailable` | Service temporarily unavailable | Maintenance or dependency failure |
+| 503 | `service_degraded` | Write operations temporarily unavailable | Redis down + `RATE_LIMIT_WRITE_ON_REDIS_DOWN=503` (P0-1). Read operations remain available. Response includes `retry_after` hint. |
 
 ---
 

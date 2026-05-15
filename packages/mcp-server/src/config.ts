@@ -125,3 +125,11 @@ export function setConfirmationMode(
   cachedConfig.MCP_CONFIRMATION_MODE = mode;
   return { previousMode, allowed: true };
 }
+
+/**
+ * Test-only: Reset the cached config so getConfig() will re-parse env vars.
+ * @internal
+ */
+export function _resetConfigForTest(): void {
+  cachedConfig = null;
+}

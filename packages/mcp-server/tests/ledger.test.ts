@@ -270,6 +270,117 @@ describe('MemoryLedger', () => {
     });
   });
 
+  // ─── Audit Events (P0-2) ──────────────────────────────────
+
+  describe('audit events', () => {
+    it('should record and retrieve audit events', () => {
+      ledger.recordAuditEvent({
+        eventId: 'evt-001',
+        eventType: 'confirmation_mode_change',
+        actorWallet: '0xABC',
+        actorType: 'agent',
+        previousValue: 'require',
+        newValue: 'auto',
+        reason: 'Testing autonomous mode',
+        requestId: 'req-001',
+      });
+
+      const events = ledger.getAuditEvents();
+      expect(events).toHaveLength(1);
+      expect(events[0].eventId).toBe('evt-001');
+      expect(events[0].eventType).toBe('confirmation_mode_change');
+      expect(events[0].actorWallet).toBe('0xABC');
+      expect(events[0].actorType).toBe('agent');
+      expect(events[0].previousValue).toBe('require');
+      expect(events[0].newValue).toBe('auto');
+      expect(events[0].reason).toBe('Testing autonomous mode');
+      expect(events[0].requestId).toBe('req-001');
+      expect(events[0].createdAt).toBeGreaterThan(0);
+    });
+
+    it('should filter audit events by type', () => {
+      ledger.recordAuditEvent({
+        eventId: 'evt-change',
+        eventType: 'confirmation_mode_change',
+        actorWallet: '0xABC',
+        actorType: 'agent',
+        previousValue: 'require',
+        newValue: 'dry-run',
+        reason: 'Testing',
+        requestId: null,
+      });
+
+      ledger.recordAuditEvent({
+        eventId: 'evt-reset',
+        eventType: 'confirmation_mode_reset',
+        actorWallet: null,
+        actorType: 'system',
+        previousValue: null,
+        newValue: 'require',
+        reason: 'process_restart_safe_default',
+        requestId: null,
+      });
+
+      const changes = ledger.getAuditEvents('confirmation_mode_change');
+      expect(changes).toHaveLength(1);
+      expect(changes[0].eventId).toBe('evt-change');
+
+      const resets = ledger.getAuditEvents('confirmation_mode_reset');
+      expect(resets).toHaveLength(1);
+      expect(resets[0].eventId).toBe('evt-reset');
+      expect(resets[0].actorType).toBe('system');
+    });
+
+    it('should return events in reverse chronological order', () => {
+      ledger.recordAuditEvent({
+        eventId: 'evt-first',
+        eventType: 'confirmation_mode_change',
+        actorWallet: null,
+        actorType: 'operator',
+        previousValue: 'require',
+        newValue: 'dry-run',
+        reason: 'First change',
+        requestId: null,
+      });
+
+      // Small delay to ensure different timestamps
+      ledger.recordAuditEvent({
+        eventId: 'evt-second',
+        eventType: 'confirmation_mode_change',
+        actorWallet: null,
+        actorType: 'operator',
+        previousValue: 'dry-run',
+        newValue: 'require',
+        reason: 'Second change',
+        requestId: null,
+      });
+
+      const events = ledger.getAuditEvents();
+      expect(events).toHaveLength(2);
+      // Most recent first
+      expect(events[0].eventId).toBe('evt-second');
+      expect(events[1].eventId).toBe('evt-first');
+    });
+
+    it('should respect limit parameter', () => {
+      for (let i = 0; i < 10; i++) {
+        ledger.recordAuditEvent({
+          eventId: `evt-${i}`,
+          eventType: 'confirmation_mode_change',
+          actorWallet: null,
+          actorType: 'agent',
+          previousValue: 'require',
+          newValue: 'dry-run',
+          reason: `Change ${i}`,
+          requestId: null,
+        });
+      }
+
+      const limited = ledger.getAuditEvents(undefined, 3);
+      expect(limited).toHaveLength(3);
+    });
+  });
+
   // ─── Close ─────────────────────────────────────────────────
 
   describe('close', () => {

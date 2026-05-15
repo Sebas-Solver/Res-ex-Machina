@@ -263,7 +263,7 @@ src/
 │   ├── index.ts              # Drizzle connection
 │   └── schema.ts             # Records + webhooks model
 ├── middleware/
-│   ├── rateLimit.ts          # Rate limiting per IP (Redis + skipOnError)
+│   ├── rateLimit.ts          # Rate limiting per IP (Redis + degradation policy)
 │   └── walletAuth.ts         # EIP-191 authentication (webhooks + /records/mine)
 ├── routes/
 │   ├── health.ts             # GET /v1/health (30s cache)

@@ -71,7 +71,7 @@
 | Fee anti-reuse (UNIQUE) | ✅ | DB constraint + app-level check |
 | Nonce anti-replay | ✅ | Compound UNIQUE (wallet, nonce) |
 | SSRF protection | ✅ | HTTPS-only + DNS resolve + blocked ranges + no redirect |
-| Rate limiting resilience | ✅ | Redis-backed + `skipOnError` fallback |
+| Rate limiting resilience | ✅ | Redis-backed + degradation policy (P0-1: fail-closed for writes, in-memory for reads) |
 | Error sanitization | ✅ | Never exposes stack traces or internal details |
 | Webhook HMAC | ✅ | `sha256=` signature with server-generated 32-byte secret |
 | Idempotent anchoring | ✅ | Checks `state === 'anchored'` before new tx |

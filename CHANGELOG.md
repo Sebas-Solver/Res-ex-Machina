@@ -5,6 +5,41 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [Unreleased] — P0 Security Remediation (CTO Review)
+
+### P0-1: Rate Limiter Degradation Policy — H-01 Remediation
+
+#### Fixed (Critical)
+
+- **CRITICAL: `skipOnError: true` eliminated** — Rate limiter no longer silently disables when Redis fails. Replaced with explicit degradation policy:
+  - **GET endpoints**: Conservative in-memory fallback (30 req/min per IP per instance)
+  - **POST/write endpoints**: `503 Service Unavailable` in production (`RATE_LIMIT_WRITE_ON_REDIS_DOWN=503`)
+  - Configurable `local_fallback` mode for development/testnet (5 req/min strict limit)
+- **Redis health tracking** — `redisHealthy` flag with `connect`/`error` event listeners, logged transitions
+- **`/health` exempt** — Health endpoint excluded from aggressive rate limiting (always responds)
+- **Error response** — New `service_degraded` error code (503) with `retry_after` hint
+
+#### Added
+
+- **`RATE_LIMIT_WRITE_ON_REDIS_DOWN`** — Controls write endpoint behavior when Redis is down (`503` or `local_fallback`)
+- **`RATE_LIMIT_READ_ON_REDIS_DOWN`** — Controls read endpoint behavior when Redis is down (`local_fallback` default)
+- **22 unit tests** in `tests/rate-limit-policy.test.ts` — Full CTO policy matrix (4 scenarios + 10 endpoint combinations)
+
+### P0-2: Audit Trail for `confirmation_mode` — Safe Operations
+
+#### Added
+
+- **`audit_events` table** (SQLite) — Persistent, tamper-evident log for all confirmation mode changes:
+  - Fields: `event_id`, `event_type`, `actor_wallet`, `actor_type` (agent|operator|system), `previous_value`, `new_value`, `reason` (NOT NULL), `request_id`, `created_at`
+- **`MCP_ALLOW_AUTO_MODE`** — New env var (default `false` ALWAYS). Auto mode requires explicit opt-in
+- **Mandatory reason** — Switching to `auto` mode requires non-empty `reason` string
+- **Restart safe default (Option A)** — Process restart always resets to `require` mode with `process_restart_safe_default` audit event
+- **`setConfirmationMode()` returns metadata** — `{ previousMode, allowed, reason }` for audit trail integration
+- **7 unit tests** in `config.test.ts` — Auto mode rejection, reason validation, config reset
+- **4 audit event tests** in `ledger.test.ts` — CRUD, filtering, ordering, limits
+
+---
+
 ## [Unreleased] — x402 Protocol Integration (Agent Economy)
 
 ### x402 Native Payment Support — Epic #42
@@ -389,7 +424,7 @@ Full 6-phase security audit (STRIDE threat model, Red/Blue Team, technical check
   - Header `Retry-After: 30` on 503 responses (degraded mode) (#22)
 - **Rate limit with Redis** — Migrated from in-memory to shared Redis store (#17)
   - Factory `createRateLimitRedisClient()` in `config/redis.ts`
-  - `skipOnError: true` — if Redis goes down, rate limit is temporarily disabled (#22)
+  - `skipOnError: true` — ~~if Redis goes down, rate limit is temporarily disabled~~ **SUPERSEDED by P0-1**: replaced with explicit degradation policy (fail-closed for writes, in-memory for reads)
   - Namespace `rxm-rl:` to avoid collisions in shared Redis
 
 #### Improved

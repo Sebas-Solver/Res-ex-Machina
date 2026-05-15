@@ -173,4 +173,111 @@ describe('Config Schema Validation', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  // ─── P0-2: MCP_ALLOW_AUTO_MODE ──────────────────────────────
+
+  it('should default MCP_ALLOW_AUTO_MODE to false', () => {
+    const result = envSchema.safeParse({});
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.MCP_ALLOW_AUTO_MODE).toBe(false);
+    }
+  });
+
+  it('should accept MCP_ALLOW_AUTO_MODE=true', () => {
+    const result = envSchema.safeParse({ MCP_ALLOW_AUTO_MODE: 'true' });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.MCP_ALLOW_AUTO_MODE).toBe(true);
+    }
+  });
+});
+
+// ─── P0-2: setConfirmationMode ────────────────────────────────
+
+describe('setConfirmationMode (P0-2)', () => {
+  let setConfirmationMode: typeof import('../src/config').setConfirmationMode;
+  let getConfig: typeof import('../src/config').getConfig;
+  let _resetConfigForTest: typeof import('../src/config')._resetConfigForTest;
+
+  beforeEach(async () => {
+    // Reset modules to get fresh config state
+    jest.resetModules();
+    const configModule = await import('../src/config');
+    setConfirmationMode = configModule.setConfirmationMode;
+    getConfig = configModule.getConfig;
+    _resetConfigForTest = configModule._resetConfigForTest;
+  });
+
+  it('should reject auto mode when MCP_ALLOW_AUTO_MODE is false (default)', () => {
+    // Initialize config (MCP_ALLOW_AUTO_MODE defaults to false)
+    getConfig();
+    const result = setConfirmationMode('auto', 'Testing');
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('Auto mode is disabled');
+  });
+
+  it('should reject auto mode without reason even if allowed', () => {
+    process.env.MCP_ALLOW_AUTO_MODE = 'true';
+    _resetConfigForTest();
+    getConfig();
+    
+    const result = setConfirmationMode('auto');
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('mandatory reason');
+    
+    delete process.env.MCP_ALLOW_AUTO_MODE;
+  });
+
+  it('should reject auto mode with empty reason', () => {
+    process.env.MCP_ALLOW_AUTO_MODE = 'true';
+    _resetConfigForTest();
+    getConfig();
+    
+    const result = setConfirmationMode('auto', '   ');
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('mandatory reason');
+    
+    delete process.env.MCP_ALLOW_AUTO_MODE;
+  });
+
+  it('should allow auto mode with valid reason and MCP_ALLOW_AUTO_MODE=true', () => {
+    process.env.MCP_ALLOW_AUTO_MODE = 'true';
+    _resetConfigForTest();
+    getConfig();
+    
+    const result = setConfirmationMode('auto', 'Batch processing scheduled job');
+    expect(result.allowed).toBe(true);
+    expect(result.previousMode).toBe('require');
+    
+    delete process.env.MCP_ALLOW_AUTO_MODE;
+  });
+
+  it('should return previous mode on successful change', () => {
+    getConfig();
+    
+    // Default is require, switch to dry-run
+    const result1 = setConfirmationMode('dry-run');
+    expect(result1.allowed).toBe(true);
+    expect(result1.previousMode).toBe('require');
+    
+    // Now switch back to require
+    const result2 = setConfirmationMode('require');
+    expect(result2.allowed).toBe(true);
+    expect(result2.previousMode).toBe('dry-run');
+  });
+
+  it('should allow require and dry-run without reason', () => {
+    getConfig();
+    
+    expect(setConfirmationMode('require').allowed).toBe(true);
+    expect(setConfirmationMode('dry-run').allowed).toBe(true);
+  });
+
+  it('should fail when config is not initialized', () => {
+    _resetConfigForTest();
+    const result = setConfirmationMode('require');
+    expect(result.allowed).toBe(false);
+    expect(result.reason).toContain('Config not initialized');
+  });
 });
