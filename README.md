@@ -5,8 +5,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-Private%20Alpha-brightgreen" alt="Status: Private Alpha"/>
-  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.2--p0-blue" alt="Version: v1.0.0-alpha.2-p0"/>
-  <img src="https://img.shields.io/badge/tests-253%20passing%20(191%20vitest%20%2B%2062%20jest)-brightgreen" alt="Tests: 253 passing"/>
+  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.3-blue" alt="Version: v1.0.0-alpha.3"/>
+  <img src="https://img.shields.io/badge/tests-277%20passing-brightgreen" alt="Tests: 277 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/security-P0%20Hardening%20Complete-brightgreen" alt="Security: P0 Hardening Complete"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
@@ -157,14 +157,20 @@ Trivial integration — from 50+ lines of code to 5:
 ```typescript
 import { RxMClient } from '@res-ex-machina/sdk';
 
-const rxm = new RxMClient({ account: wallet, rpcUrl: '...', apiUrl: '...' });
+// Writable client — full capabilities (register, sign, pay)
+const rxm = new RxMClient({ account: wallet, rpcUrl: '...', apiUrl: '...', feeReceiverAddress: '0x...' });
 const receipt = await rxm.record('AI generated content', {
   modelId: 'openai:gpt-4o:2026-01',
   contentType: 'text/plain',
 });
+
+// Read-only client — verify & audit without a wallet
+const verifier = new RxMClient({ apiUrl: '...', readOnly: true });
+const record = await verifier.getRecord('rec_...');
+const proof  = await verifier.verify('rec_...');
 ```
 
-**Features**: WebCrypto hashing, EIP-712 signing, automatic fee payment (or BYO), retry with backoff, webhooks subclient, typed errors.
+**Features**: WebCrypto hashing, EIP-712 signing, automatic fee payment (or BYO), retry with backoff, webhooks subclient, typed errors, **read-only mode** for wallet-less verification.
 
 📖 **[Full SDK documentation →](packages/sdk/README.md)**
 

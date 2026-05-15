@@ -5,7 +5,29 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [v1.0.0-alpha.2-p0] — 2026-05-15 — P0 Security Remediation ✅ CTO Approved
+## [v1.0.0-alpha.3] — 2026-05-15 — P1-2 SDK Read-Only Mode
+
+### Added
+
+- **`readOnly: true` client mode** — `RxMClient` now supports wallet-less instantiation for verifiers and auditors:
+  ```typescript
+  const rxm = new RxMClient({ apiUrl: 'https://...', readOnly: true });
+  ```
+- **Discriminated union (`RxMClientOptions`)** — TypeScript enforces that `readOnly: true` rejects `account`, `rpcUrl`, `feeReceiverAddress` at compile time
+- **`RxMReadOnlyError`** (code: `read_only_client`) — New error class thrown by write operations: `record()`, `recordHash()`, `recordBatch()`, `webhooks.register()`, `webhooks.list()`, `webhooks.delete()`
+- **`agentWallet` parameter for `listRecords()`** — Required in read-only mode, optional in writable mode (defaults to `this.account.address`)
+- **Runtime constructor validation** — Rejects ambiguous configs even from plain JavaScript:
+  - `readOnly: true` + wallet params → `RxMValidationError` ("Ambiguous configuration")
+  - `readOnly: false` without wallet params → `RxMValidationError` ("Missing writable configuration")
+- **24 new tests** in `tests/readonly.test.ts` — Constructor, guards, read ops, listRecords, writable regression
+
+### Exports
+
+- `RxMReadOnlyError`, `RxMWritableClientOptions`, `RxMReadOnlyClientOptions` added to public API
+
+---
+
+## [v1.0.0-alpha.2-p0] — 2026-05-15 — P0 Security Remediation
 
 ### P0-1: Rate Limiter Degradation Policy — H-01 Remediation
 
