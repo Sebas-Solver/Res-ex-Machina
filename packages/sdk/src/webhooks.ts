@@ -3,18 +3,31 @@
  *
  * Webhooks use EIP-191 authentication (plain message signature),
  * different from records which use EIP-712.
+ *
+ * When the parent RxMClient is in read-only mode, all methods throw
+ * RxMReadOnlyError because webhook operations require wallet authentication.
  */
 import type { Account, Hex } from 'viem';
 import { RxMHttpClient } from './http.js';
+import { RxMReadOnlyError } from './errors.js';
 import type { WebhookRegistration, WebhookListResult } from './types.js';
 
 export class WebhooksClient {
-    private readonly http: RxMHttpClient;
-    private readonly account: Account;
+    protected http: RxMHttpClient;
+    protected account: Account | null;
 
-    constructor(http: RxMHttpClient, account: Account) {
+    constructor(http: RxMHttpClient, account: Account | null) {
         this.http = http;
         this.account = account;
+    }
+
+    /**
+     * Guard: throws RxMReadOnlyError if no account is available.
+     */
+    private assertHasAccount(operation: string): asserts this is { account: Account } {
+        if (!this.account) {
+            throw new RxMReadOnlyError(`webhooks.${operation}`);
+        }
     }
 
     /**
@@ -22,15 +35,17 @@ export class WebhooksClient {
      * Signature message: "RxM-Webhook:{wallet}:{timestamp}"
      */
     private async getAuthHeaders(): Promise<Record<string, string>> {
+        this.assertHasAccount('getAuthHeaders');
+
         const timestamp = new Date().toISOString();
-        const wallet = this.account.address;
+        const wallet = this.account!.address;
         const message = `RxM-Webhook:${wallet}:${timestamp}`;
 
-        if (!this.account.signMessage) {
+        if (!this.account!.signMessage) {
             throw new Error('Account must support signMessage (use privateKeyToAccount or similar)');
         }
 
-        const signature = await this.account.signMessage({ message });
+        const signature = await this.account!.signMessage({ message });
 
         return {
             'X-Wallet-Address': wallet,
@@ -46,14 +61,17 @@ export class WebhooksClient {
      * @returns { webhookId, secret }
      */
     async register(url: string): Promise<WebhookRegistration> {
+        this.assertHasAccount('register');
         const headers = await this.getAuthHeaders();
         return this.http.post<WebhookRegistration>('/v1/webhooks', { url }, headers);
     }
 
     /**
      * List active webhooks for the current wallet.
+     * Requires wallet authentication (EIP-191).
      */
     async list(): Promise<WebhookListResult> {
+        this.assertHasAccount('list');
         const headers = await this.getAuthHeaders();
         return this.http.get<WebhookListResult>('/v1/webhooks', headers);
     }
@@ -64,6 +82,7 @@ export class WebhooksClient {
      * @param webhookId - ID of the webhook to remove
      */
     async delete(webhookId: string): Promise<void> {
+        this.assertHasAccount('delete');
         const headers = await this.getAuthHeaders();
         await this.http.delete(`/v1/webhooks/${webhookId}`, headers);
     }

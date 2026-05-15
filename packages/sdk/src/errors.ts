@@ -55,6 +55,20 @@ export class RxMValidationError extends RxMError {
 }
 
 /**
+ * Thrown when a read-only client attempts an operation that requires a wallet.
+ * Operations that require a wallet: record, recordBatch, webhooks, signing, paying.
+ */
+export class RxMReadOnlyError extends RxMError {
+    constructor(operation: string) {
+        super(
+            'read_only_client',
+            `This RxMClient was initialized in read-only mode and cannot perform operations that require a wallet. Attempted: ${operation}`,
+        );
+        this.name = 'RxMReadOnlyError';
+    }
+}
+
+/**
  * Parses an API error response and throws the appropriate typed exception.
  */
 export function parseApiError(statusCode: number, body: unknown): RxMError {
