@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 import { getConfig } from '../config.js';
-import { Ledger, LedgerStats, GuardrailResult, BatchJobStatus, BatchItemRecord, BatchJobResult } from './Ledger.js';
+import { Ledger, LedgerStats, GuardrailResult, BatchJobStatus, BatchItemRecord, BatchJobResult, AuditEvent, AuditEventType } from './Ledger.js';
 
 export class SqliteLedger implements Ledger {
   private db: Database.Database;
@@ -59,6 +59,20 @@ export class SqliteLedger implements Ledger {
         PRIMARY KEY (batch_id, content_hash),
         FOREIGN KEY (batch_id) REFERENCES batch_jobs(batch_id)
       );
+
+      CREATE TABLE IF NOT EXISTS audit_events (
+        event_id TEXT PRIMARY KEY,
+        event_type TEXT NOT NULL,
+        actor_wallet TEXT,
+        actor_type TEXT NOT NULL,
+        previous_value TEXT,
+        new_value TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        request_id TEXT,
+        created_at INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_audit_type ON audit_events(event_type);
+      CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_events(created_at);
     `);
   }
 
@@ -218,6 +232,50 @@ export class SqliteLedger implements Ledger {
         errorCode: r.error_code,
       })),
     };
+  }
+
+  // ─── Audit Events (P0-2) ──────────────────────────────────
+
+  public recordAuditEvent(event: Omit<AuditEvent, 'createdAt'>): void {
+    const stmt = this.db.prepare(`
+      INSERT INTO audit_events (event_id, event_type, actor_wallet, actor_type, previous_value, new_value, reason, request_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    stmt.run(
+      event.eventId,
+      event.eventType,
+      event.actorWallet,
+      event.actorType,
+      event.previousValue,
+      event.newValue,
+      event.reason,
+      event.requestId,
+      Date.now()
+    );
+  }
+
+  public getAuditEvents(eventType?: AuditEventType, limit = 50): AuditEvent[] {
+    let query = 'SELECT * FROM audit_events';
+    const params: any[] = [];
+    if (eventType) {
+      query += ' WHERE event_type = ?';
+      params.push(eventType);
+    }
+    query += ' ORDER BY created_at DESC LIMIT ?';
+    params.push(limit);
+
+    const rows = this.db.prepare(query).all(...params) as any[];
+    return rows.map((r: any) => ({
+      eventId: r.event_id,
+      eventType: r.event_type,
+      actorWallet: r.actor_wallet,
+      actorType: r.actor_type,
+      previousValue: r.previous_value,
+      newValue: r.new_value,
+      reason: r.reason,
+      requestId: r.request_id,
+      createdAt: r.created_at,
+    }));
   }
 
   public close(): void {

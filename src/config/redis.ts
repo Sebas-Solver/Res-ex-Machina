@@ -55,8 +55,8 @@ export function createHealthRedisClient(): Redis {
  * Factory to create an ioredis client for rate limiting (Issue #17).
  *
  * Uses lazyConnect and short connectTimeout to avoid blocking startup.
- * If Redis is unavailable, @fastify/rate-limit with skipOnError
- * falls back to in-memory automatically (Issue #22).
+ * When Redis is unavailable, the rate limiter activates a degradation
+ * policy (P0-1): fail-closed for writes, in-memory fallback for reads.
  */
 export function createRateLimitRedisClient(): Redis {
     const client = new Redis({

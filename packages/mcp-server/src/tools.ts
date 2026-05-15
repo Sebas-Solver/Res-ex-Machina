@@ -114,18 +114,62 @@ if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS && viemAccount) {
 }
 
 export function registerTools(server: McpServer) {
+
+  // P0-2: Log process start as audit event (Opción A — restart resets to 'require')
+  // This ensures that if the process was previously in 'auto' mode, the reset is recorded.
+  try {
+    ledger.recordAuditEvent({
+      eventId: randomUUID(),
+      eventType: 'confirmation_mode_reset',
+      actorWallet: publicAddress || null,
+      actorType: 'system',
+      previousValue: null, // unknown — previous process may have been in any mode
+      newValue: 'require',
+      reason: 'process_restart_safe_default',
+      requestId: null,
+    });
+  } catch {
+    // Don't block server startup if ledger is not yet ready
+  }
   
   // @ts-expect-error — TS2589: Known MCP SDK issue with deep Zod schema inference
   server.tool(
     "rxm_set_confirmation_mode",
-    "Updates the confirmation mode for the MCP server. Allowed values: 'require' (human must review), 'auto' (fully automated with guardrails), 'dry-run' (simulates transactions).",
-    { mode: z.enum(['require', 'auto', 'dry-run']).describe("The new confirmation mode") },
-    async ({ mode }) => {
-      setConfirmationMode(mode);
+    "Updates the confirmation mode for the MCP server. Allowed values: 'require' (human must review), 'auto' (fully automated with guardrails — requires reason), 'dry-run' (simulates transactions). Changing to 'auto' requires MCP_ALLOW_AUTO_MODE=true and a mandatory reason.",
+    {
+      mode: z.enum(['require', 'auto', 'dry-run']).describe("The new confirmation mode"),
+      reason: z.string().optional().describe("Mandatory reason when switching to 'auto' mode. Optional for other modes.")
+    },
+    async ({ mode, reason }) => {
+      const result = setConfirmationMode(mode, reason);
+
+      if (!result.allowed) {
+        return {
+          content: [{
+            type: "text",
+            text: `❌ Mode change rejected: ${result.reason}`
+          }]
+        };
+      }
+
+      // P0-2: Record the mode change as an audit event in persistent storage
+      ledger.recordAuditEvent({
+        eventId: randomUUID(),
+        eventType: 'confirmation_mode_change',
+        actorWallet: publicAddress || null,
+        actorType: 'agent',
+        previousValue: result.previousMode,
+        newValue: mode,
+        reason: reason || `Mode changed to ${mode}`,
+        requestId: randomUUID(),
+      });
+
       return {
         content: [{
           type: "text",
-          text: `Confirmation mode successfully updated to: ${mode}`
+          text: `Confirmation mode updated: ${result.previousMode} → ${mode}` +
+                (reason ? ` (reason: ${reason})` : '') +
+                ` [audit event recorded]`
         }]
       };
     }

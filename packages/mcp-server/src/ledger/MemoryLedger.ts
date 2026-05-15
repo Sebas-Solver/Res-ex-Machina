@@ -1,11 +1,12 @@
 import { getConfig } from '../config.js';
-import { Ledger, LedgerStats, GuardrailResult, SpendingRecord, FailedAttemptRecord, BatchJobStatus, BatchItemRecord, BatchJobResult, BatchJob } from './Ledger.js';
+import { Ledger, LedgerStats, GuardrailResult, SpendingRecord, FailedAttemptRecord, BatchJobStatus, BatchItemRecord, BatchJobResult, BatchJob, AuditEvent, AuditEventType } from './Ledger.js';
 
 export class MemoryLedger implements Ledger {
   private spendingLogs: SpendingRecord[] = [];
   private failedAttempts: FailedAttemptRecord[] = [];
   private batchJobs: Map<string, BatchJob> = new Map();
   private batchItems: Map<string, BatchItemRecord[]> = new Map();
+  private auditEvents: AuditEvent[] = [];
 
   public recordTransaction(recordId: string, txHash: string, amountWei: bigint, gasWei: bigint): void {
     this.spendingLogs.push({
@@ -140,6 +141,23 @@ export class MemoryLedger implements Ledger {
       job,
       items: this.batchItems.get(batchId) || [],
     };
+  }
+
+  // ─── Audit Events (P0-2) ──────────────────────────────────
+
+  public recordAuditEvent(event: Omit<AuditEvent, 'createdAt'>): void {
+    this.auditEvents.push({
+      ...event,
+      createdAt: Date.now(),
+    });
+  }
+
+  public getAuditEvents(eventType?: AuditEventType, limit = 50): AuditEvent[] {
+    let events = this.auditEvents;
+    if (eventType) {
+      events = events.filter(e => e.eventType === eventType);
+    }
+    return events.slice(-limit).reverse();
   }
 
   public close(): void {

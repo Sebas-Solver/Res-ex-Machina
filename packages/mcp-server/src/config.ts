@@ -23,6 +23,9 @@ export const envSchema = z.object({
   MCP_WALLET_ADDRESS: z.string().startsWith('0x').optional(),
   MCP_ENABLE_WRITE_TOOLS: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
   MCP_CONFIRMATION_MODE: z.enum(['require', 'auto', 'dry-run']).default('require'),
+  // P0-2: Default false ALWAYS. Auto mode is an explicit opt-in, not a default.
+  // To enable in testnet, set MCP_ALLOW_AUTO_MODE=true in .env.local
+  MCP_ALLOW_AUTO_MODE: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
   MCP_PAYMENT_MODE: z.enum(['legacy', 'x402']).default('x402'),
   MCP_RECORDING_POLICY: z.enum(['explicit', 'implicit']).default('explicit'),
 
@@ -86,8 +89,39 @@ export function getConfig(): EnvConfig {
   return cachedConfig;
 }
 
-export function setConfirmationMode(mode: 'require' | 'auto' | 'dry-run'): void {
-  if (cachedConfig) {
-    cachedConfig.MCP_CONFIRMATION_MODE = mode;
+/**
+ * Changes the active confirmation mode.
+ * P0-2: Returns the previous mode for audit trail. Validates auto mode restrictions.
+ * @returns { previousMode, allowed, reason? }
+ */
+export function setConfirmationMode(
+  mode: 'require' | 'auto' | 'dry-run',
+  reason?: string
+): { previousMode: string; allowed: boolean; reason?: string } {
+  if (!cachedConfig) {
+    return { previousMode: 'unknown', allowed: false, reason: 'Config not initialized' };
   }
+
+  const previousMode = cachedConfig.MCP_CONFIRMATION_MODE;
+
+  // P0-2: Auto mode requires explicit opt-in AND mandatory reason
+  if (mode === 'auto') {
+    if (!cachedConfig.MCP_ALLOW_AUTO_MODE) {
+      return {
+        previousMode,
+        allowed: false,
+        reason: 'Auto mode is disabled. Set MCP_ALLOW_AUTO_MODE=true to enable.',
+      };
+    }
+    if (!reason || reason.trim().length === 0) {
+      return {
+        previousMode,
+        allowed: false,
+        reason: 'Switching to auto mode requires a mandatory reason.',
+      };
+    }
+  }
+
+  cachedConfig.MCP_CONFIRMATION_MODE = mode;
+  return { previousMode, allowed: true };
 }

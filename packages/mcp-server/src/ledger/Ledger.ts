@@ -52,6 +52,23 @@ export interface BatchJobResult {
   items: BatchItemRecord[];
 }
 
+// ─── Audit Events (P0-2 remediation) ──────────────────────────
+
+export type AuditEventType = 'confirmation_mode_change' | 'confirmation_mode_reset';
+export type ActorType = 'agent' | 'operator' | 'system';
+
+export interface AuditEvent {
+  eventId: string;
+  eventType: AuditEventType;
+  actorWallet: string | null;
+  actorType: ActorType;
+  previousValue: string | null;
+  newValue: string;
+  reason: string;
+  requestId: string | null;
+  createdAt: number;
+}
+
 // ─── Ledger Interface ─────────────────────────────────────
 
 export interface Ledger {
@@ -69,5 +86,10 @@ export interface Ledger {
   addBatchItem(item: BatchItemRecord): void;
   getBatchJob(batchId: string): BatchJobResult | null;
 
+  // Audit events (P0-2)
+  recordAuditEvent(event: Omit<AuditEvent, 'createdAt'>): void;
+  getAuditEvents(eventType?: AuditEventType, limit?: number): AuditEvent[];
+
   close(): void;
 }
+
