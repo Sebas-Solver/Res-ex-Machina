@@ -38,6 +38,18 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **7 unit tests** in `config.test.ts` — Auto mode rejection, reason validation, config reset
 - **4 audit event tests** in `ledger.test.ts` — CRUD, filtering, ordering, limits
 
+### CI: MCP Server Type Check — Infrastructure Fix
+
+#### Changed
+
+- **MCP Server CI step split** — Separated `npm ci` and `tsc --noEmit` into independent steps so the type check starts with a clean heap
+- **`NODE_OPTIONS: --max-old-space-size=6144`** — Applied only to MCP Server type check step (not global)
+- **Root cause**: `viem` (Ethereum types library) generates an extremely complex type graph that exceeds GitHub Actions runner memory (~7GB). Documented as [Issue #43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)
+
+#### Note
+
+All other CI steps pass green: `npm audit`, TypeScript (main), ESLint, 191 vitest tests, coverage, production build.
+
 ---
 
 ## [Unreleased] — x402 Protocol Integration (Agent Economy)
