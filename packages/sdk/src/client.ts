@@ -62,8 +62,11 @@ export class RxMClient {
     /** Webhooks subclient (register, list, delete) */
     public readonly webhooks: WebhooksClient;
 
-    constructor(options: RxMClientOptions) {
+    constructor(options: any) { // Accept any at runtime to enforce strictly
         if (options.readOnly) {
+            if (options.account || options.rpcUrl || options.feeReceiverAddress) {
+                throw new RxMValidationError('Ambiguous configuration: readOnly is true, but writable options (account, rpcUrl, feeReceiverAddress) were provided.');
+            }
             // Read-only mode — no wallet, no signing, no fees
             this._readOnly = true;
             this.account = null;
@@ -82,6 +85,9 @@ export class RxMClient {
             // Webhooks: pass null account → all methods throw RxMReadOnlyError
             this.webhooks = new WebhooksClient(this.http, null);
         } else {
+            if (!options.account || !options.rpcUrl || !options.feeReceiverAddress) {
+                throw new RxMValidationError('Missing writable configuration: account, rpcUrl, and feeReceiverAddress are required unless readOnly is true.');
+            }
             // Writable mode — full capabilities
             this._readOnly = false;
             this.account = options.account;

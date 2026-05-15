@@ -44,8 +44,29 @@ describe('RxMClient — Read-only constructor', () => {
 
     it('should NOT require account, rpcUrl, or feeReceiverAddress', () => {
         // This compiles and runs without error — TypeScript enforces the union
-        const rxm = new RxMClient({ apiUrl: API_URL, readOnly: true });
+        const rxm = new RxMClient({ apiUrl: API_URL, readOnly: true } as any);
         expect(rxm.readOnly).toBe(true);
+    });
+
+    it('should reject ambiguous configuration at runtime (readOnly=true with writable params)', () => {
+        expect(() => {
+            new RxMClient({
+                apiUrl: API_URL,
+                readOnly: true,
+                account,
+                rpcUrl: 'https://sepolia.base.org',
+                feeReceiverAddress: '0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
+            } as any);
+        }).toThrow(RxMValidationError);
+    });
+
+    it('should reject missing writable configuration at runtime (readOnly=false without writable params)', () => {
+        expect(() => {
+            new RxMClient({
+                apiUrl: API_URL,
+                readOnly: false,
+            } as any);
+        }).toThrow(RxMValidationError);
     });
 
     it('should accept custom httpTimeoutMs and httpRetries', () => {
