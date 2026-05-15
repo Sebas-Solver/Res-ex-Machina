@@ -8,7 +8,7 @@
   <img src="https://img.shields.io/badge/version-v1.0.0--alpha.2--p0-blue" alt="Version: v1.0.0-alpha.2-p0"/>
   <img src="https://img.shields.io/badge/tests-253%20passing%20(191%20vitest%20%2B%2062%20jest)-brightgreen" alt="Tests: 253 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
-  <img src="https://img.shields.io/badge/security-P0%20CTO%20Approved-brightgreen" alt="Security: P0 CTO Approved"/>
+  <img src="https://img.shields.io/badge/security-P0%20Hardening%20Complete-brightgreen" alt="Security: P0 Hardening Complete"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
   <img src="https://img.shields.io/badge/status_page-live-brightgreen" alt="Status Page: Live"/>
