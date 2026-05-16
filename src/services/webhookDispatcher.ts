@@ -36,14 +36,11 @@ export const webhookQueue = new Queue('webhook_dispatch', {
     },
 });
 
-/** Webhook job data
- * @security TODO (Audit M-03): The `secret` field is stored in plaintext in DB and Redis.
- * Encrypt with a derived key from ADMIN_API_KEY before persisting. Requires schema migration.
+/** Webhook job data — P1-1: secret removed from job payload.
+ * The dispatcher loads and decrypts the secret from DB at delivery time.
  */
 export interface WebhookJobData {
     webhookId: string;
-    url: string;
-    secret: string;
     deliveryId: string;
     payload: WebhookPayload;
 }
@@ -111,8 +108,6 @@ export async function enqueueWebhookDispatch(
             'deliver-webhook',
             {
                 webhookId: webhook.webhookId,
-                url: webhook.url,
-                secret: webhook.secret,
                 deliveryId,
                 payload,
             } satisfies WebhookJobData,
@@ -133,7 +128,44 @@ export function signPayload(secret: string, body: string): string {
  * HTTPS fetch with 5s timeout, no redirects.
  */
 export async function executeWebhookDelivery(job: Job<WebhookJobData>): Promise<void> {
-    const { url, secret, payload } = job.data;
+    const { webhookId, payload } = job.data;
+
+    // 1. Fetch webhook details from DB
+    const [webhook] = await db
+        .select()
+        .from(webhooks)
+        .where(eq(webhooks.webhookId, webhookId))
+        .limit(1);
+
+    if (!webhook) {
+        throw new Error(`Webhook ${webhookId} not found in DB`);
+    }
+    if (!webhook.active) {
+        throw new Error(`Webhook ${webhookId} is inactive`);
+    }
+
+    const url = webhook.url;
+    let secret = '';
+
+    // 2. Load secret (decrypt or use legacy plaintext)
+    if (webhook.secretCiphertext && webhook.secretIv && webhook.secretAuthTag && webhook.secretKeyVersion) {
+        const { decryptSecret } = await import('./secretCrypto.js');
+        secret = decryptSecret(
+            {
+                ciphertext: webhook.secretCiphertext,
+                iv: webhook.secretIv,
+                authTag: webhook.secretAuthTag,
+                keyVersion: webhook.secretKeyVersion,
+            },
+            webhook.webhookId,
+            webhook.agentWallet
+        );
+    } else if (webhook.secret) {
+        // legacy fallback
+        secret = webhook.secret;
+    } else {
+        throw new Error(`Webhook ${webhookId} has no secret configured`);
+    }
 
     // M-04: Re-validate DNS at delivery time to prevent DNS rebinding.
     // The URL was checked at registration, but DNS can change between
