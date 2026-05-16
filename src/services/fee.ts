@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {
-    formatEther,
     parseEther,
     type Hex,
 } from 'viem';
