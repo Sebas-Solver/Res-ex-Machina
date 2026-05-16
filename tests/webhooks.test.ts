@@ -246,6 +246,12 @@ describe('P1-1: GET /v1/webhooks never returns secret or ciphertext', () => {
         expect(mapped).not.toHaveProperty('secret');
         expect(mapped).not.toHaveProperty('secretCiphertext');
         expect(mapped).not.toHaveProperty('secret_ciphertext');
+        expect(mapped).not.toHaveProperty('secretIv');
+        expect(mapped).not.toHaveProperty('secret_iv');
+        expect(mapped).not.toHaveProperty('secretAuthTag');
+        expect(mapped).not.toHaveProperty('secret_auth_tag');
+        expect(mapped).not.toHaveProperty('secretKeyVersion');
+        expect(mapped).not.toHaveProperty('secret_key_version');
     });
 });
 
@@ -321,6 +327,8 @@ describe('P1-1: BullMQ job data contains no secret and no URL', () => {
         expect(jobData).not.toHaveProperty('secret');
         expect(jobData).not.toHaveProperty('url');
         expect(jobData).not.toHaveProperty('secretCiphertext');
+        expect(jobData).not.toHaveProperty('secretIv');
+        expect(jobData).not.toHaveProperty('secretAuthTag');
     });
 
     it('enqueueWebhookDispatch adds job with correct shape (no secret/url)', async () => {
