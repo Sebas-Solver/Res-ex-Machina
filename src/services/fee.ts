@@ -99,7 +99,7 @@ export async function verifyFee(feeTxHash: string): Promise<FeeVerificationResul
 
     return {
         verified: true,
-        amount: formatEther(tx.value),
+        amount: tx.value.toString(),
         recipient: tx.to as string,
         blockNumber: receipt.blockNumber,
         confirmedAt: new Date(txTimestamp),

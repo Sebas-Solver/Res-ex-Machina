@@ -49,7 +49,7 @@ export class PaymentVerifier {
    * Verifica y liquida el pago.
    */
   async verifyAndSettle(evidence: PaymentEvidence, contentHash: string): Promise<PaymentAttempt & { __legacyFeeData?: LegacyFeeData }> {
-    const paymentIdentifier = evidence.method === 'x402_usdc' ? evidence.paymentIdentifier : null;
+    const paymentIdentifier = evidence.method === 'x402_usdc' ? evidence.paymentIdentifier : evidence.txHash;
     const txHash = evidence.method === 'legacy_eth' ? evidence.txHash : null;
 
     // Create payment_attempt
