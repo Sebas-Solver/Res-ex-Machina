@@ -154,8 +154,12 @@ const start = async () => {
             try {
                 await import('./workers/anchor.worker.js');
                 app.log.info('⚓ Anchor worker started (inline, same process)');
+                
+                const { startWebhookWorker } = await import('./workers/webhook.worker.js');
+                startWebhookWorker();
+                app.log.info('🚀 Webhook dispatch worker started (inline, same process)');
             } catch (workerErr) {
-                app.log.error(workerErr, '❌ Anchor worker failed to start (Redis available?)');
+                app.log.error(workerErr, '❌ Worker(s) failed to start (Redis available?)');
                 // Don't process.exit — the API can work without the worker,
                 // jobs will be processed when the worker becomes available.
             }
@@ -181,10 +185,19 @@ async function shutdown(signal: string) {
         await app.close();
         app.log.info('✅ Fastify closed (requests drained)');
 
-        // 2. Close BullMQ queue (dynamic import to avoid Redis connection on module load)
+        // 2. Close BullMQ queues (dynamic import to avoid Redis connection on module load)
         const { anchorQueue } = await import('./services/queue.js');
         await anchorQueue.close();
         app.log.info('✅ Anchoring queue closed');
+
+        const { webhookQueue } = await import('./services/webhookDispatcher.js');
+        await webhookQueue.close();
+        app.log.info('✅ Webhook dispatch queue closed');
+
+        if (process.env.NODE_ENV === 'production' && process.env.START_INLINE_WORKER !== 'false') {
+            const { stopWebhookWorker } = await import('./workers/webhook.worker.js');
+            await stopWebhookWorker();
+        }
 
         // 3. Close PostgreSQL pool
         await client.end();
