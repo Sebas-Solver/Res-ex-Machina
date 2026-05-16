@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
-import { db } from '../src/db/index.js';
-import { webhooks } from '../src/db/schema.js';
-import { enqueueWebhookDispatch, webhookQueue } from '../src/services/webhookDispatcher.js';
-import { startWebhookWorker, stopWebhookWorker } from '../src/workers/webhook.worker.js';
-import { encryptSecret } from '../src/services/secretCrypto.js';
+import { db } from '../../src/db/index.js';
+import { webhooks } from '../../src/db/schema.js';
+import { enqueueWebhookDispatch, webhookQueue } from '../../src/services/webhookDispatcher.js';
+import { startWebhookWorker, stopWebhookWorker } from '../../src/workers/webhook.worker.js';
+import { encryptSecret } from '../../src/services/secretCrypto.js';
 import { eq } from 'drizzle-orm';
 
 // Mock url validator to bypass SSRF protection locally
-vi.mock('../src/utils/urlValidator.js', () => ({
+vi.mock('../../src/utils/urlValidator.js', () => ({
     resolveAndValidateHostname: vi.fn().mockResolvedValue(undefined),
     isBlockedIp: vi.fn().mockReturnValue(false),
     validateWebhookUrl: vi.fn().mockResolvedValue(undefined),
