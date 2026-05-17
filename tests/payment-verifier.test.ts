@@ -198,7 +198,35 @@ describe('PaymentVerifier.verifyAndSettle — duplicate paymentIdentifier', () =
             await verifier.verifyAndSettle(LEGACY_EVIDENCE, 'sha256:' + 'cc'.repeat(32));
             expect.unreachable('should have thrown');
         } catch (e) {
-            // Must be a controlled ApiError, NOT a raw PG error
+            expect(e).toBeInstanceOf(ApiError);
+            expect((e as ApiError).statusCode).toBe(409);
+            expect((e as ApiError).code).toBe('fee_tx_reused');
+        }
+    });
+
+    it('maps fee_tx_reused when node-postgres uses "constraint" field (not "constraint_name")', async () => {
+        // node-postgres exposes `error.constraint`, Drizzle may use `constraint_name`.
+        // The guard uses: pgError.constraint ?? pgError.constraint_name
+        const pgError = new Error('duplicate key value violates unique constraint "idx_pa_payment_identifier"');
+        Object.assign(pgError, {
+            code: '23505',
+            constraint: 'idx_pa_payment_identifier', // node-postgres style
+            // no constraint_name — tests the fallback path
+            detail: 'Key (payment_identifier)=(0xabcdef) already exists.',
+        });
+        shouldInsertThrow = pgError;
+
+        const LEGACY_EVIDENCE = {
+            method: 'legacy_eth' as const,
+            txHash: '0x' + 'ff'.repeat(32),
+        };
+
+        const verifier = new PaymentVerifier();
+
+        try {
+            await verifier.verifyAndSettle(LEGACY_EVIDENCE, 'sha256:' + 'ff'.repeat(32));
+            expect.unreachable('should have thrown');
+        } catch (e) {
             expect(e).toBeInstanceOf(ApiError);
             expect((e as ApiError).statusCode).toBe(409);
             expect((e as ApiError).code).toBe('fee_tx_reused');

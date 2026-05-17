@@ -66,10 +66,12 @@ export class PaymentVerifier {
         txHash,
       }).returning();
     } catch (insertError: unknown) {
-      const pgError = insertError as { code?: string; constraint_name?: string; detail?: string };
+      const pgError = insertError as { code?: string; constraint?: string; constraint_name?: string; detail?: string };
+      // node-postgres exposes `error.constraint`; some Drizzle versions may use `constraint_name`.
+      const constraintName = pgError.constraint ?? pgError.constraint_name;
       if (
         pgError.code === '23505' &&
-        pgError.constraint_name === 'idx_pa_payment_identifier'
+        constraintName === 'idx_pa_payment_identifier'
       ) {
         // Translate ONLY paymentIdentifier collisions to controlled ApiError.
         // Any other 23505 (different constraint) re-throws to preserve observability.
