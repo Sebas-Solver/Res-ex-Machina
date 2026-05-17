@@ -2,6 +2,7 @@
   "name": "res-ex-machina",
   "version": "1.0.0-alpha.2",
   "description": "Registro neutral y automatizado de hechos de generación por IA",
+  "packageManager": "pnpm@11.1.2",
   "type": "module",
   "main": "dist/app.js",
   "scripts": {
