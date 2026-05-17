@@ -37,5 +37,13 @@ semgrep-results.json
 # Internal docs (not published)
 Docs/_internal/
 
+# Test output
+test-results.txt
+
+# Operational scripts (moved to RxM-private)
+scripts/_*
+scripts/smoke-test-*.ts
+scripts/check-db-*.ts
+
 # Private repo (separate git, proprietary)
 private/
