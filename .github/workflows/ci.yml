@@ -16,9 +16,11 @@
 #
 # After this workflow runs green once, add these as required
 # checks in GitHub branch protection for main:
-#   ✅ Core CI / Node 20
 #   ✅ Core CI / Node 22
 #   ❌ MCP Server Type Check — NOT required (Issue #43)
+#
+# NOTE: Node 20 removed from matrix — pnpm 11.x requires Node >= 22.13.
+# Node 20 LTS entered maintenance April 2026.
 
 name: CI
 
@@ -46,7 +48,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22]
+        # pnpm 11.x requires Node >= 22.13. Node 20 not supported.
+        node-version: [22]
 
     # Environment variables for tests.
     # ⚠️ These are CI-only dummy values.
