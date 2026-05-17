@@ -39,3 +39,15 @@ Docs/_internal/
 
 # Private repo (separate git, proprietary)
 private/
+
+# AI agent local instructions (not published)
+.gemini/
+.agents/
+
+# Operational scripts (repo-guardian: NEVER commit)
+scripts/_*
+scripts/smoke-test-*.ts
+scripts/check-db-*.ts
+
+# Test output with potential production data
+test-results.txt
