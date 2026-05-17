@@ -204,7 +204,8 @@ Connect via: `http://localhost:8787/sse`
                                                   │
                                        ┌──────────▼──────────┐
                                        │   RxM REST API      │
-                                       │   (Render + Neon)    │
+                                       │   (Render + Neon     │
+                                       │    via integration)  │
                                        └──────────┬──────────┘
                                                   │
                                        ┌──────────▼──────────┐

@@ -384,7 +384,7 @@ Key security controls: EIP-712/EIP-191 cryptographic verification, SSRF protecti
 | **v1.0 (MVP)** | ✅ Completed | Registration, PoG v1, L2 anchoring, REST API, on-chain fee, 63 tests, CI/CD |
 | **v1.0.0-rc1** | ✅ Tagged | Alpha testing framework, adversarial scripts, pilot plan |
 | **v1.0.0-rc2** | ✅ Tagged | Fix rate limit 429, fee $0.01, trust model docs, user + dev guides |
-| **v1.0.0-alpha.1** | ✅ Deployed | Deploy on Render + Neon + Upstash + Base Sepolia. Multi-chain, Redis TLS, inline worker |
+| **v1.0.0-alpha.1** | ✅ Deployed | Deploy on Render (API + Neon Postgres via Render integration) + Upstash (Redis) + Base Sepolia. Multi-chain, Redis TLS, inline worker |
 | **v1.1** | ✅ Completed | Batch endpoint (#12), secure webhooks (#13), dual temporal attestation (#14) |
 | **v1.2** | ✅ Published | npm SDK [`@res-ex-machina/sdk`](https://www.npmjs.com/package/@res-ex-machina/sdk) — trivial integration for humans and agents (#27) |
 | **v2** | 🔲 Planned | model_id verification (#15), content pointers, dual identity, fiat fee |
