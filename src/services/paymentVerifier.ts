@@ -67,8 +67,12 @@ export class PaymentVerifier {
       }).returning();
     } catch (insertError: unknown) {
       const pgError = insertError as { code?: string; constraint_name?: string; detail?: string };
-      if (pgError.code === '23505') {
-        // Translate to controlled ApiError — never expose raw PG error
+      if (
+        pgError.code === '23505' &&
+        pgError.constraint_name === 'idx_pa_payment_identifier'
+      ) {
+        // Translate ONLY paymentIdentifier collisions to controlled ApiError.
+        // Any other 23505 (different constraint) re-throws to preserve observability.
         throw new ApiError(409, 'fee_tx_reused', 'Fee transaction has already been used for another record');
       }
       throw insertError;

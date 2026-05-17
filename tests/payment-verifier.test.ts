@@ -204,6 +204,35 @@ describe('PaymentVerifier.verifyAndSettle — duplicate paymentIdentifier', () =
             expect((e as ApiError).code).toBe('fee_tx_reused');
         }
     });
+
+    it('23505 on a DIFFERENT constraint re-throws raw (not fee_tx_reused) for observability', async () => {
+        // A 23505 on another constraint (e.g. content_hash uniqueness)
+        // must NOT be swallowed as fee_tx_reused — it reveals a different bug.
+        const otherPgError = new Error('duplicate key value violates unique constraint "payment_attempts_content_hash_key"');
+        Object.assign(otherPgError, {
+            code: '23505',
+            constraint_name: 'payment_attempts_content_hash_key',
+            detail: 'Key (content_hash)=(sha256:abc) already exists.',
+        });
+        shouldInsertThrow = otherPgError;
+
+        const LEGACY_EVIDENCE = {
+            method: 'legacy_eth' as const,
+            txHash: '0x' + 'ee'.repeat(32),
+        };
+
+        const verifier = new PaymentVerifier();
+
+        try {
+            await verifier.verifyAndSettle(LEGACY_EVIDENCE, 'sha256:' + 'ee'.repeat(32));
+            expect.unreachable('should have thrown');
+        } catch (e) {
+            // Must NOT be ApiError — this is an unexpected constraint violation
+            expect(e).not.toBeInstanceOf(ApiError);
+            // Must be the original PG error, untouched
+            expect((e as Error).message).toContain('payment_attempts_content_hash_key');
+        }
+    });
 });
 
 // =========================================================
