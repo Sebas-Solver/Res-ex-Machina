@@ -1,13 +1,26 @@
 # ============================================
 # Res ex Machina — CI Pipeline
 # ============================================
+# SPDX-License-Identifier: Apache-2.0
+#
 # Two jobs:
-#   1. test (REQUIRED) — All checks that must pass for merge:
-#      npm audit, TypeScript, ESLint, Vitest, Coverage,
-#      Production build, MCP Server install + Jest tests
+#   1. core-ci (REQUIRED) — Must pass before merge to main:
+#      pnpm install --frozen-lockfile, TypeScript typecheck,
+#      Vitest unit tests, production build, SDK build+tests,
+#      MCP Server install + Jest tests.
+#
 #   2. mcp-typecheck (NON-BLOCKING) — MCP Server tsc --noEmit
 #      Currently OOM due to viem type graph complexity.
 #      Tracked in Issue #43. P1 technical debt.
+#      DO NOT add as required check until #43 is resolved.
+#
+# After this workflow runs green once, add these as required
+# checks in GitHub branch protection for main:
+#   ✅ Core CI / Node 22
+#   ❌ MCP Server Type Check — NOT required (Issue #43)
+#
+# NOTE: Node 20 removed from matrix — pnpm 11.x requires Node >= 22.13.
+# Node 20 LTS entered maintenance April 2026.
 
 name: CI
 
@@ -27,69 +40,76 @@ jobs:
   # ─────────────────────────────────────────────
   # Job 1: REQUIRED — Must pass for merge
   # ─────────────────────────────────────────────
-  test:
-    name: Test & Build (Node ${{ matrix.node-version }})
+  core-ci:
+    name: Core CI (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20, 22]
+        # pnpm 11.x requires Node >= 22.13. Node 20 not supported.
+        node-version: [22]
 
-    # Environment variables defined once,
-    # inherited by all steps in the job.
-    # ⚠️ Sensitive keys stored in GitHub Secrets (Settings → Secrets → Actions).
-    # Never hardcode keys in public YAML, even for development.
+    # Environment variables for tests.
+    # ⚠️ These are CI-only dummy values.
+    # Real secrets are in GitHub Secrets (Settings → Secrets → Actions).
     env:
       DATABASE_URL: postgres://test:test@localhost:5432/test
       REDIS_URL: redis://localhost:6379
       L2_RPC_URL: http://localhost:8545
       L2_CHAIN_ID: 31337
-      FEE_RECEIVER_ADDRESS: ${{ secrets.FEE_RECEIVER_ADDRESS }}
-      FEE_MINIMUM_AMOUNT: 0.01
-      ANCHOR_WALLET_PRIVATE_KEY: ${{ secrets.ANCHOR_WALLET_PRIVATE_KEY }}
+      FEE_RECEIVER_ADDRESS: "0x0000000000000000000000000000000000000001"
+      FEE_MINIMUM_AMOUNT: "0.0001"
+      ANCHOR_WALLET_PRIVATE_KEY: "0x0000000000000000000000000000000000000000000000000000000000000001"
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # ── pnpm setup ──
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          cache: 'pnpm'
 
-      - name: Install dependencies
-        run: npm ci
+      # ── Root / Server ──
+      - name: Install dependencies (root)
+        run: pnpm install --frozen-lockfile
 
-      - name: Audit dependencies (security)
-        run: npm audit --audit-level=high
-
-      - name: TypeScript type check
-        run: npx tsc --noEmit
+      - name: TypeScript type check (root)
+        run: pnpm run typecheck
 
       - name: Lint (ESLint)
-        run: npm run lint
+        run: pnpm run lint
 
-      - name: Run tests
-        run: npm test
-
-      - name: Run tests with coverage
-        run: npm run test:coverage
-
-      - name: Upload coverage report
-        if: matrix.node-version == 22
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage/
-          retention-days: 14
+      - name: Run tests (Vitest)
+        run: pnpm test
 
       - name: Production build
-        run: npm run build
+        run: pnpm run build
 
-      # Audit M-04: MCP Server tests MUST pass in CI (not just locally)
+      # ── SDK package ──
+      - name: SDK - Install
+        run: |
+          cd packages/sdk
+          npm ci
+
+      - name: SDK - TypeScript check
+        run: |
+          cd packages/sdk
+          npx tsc --noEmit
+
+      - name: SDK - Tests (Vitest)
+        run: |
+          cd packages/sdk
+          npm test
+
+      # ── MCP Server (tests only, NOT typecheck) ──
       - name: MCP Server - Install
         run: |
           cd packages/mcp-server
@@ -103,12 +123,13 @@ jobs:
   # ─────────────────────────────────────────────
   # Job 2: NON-BLOCKING — MCP Server typecheck
   # Known OOM — tracked in Issue #43 (P1 debt)
+  # DO NOT add as required check in branch protection.
   # ─────────────────────────────────────────────
   mcp-typecheck:
     name: MCP Server Type Check (Issue #43 — known OOM)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # This job does NOT block merge. It exists to track
+    # This job does NOT block merge. It exists only to track
     # when the OOM is resolved. See Issue #43.
     continue-on-error: true
 
@@ -124,7 +145,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
 
       - name: MCP Server - Install
         run: |

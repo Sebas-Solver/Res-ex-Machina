@@ -2,6 +2,7 @@
   "name": "res-ex-machina",
   "version": "1.0.0-alpha.2",
   "description": "Registro neutral y automatizado de hechos de generación por IA",
+  "packageManager": "pnpm@11.1.2",
   "type": "module",
   "main": "dist/app.js",
   "scripts": {
@@ -51,12 +52,14 @@
     "drizzle-orm": "^0.45.1",
     "fastify": "^5.7.4",
     "ioredis": "^5.9.2",
+    "pino": "^10.3.1",
     "postgres": "^3.4.8",
     "uuidv7": "^1.1.0",
     "viem": "^2.45.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/node": "^25.2.2",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
