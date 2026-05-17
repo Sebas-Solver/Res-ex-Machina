@@ -53,13 +53,32 @@ export class PaymentVerifier {
     const txHash = evidence.method === 'legacy_eth' ? evidence.txHash : null;
 
     // Create payment_attempt
-    const [attempt] = await db.insert(paymentAttempts).values({
-      contentHash,
-      method: evidence.method,
-      status: 'pending',
-      paymentIdentifier,
-      txHash,
-    }).returning();
+    // Wrap in try/catch to translate PG 23505 (unique constraint violation)
+    // into a controlled ApiError. Without this, duplicate paymentIdentifier
+    // would propagate as raw PG error → 500 (Issue #52, PR #49 follow-up).
+    let attempt;
+    try {
+      [attempt] = await db.insert(paymentAttempts).values({
+        contentHash,
+        method: evidence.method,
+        status: 'pending',
+        paymentIdentifier,
+        txHash,
+      }).returning();
+    } catch (insertError: unknown) {
+      const pgError = insertError as { code?: string; constraint?: string; constraint_name?: string; detail?: string };
+      // node-postgres exposes `error.constraint`; some Drizzle versions may use `constraint_name`.
+      const constraintName = pgError.constraint ?? pgError.constraint_name;
+      if (
+        pgError.code === '23505' &&
+        constraintName === 'idx_pa_payment_identifier'
+      ) {
+        // Translate ONLY paymentIdentifier collisions to controlled ApiError.
+        // Any other 23505 (different constraint) re-throws to preserve observability.
+        throw new ApiError(409, 'fee_tx_reused', 'Fee transaction has already been used for another record');
+      }
+      throw insertError;
+    }
 
     try {
       if (evidence.method === 'legacy_eth') {
