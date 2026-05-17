@@ -178,4 +178,41 @@ describe('verifyFee', () => {
         const result = await verifyFee('0x' + '33'.repeat(32));
         expect(result.verified).toBe(true);
     });
+
+    // =========================================================
+    // PR #49 Regression: amount must be atomic wei, not ETH
+    // =========================================================
+
+    it('amount is an atomic wei integer string, not ETH decimal (PR #49 regression)', async () => {
+        // 0.015 ETH = 15_000_000_000_000_000 wei (above 0.01 ETH minimum)
+        // Before PR #49 fix, fee.ts used formatEther(tx.value) → "0.015"
+        // Then recordsService did BigInt("0.015") → CRASH (500)
+        mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: 15000000000000000n });
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
+        mockGetBlock.mockResolvedValue(RECENT_BLOCK);
+
+        const result = await verifyFee('0x' + '44'.repeat(32));
+
+        // CRITICAL: must be raw wei string, NOT ETH decimal
+        expect(result.amount).toBe('15000000000000000');
+        expect(result.amount).not.toBe('0.015');
+
+        // Must be a pure integer string (no decimals, commas, or scientific notation)
+        expect(result.amount).toMatch(/^\d+$/);
+
+        // CRITICAL: must be BigInt-safe (this was the exact crash in PR #49)
+        expect(() => BigInt(result.amount)).not.toThrow();
+    });
+
+    it('amount is atomic wei for standard 0.01 ETH fee', async () => {
+        mockGetTransaction.mockResolvedValue({ ...VALID_TX, value: BigInt(1e16) }); // 0.01 ETH
+        mockGetTransactionReceipt.mockResolvedValue(VALID_RECEIPT);
+        mockGetBlock.mockResolvedValue(RECENT_BLOCK);
+
+        const result = await verifyFee('0x' + '55'.repeat(32));
+
+        expect(result.amount).toBe('10000000000000000');
+        expect(result.amount).toMatch(/^\d+$/);
+        expect(() => BigInt(result.amount)).not.toThrow();
+    });
 });
