@@ -47,3 +47,6 @@ scripts/check-db-*.ts
 
 # Private repo (separate git, proprietary)
 private/
+
+# AI agent local instructions (not published)
+.gemini/
