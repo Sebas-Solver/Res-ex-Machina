@@ -390,11 +390,11 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         const walletFilter = sql`lower(${records.agentWallet}) = ${wallet}`;
 
         const countResult = await db
-            .select({ count: records.recordId })
+            .select({ count: sql<number>`cast(count(*) as integer)` })
             .from(records)
             .where(walletFilter);
 
-        const total = countResult.length;
+        const total = countResult[0]?.count ?? 0;
 
         // Get paginated records, most recent first
         const result = await db

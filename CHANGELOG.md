@@ -5,6 +5,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [v1.0.0-alpha.3a] — 2026-05-18 — Audit P0 Fixes (PR #57)
+
+### Fixed (Performance — P0-1)
+
+- **`GET /v1/records/mine` COUNT optimization** — Replaced `.select({ count: records.recordId })` + `.length` (which loaded ALL records into memory) with `sql<number>cast(count(*) as integer)` — the same proven pattern used in `recordsService.listRecords()`. Prevents OOM for wallets with thousands of records.
+
+### Added (Resilience — P0-2)
+
+- **Process crash handlers** — `unhandledRejection` and `uncaughtException` now trigger structured logging + Sentry reporting + controlled shutdown. Previously, unhandled rejections or exceptions would crash the process silently without any error trail.
+  - `unhandledRejection`: logs error → reports to Sentry → graceful shutdown via `app.close()`
+  - `uncaughtException`: logs error → reports to Sentry → `process.exit(1)` (non-recoverable)
+  - Guard via `globalThis.__rxm_crash_handlers__` prevents duplicate listeners in test environments
+
+### Tests
+
+- **New:** `tests/records-mine.test.ts` — 5 tests verifying SQL COUNT, pagination, `has_more`, and `limit` clamping
+- **Total: 241 tests passing** (18 suites)
+
+### Audit Context
+
+Identified by automated skill-based code review using Tier 1 skills: `drizzle`, `nodejs-backend-patterns`, `nodejs-best-practices`, `vitest`, `typescript-advanced-types`, `zod`. CTO-approved minimal PR scope (P0 only, no refactoring mixed in).
+
+---
+
 ## [v1.0.0-alpha.3] — 2026-05-15 — P1-2 SDK Read-Only Mode
 
 ### Added
@@ -110,6 +134,7 @@ Aligned public repository with "Open Protocol, Closed Managed Network" strategy 
 - **Production deployment section** — Removed self-hosted instructions from developer guide. Replaced with "Contact RxM team" redirect
 - **Fee roadmap** — Removed pricing strategy details from `fee-flow-v1.md`. Kept as "details TBD"
 - **Broken links** — Fixed references to files moved to private repo
+- **Environment variables** — Moved `.env.production.example` to private repository and replaced with a secure stub
 
 #### Security
 
