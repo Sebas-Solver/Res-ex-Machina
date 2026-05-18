@@ -9,6 +9,7 @@
   <img src="https://img.shields.io/badge/transport-stdio%20%7C%20SSE-green" alt="Transport: stdio | SSE"/>
   <img src="https://img.shields.io/badge/chain-Base%20Sepolia-purple" alt="Chain: Base Sepolia"/>
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
+  <img src="https://img.shields.io/badge/mode-read--only%20default-orange" alt="Mode: Read-only Default"/>
 </p>
 
 ---
@@ -19,6 +20,12 @@ An **MCP (Model Context Protocol) Server** that lets AI agents register verifiab
 
 Works with **any MCP-compatible client**: Claude Desktop, Google Antigravity, Cursor, VS Code (Copilot), and more.
 
+> **⚠️ EXPERIMENTAL** — This package is under active development and is **not production-stable**.
+> Known issue: TypeScript typecheck fails under OOM ([#43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)).
+> Use for **development and testnet integration only**. API surface may change without notice.
+>
+> **v0.2.0** — Read-only by default. Write operations require explicit opt-in.
+
 ---
 
 ## Quick Start
@@ -27,7 +34,7 @@ Works with **any MCP-compatible client**: Claude Desktop, Google Antigravity, Cu
 npx @res-ex-machina/mcp-server
 ```
 
-This starts the server in `stdio` mode (default). No configuration needed for read-only tools.
+This starts the server in `stdio` mode (default). **Zero configuration needed** — you get read-only tools out of the box.
 
 ---
 
@@ -123,24 +130,38 @@ Connect via: `http://localhost:8787/sse`
 
 ## Available Tools
 
-### 🔓 Read-Only (always available)
+### 🔓 Read-Only (always available, zero config)
 
 | Tool | Description |
 |---|---|
-| `rxm_hash_content` | Calculate SHA-256 content hash |
+| `rxm_hash_content` | Calculate SHA-256 content hash offline |
 | `rxm_verify_hash` | Verify on-chain status of a hash |
 | `rxm_verify_content` | Hash content and verify status |
-| `rxm_get_wallet_balance` | Check agent wallet balance and daily allowance |
 | `rxm_get_receipt` | Retrieve a record's receipt |
+
+### 👛 Conditional (requires wallet address or key)
+
+| Tool | Description |
+|---|---|
+| `rxm_get_wallet_balance` | Check own wallet balance and daily allowance |
+
+### 🎛️ Control (requires `MCP_ENABLE_WRITE_TOOLS=true` + `MCP_PRIVATE_KEY`)
+
+| Tool | Description |
+|---|---|
 | `rxm_set_confirmation_mode` | Switch between `require`, `auto`, `dry-run` |
 
-### 🔐 Write Tools (require `MCP_ENABLE_WRITE_TOOLS=true` + `MCP_PRIVATE_KEY`)
+### 🔐 Write (requires `MCP_ENABLE_WRITE_TOOLS=true` + `MCP_PRIVATE_KEY`)
 
 | Tool | Description |
 |---|---|
 | `rxm_prepare_record_generation` | Phase 1: Prepare a record (checks, guardrails, confirmation ID) |
 | `rxm_confirm_record_generation` | Phase 2: Confirm and register on-chain |
-| `rxm_record_generation` | Direct registration (only in `auto`/`dry-run` mode) |
+
+### 📦 Batch (requires write tools + `MCP_ENABLE_BATCH_TOOLS=true`)
+
+| Tool | Description |
+|---|---|
 | `rxm_prepare_batch` | Prepare multiple records (dedup + cost estimate) |
 | `rxm_confirm_batch` | Confirm and register batch |
 
@@ -154,58 +175,70 @@ Connect via: `http://localhost:8787/sse`
 | `MCP_API_URL` | `https://res-ex-machina-api.onrender.com/v1` | RxM API endpoint |
 | `MCP_RPC_URL` | `https://sepolia.base.org` | Blockchain RPC URL |
 | `MCP_CHAIN_ID` | `84532` | Chain ID (Base Sepolia) |
-| **Auth & Permissions** |
+| **Auth & Permissions** |||
 | `MCP_PRIVATE_KEY` | — | Agent wallet private key (hex, `0x...`) |
-| `MCP_WALLET_ADDRESS` | — | Read-only wallet address |
-| `MCP_ENABLE_WRITE_TOOLS` | `false` | Enable registration tools |
+| `MCP_WALLET_ADDRESS` | — | Read-only wallet address (identity only) |
+| `MCP_ENABLE_WRITE_TOOLS` | `false` | Enable write + control tools |
+| `MCP_ENABLE_BATCH_TOOLS` | `false` | Enable batch tools (requires write tools) |
 | `MCP_HTTP_AUTH_TOKEN` | — | Bearer token for SSE transport |
 | `MCP_ALLOW_REMOTE_HTTP` | `false` | Allow non-localhost SSE connections |
 | `MCP_CONFIRMATION_MODE` | `require` | `require` / `auto` / `dry-run` |
+| `MCP_ALLOW_AUTO_MODE` | `false` | Allow `auto` confirmation mode |
 | `MCP_PAYMENT_MODE` | `x402` | Payment mode: `legacy` (ETH) or `x402` (USDC) |
-| **Financial Guardrails** |
+| **Financial Guardrails** |||
 | `MCP_MAX_RXM_FEE_WEI` | `10000000000000000` | Max fee per record (0.01 ETH) |
 | `MCP_MAX_SPEND_PER_DAY_WEI` | `50000000000000000` | Max daily spend (0.05 ETH) |
 | `MCP_MAX_RECORDS_PER_DAY` | `20` | Max records per day |
-| **Content Protection** |
+| `MCP_MAX_BATCH_SIZE` | `10` | Max items per batch (max: 100) |
+| **Content Protection** |||
 | `MCP_MAX_CONTENT_BYTES` | `65536` | Max content size (64KB) |
 | `MCP_ALLOWED_CONTENT_TYPES` | `text/plain,text/markdown,application/json` | Allowed MIME types |
 | `MCP_REQUIRE_MODEL_ID` | `true` | Require model ID in registrations |
+
+> **Namespace aliases:** All `MCP_*` variables above also accept an `RXM_MCP_*` prefix
+> (e.g. `RXM_MCP_ENABLE_WRITE_TOOLS=true`). This avoids collisions if you run multiple
+> MCP servers. The `RXM_MCP_*` alias is used only when the canonical `MCP_*` variable
+> is **not** already set.
 
 ---
 
 ## Security Model
 
-1. **Isolated sidecar** — The LLM only accesses high-level tools, never raw signing methods
-2. **Financial guardrails** — Daily spend limits, per-transaction caps, record counters
-3. **Two-phase confirmation** — `prepare` → human review → `confirm` (default mode)
-4. **Auth token** — Required for SSE transport when write tools are enabled
-5. **Mainnet protection** — Mainnet chain IDs blocked unless explicitly enabled
-6. **No key storage** — Private keys are injected via environment variables only
+See [SECURITY.md](./SECURITY.md) for full details.
+
+1. **Read-only by default** — No private key required. Zero-config start.
+2. **Crypto sidecar** — Private keys isolated in closure; sanitized from `process.env` on init.
+3. **Financial guardrails** — Daily spend limits, per-transaction caps, record counters.
+4. **Two-phase confirmation** — `prepare` → human review → `confirm` (default mode).
+5. **Auth token** — Required for SSE transport when write tools are enabled.
+6. **Mainnet protection** — Mainnet chain IDs blocked unless explicitly enabled.
+7. **Audit ledger** — All mode changes and transactions recorded in SQLite.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────┐     stdio/SSE     ┌──────────────────────┐
-│   MCP Client    │◄──────────────────►│   RxM MCP Server     │
-│  (Claude, etc)  │                    │                      │
-└─────────────────┘                    │  ┌────────────────┐  │
-                                       │  │ Financial      │  │
-                                       │  │ Guardrails     │  │
-                                       │  │ (SQLite ledger)│  │
-                                       │  └────────────────┘  │
-                                       │          │           │
-                                       │  ┌───────▼────────┐  │
-                                       │  │ @rxm/sdk       │  │
-                                       │  │ (EIP-712, x402)│  │
-                                       │  └───────┬────────┘  │
-                                       └──────────┼──────────┘
+┌─────────────────┐     stdio/SSE     ┌──────────────────────────────┐
+│   MCP Client    │◄──────────────────►│   RxM MCP Server             │
+│  (Claude, etc)  │                    │                              │
+└─────────────────┘                    │  ┌────────────┐ ┌─────────┐ │
+                                       │  │ Read-Only  │ │ Crypto  │ │
+                                       │  │ Tools (4)  │ │ Sidecar │ │
+                                       │  └────────────┘ │(closure)│ │
+                                       │  ┌────────────┐ └─────────┘ │
+                                       │  │ Write/Ctrl │              │
+                                       │  │ (opt-in)   │ ┌─────────┐ │
+                                       │  └────────────┘ │ SQLite  │ │
+                                       │  ┌────────────┐ │ Ledger  │ │
+                                       │  │ Batch      │ └─────────┘ │
+                                       │  │ (2x opt-in)│              │
+                                       │  └────────────┘              │
+                                       └──────────┬──────────────────┘
                                                   │
                                        ┌──────────▼──────────┐
                                        │   RxM REST API      │
-                                       │   (Render + Neon     │
-                                       │    via integration)  │
+                                       │   (Render + Neon)    │
                                        └──────────┬──────────┘
                                                   │
                                        ┌──────────▼──────────┐

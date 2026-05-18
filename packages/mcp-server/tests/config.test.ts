@@ -13,7 +13,7 @@ describe('Config Schema Validation', () => {
       expect(result.data.MCP_CONFIRMATION_MODE).toBe('require');
       expect(result.data.MCP_CHAIN_ID).toBe(84532);
       expect(result.data.MCP_TRANSPORT).toBe('stdio');
-      expect(result.data.MCP_RECORDING_POLICY).toBe('explicit');
+      // MCP_RECORDING_POLICY removed in v0.2.0 — was dead code
       expect(result.data.MCP_REQUIRE_MODEL_ID).toBe(true);
       expect(result.data.MCP_MAX_CONTENT_BYTES).toBe(65536);
       expect(result.data.MCP_MAX_RECORDS_PER_DAY).toBe(20);
@@ -95,7 +95,7 @@ describe('Config Schema Validation', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.MCP_ENABLE_BATCH_TOOLS).toBe(false);
-      expect(result.data.MCP_MAX_BATCH_SIZE).toBe(20);
+      expect(result.data.MCP_MAX_BATCH_SIZE).toBe(10);
       expect(result.data.MCP_BATCH_DEDUP_BEFORE_PAY).toBe(true);
     }
   });
@@ -279,5 +279,111 @@ describe('setConfirmationMode (P0-2)', () => {
     const result = setConfirmationMode('require');
     expect(result.allowed).toBe(false);
     expect(result.reason).toContain('Config not initialized');
+  });
+});
+
+// ─── CTO Condition 1: RXM_ Alias Resolution ──────────────────────
+
+describe('RXM_ Alias Resolution', () => {
+  let getConfig: typeof import('../src/config').getConfig;
+  let _resetConfigForTest: typeof import('../src/config')._resetConfigForTest;
+
+  beforeEach(async () => {
+    jest.resetModules();
+    // Clean up any RXM_ or MCP_ env vars
+    delete process.env.RXM_MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.RXM_MCP_ENABLE_BATCH_TOOLS;
+    delete process.env.MCP_ENABLE_BATCH_TOOLS;
+  });
+
+  afterEach(() => {
+    delete process.env.RXM_MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.RXM_MCP_ENABLE_BATCH_TOOLS;
+    delete process.env.MCP_ENABLE_BATCH_TOOLS;
+  });
+
+  it('should resolve RXM_MCP_ENABLE_WRITE_TOOLS to MCP_ENABLE_WRITE_TOOLS', async () => {
+    process.env.RXM_MCP_ENABLE_WRITE_TOOLS = 'true';
+    // Need a private key so getConfig() doesn't fallback to read-only
+    process.env.MCP_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+    const configModule = await import('../src/config');
+    _resetConfigForTest = configModule._resetConfigForTest;
+    getConfig = configModule.getConfig;
+    const config = getConfig();
+    expect(config.MCP_ENABLE_WRITE_TOOLS).toBe(true);
+    delete process.env.MCP_PRIVATE_KEY;
+  });
+
+  it('should not override MCP_ if already set', async () => {
+    process.env.MCP_ENABLE_WRITE_TOOLS = 'false';
+    process.env.RXM_MCP_ENABLE_WRITE_TOOLS = 'true';
+    const configModule = await import('../src/config');
+    _resetConfigForTest = configModule._resetConfigForTest;
+    getConfig = configModule.getConfig;
+    const config = getConfig();
+    // MCP_ was already set, so RXM_ should NOT override
+    expect(config.MCP_ENABLE_WRITE_TOOLS).toBe(false);
+  });
+
+  it('should sanitize RXM_ alias from process.env after resolution', async () => {
+    process.env.RXM_MCP_ENABLE_BATCH_TOOLS = 'true';
+    await import('../src/config');
+    // Alias should have been deleted during module load
+    expect(process.env.RXM_MCP_ENABLE_BATCH_TOOLS).toBeUndefined();
+  });
+});
+
+// ─── CTO Blocker 1: consumePrivateKey() ───────────────────────
+
+describe('consumePrivateKey()', () => {
+  const TEST_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+
+  beforeEach(() => {
+    jest.resetModules();
+    delete process.env.MCP_PRIVATE_KEY;
+    delete process.env.MCP_ENABLE_WRITE_TOOLS;
+  });
+
+  afterEach(() => {
+    delete process.env.MCP_PRIVATE_KEY;
+    delete process.env.MCP_ENABLE_WRITE_TOOLS;
+  });
+
+  it('should return the key and wipe it from cachedConfig', async () => {
+    process.env.MCP_PRIVATE_KEY = TEST_KEY;
+    process.env.MCP_ENABLE_WRITE_TOOLS = 'true';
+
+    const { getConfig, consumePrivateKey } = await import('../src/config');
+    // Force config init
+    getConfig();
+
+    // First call returns key
+    const key = consumePrivateKey();
+    expect(key).toBe(TEST_KEY);
+
+    // After consume, cachedConfig no longer has the key
+    expect(getConfig().MCP_PRIVATE_KEY).toBeUndefined();
+  });
+
+  it('should return undefined on second call', async () => {
+    process.env.MCP_PRIVATE_KEY = TEST_KEY;
+    process.env.MCP_ENABLE_WRITE_TOOLS = 'true';
+
+    const { getConfig, consumePrivateKey } = await import('../src/config');
+    getConfig();
+
+    consumePrivateKey(); // first call
+    const second = consumePrivateKey(); // second call
+    expect(second).toBeUndefined();
+  });
+
+  it('should return undefined when no key was configured', async () => {
+    const { getConfig, consumePrivateKey } = await import('../src/config');
+    getConfig();
+
+    const key = consumePrivateKey();
+    expect(key).toBeUndefined();
   });
 });

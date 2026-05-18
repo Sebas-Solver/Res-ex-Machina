@@ -1,6 +1,6 @@
 {
   "name": "@res-ex-machina/mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP Server for Res-ex-Machina — Secure sidecar for AI agents to register verifiable Proofs of Generation on blockchain",
   "bin": {
     "rxm-mcp": "./dist/index.js"
@@ -10,6 +10,7 @@
   "files": [
     "dist",
     "README.md",
+    "SECURITY.md",
     "LICENSE"
   ],
   "engines": {
@@ -46,7 +47,7 @@
     "dev": "ts-node src/index.ts",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build && node -e \"require('fs').existsSync('dist/index.js') || (console.error('ERROR: dist/index.js not found — build failed silently (Issue #43)'), process.exit(1))\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",

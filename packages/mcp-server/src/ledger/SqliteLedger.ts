@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -6,6 +7,21 @@ import { logger } from './logger.js';
 
 // Load .env.local if present
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
+// CTO Condition 1: Support RXM_ prefixed aliases to avoid collisions
+// with other MCPs. RXM_MCP_* takes precedence only if MCP_* is unset.
+const RXM_ALIASES: [string, string][] = [
+  ['RXM_MCP_ENABLE_WRITE_TOOLS', 'MCP_ENABLE_WRITE_TOOLS'],
+  ['RXM_MCP_ENABLE_BATCH_TOOLS', 'MCP_ENABLE_BATCH_TOOLS'],
+  ['RXM_MCP_PRIVATE_KEY', 'MCP_PRIVATE_KEY'],
+  ['RXM_MCP_HTTP_AUTH_TOKEN', 'MCP_HTTP_AUTH_TOKEN'],
+];
+for (const [alias, canonical] of RXM_ALIASES) {
+  if (process.env[alias] && !process.env[canonical]) {
+    process.env[canonical] = process.env[alias];
+  }
+  delete process.env[alias]; // Sanitize alias after resolution
+}
 
 export const envSchema = z.object({
   MCP_TRANSPORT: z.enum(['stdio', 'sse']).default('stdio'),
@@ -27,7 +43,8 @@ export const envSchema = z.object({
   // To enable in testnet, set MCP_ALLOW_AUTO_MODE=true in .env.local
   MCP_ALLOW_AUTO_MODE: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
   MCP_PAYMENT_MODE: z.enum(['legacy', 'x402']).default('x402'),
-  MCP_RECORDING_POLICY: z.enum(['explicit', 'implicit']).default('explicit'),
+  // MCP_RECORDING_POLICY removed in v0.2.0 — was dead code (never used by any tool).
+  // Recording behavior is now governed by tool enablement and confirmation mode.
 
   // Financial Guardrails (in WEI strings to prevent precision loss, parsed as BigInt)
   MCP_MAX_RXM_FEE_WEI: z.string().default('10000000000000000'), // 0.01 ETH
@@ -45,7 +62,7 @@ export const envSchema = z.object({
 
   // Batch Processing
   MCP_ENABLE_BATCH_TOOLS: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
-  MCP_MAX_BATCH_SIZE: z.coerce.number().min(1).max(100).default(20),
+  MCP_MAX_BATCH_SIZE: z.coerce.number().min(1).max(100).default(10),
   MCP_BATCH_DEDUP_BEFORE_PAY: z.enum(['true', 'false']).transform(v => v === 'true').default('true'),
 });
 
@@ -72,7 +89,7 @@ export function getConfig(): EnvConfig {
     
     // Safety check: Cannot enable write tools without a private key
     if (cachedConfig.MCP_ENABLE_WRITE_TOOLS && !cachedConfig.MCP_PRIVATE_KEY) {
-      logger.error('MCP_ENABLE_WRITE_TOOLS is true but MCP_PRIVATE_KEY is missing — forcing read-only mode');
+      logger.warn('Write tools requested but no signer configured; falling back to read-only');
       cachedConfig.MCP_ENABLE_WRITE_TOOLS = false;
     }
     
@@ -85,6 +102,15 @@ export function getConfig(): EnvConfig {
          process.exit(1);
       }
     }
+
+    // Startup mode log
+    const mode = cachedConfig.MCP_ENABLE_WRITE_TOOLS ? 'READ-WRITE' : 'READ-ONLY';
+    logger.info(`MCP config loaded — mode: ${mode}`, {
+      writeTools: cachedConfig.MCP_ENABLE_WRITE_TOOLS,
+      batchTools: cachedConfig.MCP_ENABLE_BATCH_TOOLS,
+      confirmationMode: cachedConfig.MCP_CONFIRMATION_MODE,
+      chainId: cachedConfig.MCP_CHAIN_ID,
+    });
   }
   return cachedConfig;
 }
@@ -124,6 +150,26 @@ export function setConfirmationMode(
 
   cachedConfig.MCP_CONFIRMATION_MODE = mode;
   return { previousMode, allowed: true };
+}
+
+/**
+ * Consume and clear the private key from config.
+ * After this call, cachedConfig.MCP_PRIVATE_KEY is undefined.
+ * Only crypto-sidecar should call this — enforces "key lives only in closure".
+ *
+ * CTO Blocker 1: process.env.MCP_PRIVATE_KEY was already deleted,
+ * but the key survived inside cachedConfig. This function completes
+ * the sanitation chain:
+ *   process.env → deleted (line 87)
+ *   cachedConfig → deleted (here)
+ *   only crypto-sidecar closure retains account/client
+ */
+export function consumePrivateKey(): `0x${string}` | undefined {
+  const key = cachedConfig?.MCP_PRIVATE_KEY as `0x${string}` | undefined;
+  if (cachedConfig) {
+    (cachedConfig as any).MCP_PRIVATE_KEY = undefined;
+  }
+  return key;
 }
 
 /**
