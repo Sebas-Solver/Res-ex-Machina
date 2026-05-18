@@ -5,8 +5,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-Private%20Alpha-brightgreen" alt="Status: Private Alpha"/>
-  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.3-blue" alt="Version: v1.0.0-alpha.3"/>
-  <img src="https://img.shields.io/badge/tests-308%20passing-brightgreen" alt="Tests: 308 passing"/>
+  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.3a-blue" alt="Version: v1.0.0-alpha.3a"/>
+  <img src="https://img.shields.io/badge/tests-331%20passing-brightgreen" alt="Tests: 331 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
   <img src="https://img.shields.io/badge/security-P0%20Hardening%20Complete-brightgreen" alt="Security: P0 Hardening Complete"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
@@ -148,11 +148,12 @@ Full API reference: [`openapi-v1.yaml`](Docs/10-specs/openapi-v1.yaml)
  ✓ readonly.test.ts       (25)  — Read-only mode (constructor, guards, listRecords)
 ```
 
-### MCP Server (62 tests, 3 suites)
+### MCP Server v0.2.0 (85 tests, 4 suites)
 ```
- ✓ tools.test.ts          (25)  — MCP tool definitions and handlers
- ✓ config.test.ts         (17)  — Configuration and confirmation mode
- ✓ ledger.test.ts         (20)  — Audit event ledger CRUD
+ ✓ tool-registration.test.ts (28) — Tool segregation (read-only/write/batch/control)
+ ✓ config.test.ts            (20) — Config, aliases RXM_MCP_*, consumePrivateKey
+ ✓ ledger.test.ts            (20) — Audit event ledger CRUD
+ ✓ batch.test.ts             (17) — Batch operations with dedup and limits
 ```
 
 ---
@@ -187,10 +188,10 @@ const proof  = await verifier.verify('rec_...');
 
 ---
 
-## 🤖 MCP Server (`@res-ex-machina/mcp-server`) — Experimental
+## 🤖 MCP Server v0.2.0 (`@res-ex-machina/mcp-server`) — Experimental
 
 > [!WARNING]
-> **Status: Experimental / Deferred.** MCP Server is functional but not blocking the alpha release. TypeScript typecheck has a known OOM issue ([#43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)). Jest tests pass in CI. New features are frozen until the core API + SDK are validated.
+> **Status: Experimental.** MCP Server v0.2.0 is security-hardened and merged to main (PR #58, 2026-05-18). **Read-only by default**. npm publish blocked until typecheck OOM is resolved ([#43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)). 85 tests passing.
 
 Connect any MCP-compatible AI client to Res ex Machina with zero friction.
 
@@ -212,7 +213,15 @@ npx @res-ex-machina/mcp-server
 }
 ```
 
-**10 tools** available: hash, verify, register, batch, wallet balance, receipts. Write tools require explicit opt-in (`MCP_ENABLE_WRITE_TOOLS=true`) with financial guardrails.
+**Tools** (segregated by privilege level):
+| Level | Tools | Gate |
+|-------|-------|------|
+| Read-only | hash, verify_hash, verify_content, get_receipt, wallet_balance | None |
+| Control | set_confirmation_mode | Write-enabled |
+| Write | prepare_record, confirm_record | Write + key |
+| Batch | prepare_batch, confirm_batch | Write + batch flag |
+
+Write tools require explicit opt-in (`MCP_ENABLE_WRITE_TOOLS=true`) with financial guardrails and 2-phase confirm flow.
 
 Also compatible with **Google Antigravity**, **Cursor**, **VS Code (Copilot)**, and any MCP client.
 
@@ -257,7 +266,7 @@ npm run worker:anchor    # Anchoring worker
 | Script | Description |
 |---|---|
 | `npm run dev` | Development server (tsx watch) |
-| `npm test` | Run 191 server tests |
+| `npm test` | Run 241 server tests |
 | `npm run test:coverage` | Tests with coverage report (v8) |
 | `npm run build` | Production build |
 | `npx drizzle-kit push` | Apply schema to database |
@@ -434,7 +443,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.3** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk) with **read-only mode**. **308 tests** (100% passing: 191 server + 55 SDK + 62 MCP). P0 security hardening complete. Batch endpoint, webhooks, dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
+🟢 **v1.0.0-alpha.3a** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk) with **read-only mode**. MCP Server v0.2.0 hardened (PR #58). **331 tests** (100% passing: 191 server + 55 SDK + 85 MCP). P0 security hardening complete. Batch endpoint, webhooks, dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
 
 ---
 
