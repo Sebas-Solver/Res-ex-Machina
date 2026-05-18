@@ -88,7 +88,7 @@ export function decryptSecret(encrypted: EncryptedSecret, webhookId: string, wal
 
         const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
         return plaintext.toString('utf8');
-    } catch (error) {
+    } catch {
         // Log redaction policy: Do not leak key, ciphertext, auth_tag, or plaintext in error messages.
         throw new Error('Webhook decryption failed (authentication tag or ciphertext invalid)');
     }

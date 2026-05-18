@@ -5,6 +5,60 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [MCP Server v0.2.0] — 2026-05-18 — Public Hardening (PR #58)
+
+MCP Server refactored for open-core publication. **Read-only by default**, write operations require explicit opt-in. Approved by CTO after resolving two mandatory security blockers.
+
+### Architecture
+
+- **Tool segregation** — Monolithic `tools.ts` replaced by 4 focused modules:
+  | Module | Tools | Gate |
+  |--------|-------|------|
+  | `read-only.ts` | hash, verify_hash, verify_content, get_receipt, wallet_balance | None / wallet |
+  | `control.ts` | set_confirmation_mode | Write-enabled + key |
+  | `write.ts` | prepare_record, confirm_record | Write-enabled + key |
+  | `batch.ts` | prepare_batch, confirm_batch | Write + batch flag |
+
+- **Crypto sidecar** — Private key isolated in closure scope. New `consumePrivateKey()` function ensures key is wiped from `cachedConfig` after sidecar initialization. Full sanitization chain: `process.env` → deleted, `cachedConfig` → consumed, only closure retains account.
+
+- **SDK native read-only** — Replaced pseudo-account pattern (`{ address } as any`) with `RxMClient({ readOnly: true, apiUrl })`. No identity spoofing.
+
+### Security
+
+- **`consumePrivateKey()`** — Returns key once, then sets `cachedConfig.MCP_PRIVATE_KEY = undefined`
+- **`RXM_MCP_*` env aliases** — Namespace-safe aliases to avoid collisions in shared agent environments
+- **`MCP_RECORDING_POLICY` removed** — Dead code, never used by any tool
+- **`MCP_MAX_BATCH_SIZE` default** — Reduced from 20 → 10
+- **SPDX-License-Identifier** — `Apache-2.0` header added to all source files
+- **SECURITY.md** — Security policy, architecture model, vulnerability reporting
+
+### Operational
+
+- **`prepublishOnly` smoke test** — Blocks `npm publish` if `dist/index.js` doesn't exist (guards against silent `tsc || true` failures)
+- **Startup mode log** — `MCP config loaded — mode: READ-ONLY/READ-WRITE` with feature flags
+
+### Removed
+
+- **`rxm_record_generation`** — Direct record tool removed from public package (only 2-phase `prepare → confirm` flow)
+
+### Tests
+
+- **85 tests passing** (4 suites) — +23 new tests for tool registration, config aliases, consumePrivateKey
+- Known debt: `tsc || true` build, typecheck OOM ([#43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)). npm publish blocked until resolved.
+
+---
+
+## [v1.0.0-alpha.4] — 2026-05-18 — Webhooks Secret Hardening Finalization
+
+### Security
+
+- **Database Cleanup** — The legacy plaintext `secret` column has been dropped from the `webhooks` table via Drizzle schema update, fulfilling the final phase of the zero-downtime migration to AES-256-GCM.
+- **Dispatcher Hardening** — Removed legacy fallback logic in `webhookDispatcher`. The system now strictly enforces encrypted secrets. Plaintext secrets are no longer accepted or parsed.
+- **Migration scripts removed** — Since the migration is fully completed, `migrate-webhook-secrets.ts` and its associated tests have been removed to reduce operational attack surface.
+- **Fail-fast Validation** — Ensured the API and Worker processes will fail at startup if `WEBHOOK_SECRET_ENCRYPTION_KEY` is missing or invalid.
+
+---
+
 ## [v1.0.0-alpha.3a] — 2026-05-18 — Audit P0 Fixes (PR #57)
 
 ### Fixed (Performance — P0-1)

@@ -85,7 +85,6 @@ export default async function webhookRoutes(fastify: FastifyInstance): Promise<v
             webhookId,
             agentWallet: wallet,
             url,
-            secret: null, // P1-1: Plaintext secret is null for new webhooks
             secretCiphertext: encrypted.ciphertext,
             secretIv: encrypted.iv,
             secretAuthTag: encrypted.authTag,

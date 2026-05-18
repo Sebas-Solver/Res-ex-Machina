@@ -160,9 +160,6 @@ export async function executeWebhookDelivery(job: Job<WebhookJobData>): Promise<
             webhook.webhookId,
             webhook.agentWallet
         );
-    } else if (webhook.secret) {
-        // legacy fallback
-        secret = webhook.secret;
     } else {
         throw new Error(`Webhook ${webhookId} has no secret configured`);
     }

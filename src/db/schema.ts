@@ -182,10 +182,7 @@ export const webhooks = pgTable(
         /** HTTPS URL to send notifications to */
         url: text('url').notNull(),
 
-        /** Server-generated HMAC-SHA256 secret (64 hex chars) */
-        secret: varchar('secret', { length: 128 }),
-
-        /** P1-1: AES-256-GCM Encrypted Secret (null for legacy unmigrated) */
+        /** P1-1: AES-256-GCM Encrypted Secret (legacy plaintext secret column dropped) */
         secretCiphertext: text('secret_ciphertext'),
         secretIv: varchar('secret_iv', { length: 24 }),
         secretAuthTag: varchar('secret_auth_tag', { length: 32 }),
