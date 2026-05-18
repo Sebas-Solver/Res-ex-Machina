@@ -234,7 +234,7 @@ Also compatible with **Google Antigravity**, **Cursor**, **VS Code (Copilot)**, 
 Want to test the API without setting up a dev environment? → **[Testing Quickstart](Docs/50-testing/testing-quickstart.md)** (5 minutes)
 
 - 📋 **[Postman Collection](Docs/50-testing/postman-collection.json)** — Import in Postman and test all endpoints
-- 🔧 **[E2E Script](scripts/test-alpha.ts)** — Automated test (register, anchor, verify, export)
+- 🔧 **[Alpha Test Scripts](scripts/alpha/)** — Automated E2E tests (register, anchor, verify, export)
 
 ---
 

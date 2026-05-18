@@ -26,8 +26,7 @@
     "start:worker": "node dist/workers/all.worker.js",
     "alpha:happy": "tsx scripts/alpha/agent-a-happy-path.ts",
     "alpha:adversarial": "tsx scripts/alpha/agent-d-adversarial.ts",
-    "alpha:all": "npm run alpha:happy && npm run alpha:adversarial",
-    "smoke:live": "tsx scripts/smoke-test-live.ts"
+    "alpha:all": "npm run alpha:happy && npm run alpha:adversarial"
   },
   "repository": {
     "type": "git",
