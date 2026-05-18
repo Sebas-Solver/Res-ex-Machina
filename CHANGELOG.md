@@ -110,6 +110,7 @@ Aligned public repository with "Open Protocol, Closed Managed Network" strategy 
 - **Production deployment section** — Removed self-hosted instructions from developer guide. Replaced with "Contact RxM team" redirect
 - **Fee roadmap** — Removed pricing strategy details from `fee-flow-v1.md`. Kept as "details TBD"
 - **Broken links** — Fixed references to files moved to private repo
+- **Environment variables** — Moved `.env.production.example` to private repository and replaced with a secure stub
 
 #### Security
 
