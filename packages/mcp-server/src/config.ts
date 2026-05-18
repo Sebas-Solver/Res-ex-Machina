@@ -153,6 +153,26 @@ export function setConfirmationMode(
 }
 
 /**
+ * Consume and clear the private key from config.
+ * After this call, cachedConfig.MCP_PRIVATE_KEY is undefined.
+ * Only crypto-sidecar should call this — enforces "key lives only in closure".
+ *
+ * CTO Blocker 1: process.env.MCP_PRIVATE_KEY was already deleted,
+ * but the key survived inside cachedConfig. This function completes
+ * the sanitation chain:
+ *   process.env → deleted (line 87)
+ *   cachedConfig → deleted (here)
+ *   only crypto-sidecar closure retains account/client
+ */
+export function consumePrivateKey(): `0x${string}` | undefined {
+  const key = cachedConfig?.MCP_PRIVATE_KEY as `0x${string}` | undefined;
+  if (cachedConfig) {
+    (cachedConfig as any).MCP_PRIVATE_KEY = undefined;
+  }
+  return key;
+}
+
+/**
  * Test-only: Reset the cached config so getConfig() will re-parse env vars.
  * @internal
  */

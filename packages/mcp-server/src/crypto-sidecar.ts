@@ -17,7 +17,7 @@ import { createWalletClient, createPublicClient, http, type PublicClient, type W
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
 import { RxMClient } from '@res-ex-machina/sdk';
-import { getConfig } from './config.js';
+import { getConfig, consumePrivateKey } from './config.js';
 import { logger } from './logger.js';
 
 // ─── Closure-based key isolation ───────────────────────────────
@@ -41,9 +41,13 @@ export function initCryptoSidecar(): void {
   // Public client is always available (read-only operations)
   _publicClient = createPublicClient({ chain, transport });
 
-  if (config.MCP_PRIVATE_KEY && config.MCP_ENABLE_WRITE_TOOLS) {
+  // CTO Blocker 1: Consume the private key — wipes it from cachedConfig.
+  // After this call, the key exists ONLY in this closure scope.
+  const privateKey = consumePrivateKey();
+
+  if (privateKey && config.MCP_ENABLE_WRITE_TOOLS) {
     // ── Write-capable mode ──
-    _account = privateKeyToAccount(config.MCP_PRIVATE_KEY as `0x${string}`);
+    _account = privateKeyToAccount(privateKey);
     _publicAddress = _account.address;
     _writeCapable = true;
 
@@ -60,12 +64,12 @@ export function initCryptoSidecar(): void {
       feeReceiverAddress: (config.MCP_FEE_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`,
     });
 
-    logger.info('Crypto sidecar: write-capable, key sanitized from env');
+    logger.info('Crypto sidecar: write-capable, key consumed and sanitized');
   } else {
     // ── Read-only mode ──
-    if (config.MCP_PRIVATE_KEY && !config.MCP_ENABLE_WRITE_TOOLS) {
-      // Key present but write tools disabled — derive address only
-      const tempAccount = privateKeyToAccount(config.MCP_PRIVATE_KEY as `0x${string}`);
+    if (privateKey && !config.MCP_ENABLE_WRITE_TOOLS) {
+      // Key present but write tools disabled — derive address only, then discard key
+      const tempAccount = privateKeyToAccount(privateKey);
       _publicAddress = tempAccount.address;
       // tempAccount goes out of scope here — key not stored
     } else if (config.MCP_WALLET_ADDRESS) {
@@ -73,12 +77,11 @@ export function initCryptoSidecar(): void {
       _publicAddress = config.MCP_WALLET_ADDRESS;
     }
 
-    const readOnlyAddress = (_publicAddress || '0x0000000000000000000000000000000000000000') as `0x${string}`;
+    // CTO Blocker 2: Use SDK's native readOnly mode.
+    // No pseudo-account, no `as any` — proper read-only client.
     _rxmClient = new RxMClient({
-      account: { address: readOnlyAddress } as any, // Identity only — no key material
-      rpcUrl: config.MCP_RPC_URL,
+      readOnly: true,
       apiUrl: config.MCP_API_URL,
-      feeReceiverAddress: (config.MCP_FEE_RECEIVER_ADDRESS || '0x0000000000000000000000000000000000000000') as `0x${string}`,
     });
 
     logger.info('Crypto sidecar: read-only', {
