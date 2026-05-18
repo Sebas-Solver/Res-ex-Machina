@@ -53,7 +53,7 @@ TEST_AGENT_PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
 ### 2c. Run test
 
 ```bash
-npx tsx scripts/test-alpha.ts
+npm run alpha:happy
 ```
 
 Script runs automatically:
@@ -96,30 +96,30 @@ If you prefer testing endpoints manually:
 
 ### Health check
 ```bash
-curl https://res-ex-machina-api.onrender.com/v1/health
+curl https://YOUR_API_URL/v1/health
 ```
 
 ### Query an existing record
 ```bash
 # Replace :id with real record_id
-curl https://res-ex-machina-api.onrender.com/v1/records/:id
+curl https://YOUR_API_URL/v1/records/:id
 ```
 
 ### Verify by hash
 ```bash
-curl "https://res-ex-machina-api.onrender.com/v1/records/verify?content_hash=sha256:abc123..."
+curl "https://YOUR_API_URL/v1/records/verify?content_hash=sha256:abc123..."
 ```
 
 ### Export receipt
 ```bash
 # Full mode
-curl https://res-ex-machina-api.onrender.com/v1/records/:id/export
+curl https://YOUR_API_URL/v1/records/:id/export
 
 # Compact mode (only verification fields)
-curl "https://res-ex-machina-api.onrender.com/v1/records/:id/export?mode=compact"
+curl "https://YOUR_API_URL/v1/records/:id/export?mode=compact"
 ```
 
-> **Note:** POST records require EIP-712 signatures. Use `test-alpha.ts` script or included Postman collection.
+> **Note:** POST records require EIP-712 signatures. Use `npm run alpha:happy` or included Postman collection.
 
 ---
 
@@ -151,9 +151,9 @@ curl "https://res-ex-machina-api.onrender.com/v1/records/:id/export?mode=compact
 | `/v1/webhooks` | GET | List own webhooks |
 | `/v1/webhooks/:id` | DELETE | Deactivate webhook |
 
-**Base URL:** `https://res-ex-machina-api.onrender.com`
+**Base URL:** See project deployment docs for the current API endpoint.
 
-> ⚠️ Render instance sleeps after 15 min inactivity. First call may take ~30s to wake.
+> ⚠️ Free-tier instances may sleep after inactivity. First call may take ~30s to wake.
 
 ---
 
