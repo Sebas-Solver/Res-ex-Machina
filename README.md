@@ -393,7 +393,7 @@ Key security controls: EIP-712/EIP-191 cryptographic verification, SSRF protecti
 | **v1.0 (MVP)** | ✅ Completed | Registration, PoG v1, L2 anchoring, REST API, on-chain fee, 63 tests, CI/CD |
 | **v1.0.0-rc1** | ✅ Tagged | Alpha testing framework, adversarial scripts, pilot plan |
 | **v1.0.0-rc2** | ✅ Tagged | Fix rate limit 429, fee $0.01, trust model docs, user + dev guides |
-| **v1.0.0-alpha.1** | ✅ Deployed | Deploy on Render (API + Neon Postgres via Render integration) + Upstash (Redis) + Base Sepolia. Multi-chain, Redis TLS, inline worker |
+| **v1.0.0-alpha.1** | ✅ Deployed | Production deployment on managed infrastructure + Base Sepolia. Multi-chain, Redis TLS, inline worker |
 | **v1.1** | ✅ Completed | Batch endpoint (#12), secure webhooks (#13), dual temporal attestation (#14) |
 | **v1.2** | ✅ Published | npm SDK [`@res-ex-machina/sdk`](https://www.npmjs.com/package/@res-ex-machina/sdk) — trivial integration for humans and agents (#27) |
 | **v2** | 🔲 Planned | model_id verification (#15), content pointers, dual identity, fiat fee |
@@ -443,7 +443,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.3a** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk) with **read-only mode**. MCP Server v0.2.0 hardened (PR #58). **331 tests** (100% passing: 191 server + 55 SDK + 85 MCP). P0 security hardening complete. Batch endpoint, webhooks, dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
+🟢 **v1.0.0-alpha.4** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk) with **read-only mode**. MCP Server v0.2.0 hardened (PR #58). **376 tests** (100% passing: 236 server + 55 SDK + 85 MCP). P0 security hardening complete. P1-1 webhook secrets migration complete. Batch endpoint, webhooks (AES-256-GCM encrypted secrets), dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
 
 ---
 

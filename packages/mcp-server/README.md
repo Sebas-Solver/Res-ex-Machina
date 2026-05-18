@@ -238,7 +238,7 @@ See [SECURITY.md](./SECURITY.md) for full details.
                                                   │
                                        ┌──────────▼──────────┐
                                        │   RxM REST API      │
-                                       │   (Render + Neon)    │
+                                       │   (managed service)  │
                                        └──────────┬──────────┘
                                                   │
                                        ┌──────────▼──────────┐

@@ -3,7 +3,7 @@
 import rateLimit from '@fastify/rate-limit';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import { createRateLimitRedisClient } from '../config/redis.js';
-import { env } from '../config/env.js';
+
 import { logger } from '../utils/logger.js';
 
 /**

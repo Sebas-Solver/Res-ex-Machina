@@ -48,6 +48,17 @@ MCP Server refactored for open-core publication. **Read-only by default**, write
 
 ---
 
+## [v1.0.0-alpha.4] — 2026-05-18 — Webhooks Secret Hardening Finalization
+
+### Security
+
+- **Database Cleanup** — The legacy plaintext `secret` column has been dropped from the `webhooks` table via Drizzle schema update, fulfilling the final phase of the zero-downtime migration to AES-256-GCM.
+- **Dispatcher Hardening** — Removed legacy fallback logic in `webhookDispatcher`. The system now strictly enforces encrypted secrets. Plaintext secrets are no longer accepted or parsed.
+- **Migration scripts removed** — Since the migration is fully completed, `migrate-webhook-secrets.ts` and its associated tests have been removed to reduce operational attack surface.
+- **Fail-fast Validation** — Ensured the API and Worker processes will fail at startup if `WEBHOOK_SECRET_ENCRYPTION_KEY` is missing or invalid.
+
+---
+
 ## [v1.0.0-alpha.3a] — 2026-05-18 — Audit P0 Fixes (PR #57)
 
 ### Fixed (Performance — P0-1)

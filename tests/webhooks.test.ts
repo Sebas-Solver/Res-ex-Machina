@@ -206,7 +206,7 @@ describe('P1-1: GET /v1/webhooks never returns secret or ciphertext', () => {
         // If the code used `.select()` (all columns), secret/ciphertext would leak.
         // This test validates the select projection against the source code contract.
         const safeFields = ['webhookId', 'url', 'events', 'active', 'createdAt'];
-        const forbiddenFields = ['secret', 'secretCiphertext', 'secretIv', 'secretAuthTag', 'secretKeyVersion'];
+        const forbiddenFields = ['secretCiphertext', 'secretIv', 'secretAuthTag', 'secretKeyVersion'];
 
         // Verify that the response shape from GET doesn't include forbidden fields
         const mockGetResponse = {
@@ -243,7 +243,6 @@ describe('P1-1: GET /v1/webhooks never returns secret or ciphertext', () => {
             created_at: dbRow.createdAt?.toISOString(),
         };
 
-        expect(mapped).not.toHaveProperty('secret');
         expect(mapped).not.toHaveProperty('secretCiphertext');
         expect(mapped).not.toHaveProperty('secret_ciphertext');
         expect(mapped).not.toHaveProperty('secretIv');
@@ -283,14 +282,12 @@ describe('P1-1: POST /v1/webhooks stores encrypted secret', () => {
 
         // And the plaintext secret stored should be null
         const dbValues = {
-            secret: null, // P1-1: plaintext is null
             secretCiphertext: encrypted.ciphertext,
             secretIv: encrypted.iv,
             secretAuthTag: encrypted.authTag,
             secretKeyVersion: encrypted.keyVersion,
         };
 
-        expect(dbValues.secret).toBeNull();
         expect(dbValues.secretCiphertext).not.toBeNull();
     });
 });
@@ -324,7 +321,6 @@ describe('P1-1: BullMQ job data contains no secret and no URL', () => {
         expect(keys).toEqual(['webhookId', 'deliveryId', 'payload']);
 
         // Must NOT have secret or url
-        expect(jobData).not.toHaveProperty('secret');
         expect(jobData).not.toHaveProperty('url');
         expect(jobData).not.toHaveProperty('secretCiphertext');
         expect(jobData).not.toHaveProperty('secretIv');

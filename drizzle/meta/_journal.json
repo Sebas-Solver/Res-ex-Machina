@@ -36,6 +36,13 @@
       "when": 1778877594235,
       "tag": "0004_organic_ghost_rider",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779128434952,
+      "tag": "0005_greedy_the_fallen",
+      "breakpoints": true
     }
   ]
 }
