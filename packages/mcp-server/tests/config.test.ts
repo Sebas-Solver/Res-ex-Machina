@@ -281,3 +281,56 @@ describe('setConfirmationMode (P0-2)', () => {
     expect(result.reason).toContain('Config not initialized');
   });
 });
+
+// ─── CTO Condition 1: RXM_ Alias Resolution ──────────────────────
+
+describe('RXM_ Alias Resolution', () => {
+  let getConfig: typeof import('../src/config').getConfig;
+  let _resetConfigForTest: typeof import('../src/config')._resetConfigForTest;
+
+  beforeEach(async () => {
+    jest.resetModules();
+    // Clean up any RXM_ or MCP_ env vars
+    delete process.env.RXM_MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.RXM_MCP_ENABLE_BATCH_TOOLS;
+    delete process.env.MCP_ENABLE_BATCH_TOOLS;
+  });
+
+  afterEach(() => {
+    delete process.env.RXM_MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.MCP_ENABLE_WRITE_TOOLS;
+    delete process.env.RXM_MCP_ENABLE_BATCH_TOOLS;
+    delete process.env.MCP_ENABLE_BATCH_TOOLS;
+  });
+
+  it('should resolve RXM_MCP_ENABLE_WRITE_TOOLS to MCP_ENABLE_WRITE_TOOLS', async () => {
+    process.env.RXM_MCP_ENABLE_WRITE_TOOLS = 'true';
+    // Need a private key so getConfig() doesn't fallback to read-only
+    process.env.MCP_PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+    const configModule = await import('../src/config');
+    _resetConfigForTest = configModule._resetConfigForTest;
+    getConfig = configModule.getConfig;
+    const config = getConfig();
+    expect(config.MCP_ENABLE_WRITE_TOOLS).toBe(true);
+    delete process.env.MCP_PRIVATE_KEY;
+  });
+
+  it('should not override MCP_ if already set', async () => {
+    process.env.MCP_ENABLE_WRITE_TOOLS = 'false';
+    process.env.RXM_MCP_ENABLE_WRITE_TOOLS = 'true';
+    const configModule = await import('../src/config');
+    _resetConfigForTest = configModule._resetConfigForTest;
+    getConfig = configModule.getConfig;
+    const config = getConfig();
+    // MCP_ was already set, so RXM_ should NOT override
+    expect(config.MCP_ENABLE_WRITE_TOOLS).toBe(false);
+  });
+
+  it('should sanitize RXM_ alias from process.env after resolution', async () => {
+    process.env.RXM_MCP_ENABLE_BATCH_TOOLS = 'true';
+    await import('../src/config');
+    // Alias should have been deleted during module load
+    expect(process.env.RXM_MCP_ENABLE_BATCH_TOOLS).toBeUndefined();
+  });
+});

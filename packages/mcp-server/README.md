@@ -20,6 +20,10 @@ An **MCP (Model Context Protocol) Server** that lets AI agents register verifiab
 
 Works with **any MCP-compatible client**: Claude Desktop, Google Antigravity, Cursor, VS Code (Copilot), and more.
 
+> **⚠️ EXPERIMENTAL** — This package is under active development and is **not production-stable**.
+> Known issue: TypeScript typecheck fails under OOM ([#43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)).
+> Use for **development and testnet integration only**. API surface may change without notice.
+>
 > **v0.2.0** — Read-only by default. Write operations require explicit opt-in.
 
 ---
@@ -190,6 +194,11 @@ Connect via: `http://localhost:8787/sse`
 | `MCP_MAX_CONTENT_BYTES` | `65536` | Max content size (64KB) |
 | `MCP_ALLOWED_CONTENT_TYPES` | `text/plain,text/markdown,application/json` | Allowed MIME types |
 | `MCP_REQUIRE_MODEL_ID` | `true` | Require model ID in registrations |
+
+> **Namespace aliases:** All `MCP_*` variables above also accept an `RXM_MCP_*` prefix
+> (e.g. `RXM_MCP_ENABLE_WRITE_TOOLS=true`). This avoids collisions if you run multiple
+> MCP servers. The `RXM_MCP_*` alias is used only when the canonical `MCP_*` variable
+> is **not** already set.
 
 ---
 

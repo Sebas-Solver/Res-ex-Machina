@@ -31,7 +31,7 @@ If you discover a security vulnerability, please report it responsibly:
 
 | Version | Supported |
 |---------|-----------|
-| 0.2.x   | ✅ Current |
+| 0.2.x   | ⚠️ Experimental — development/testnet only |
 | 0.1.x   | ❌ Deprecated |
 
 ## Security Controls

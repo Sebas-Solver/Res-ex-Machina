@@ -8,6 +8,21 @@ import { logger } from './logger.js';
 // Load .env.local if present
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 
+// CTO Condition 1: Support RXM_ prefixed aliases to avoid collisions
+// with other MCPs. RXM_MCP_* takes precedence only if MCP_* is unset.
+const RXM_ALIASES: [string, string][] = [
+  ['RXM_MCP_ENABLE_WRITE_TOOLS', 'MCP_ENABLE_WRITE_TOOLS'],
+  ['RXM_MCP_ENABLE_BATCH_TOOLS', 'MCP_ENABLE_BATCH_TOOLS'],
+  ['RXM_MCP_PRIVATE_KEY', 'MCP_PRIVATE_KEY'],
+  ['RXM_MCP_HTTP_AUTH_TOKEN', 'MCP_HTTP_AUTH_TOKEN'],
+];
+for (const [alias, canonical] of RXM_ALIASES) {
+  if (process.env[alias] && !process.env[canonical]) {
+    process.env[canonical] = process.env[alias];
+  }
+  delete process.env[alias]; // Sanitize alias after resolution
+}
+
 export const envSchema = z.object({
   MCP_TRANSPORT: z.enum(['stdio', 'sse']).default('stdio'),
   MCP_API_URL: z.string().url().default('https://res-ex-machina-api.onrender.com/v1'),
