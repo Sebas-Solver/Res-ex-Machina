@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Issue #19: Sentry must be initialized BEFORE any other import
-import { initMonitoring } from './config/monitoring.js';
+import { initMonitoring, Sentry } from './config/monitoring.js';
 initMonitoring();
 
 import Fastify from 'fastify';
@@ -209,6 +209,25 @@ async function shutdown(signal: string) {
         app.log.error(err, '❌ Error during shutdown');
         process.exit(1);
     }
+}
+
+// --- Process crash handlers (P0-2: audit findings) ---
+// Guard: prevent duplicate listeners if app.ts is imported multiple times in tests.
+const CRASH_HANDLERS_KEY = '__rxm_crash_handlers__';
+if (!(globalThis as Record<string, unknown>)[CRASH_HANDLERS_KEY]) {
+    (globalThis as Record<string, unknown>)[CRASH_HANDLERS_KEY] = true;
+
+    process.on('unhandledRejection', (reason) => {
+        app.log.error({ reason }, '💀 Unhandled rejection — starting shutdown');
+        try { Sentry.captureException(reason); } catch { /* Sentry best-effort */ }
+        shutdown('unhandledRejection');
+    });
+
+    process.on('uncaughtException', (error) => {
+        app.log.error({ error }, '💀 Uncaught exception — exiting immediately');
+        try { Sentry.captureException(error); } catch { /* Sentry best-effort */ }
+        process.exit(1);
+    });
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
