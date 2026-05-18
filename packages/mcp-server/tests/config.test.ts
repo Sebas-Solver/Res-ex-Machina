@@ -13,7 +13,7 @@ describe('Config Schema Validation', () => {
       expect(result.data.MCP_CONFIRMATION_MODE).toBe('require');
       expect(result.data.MCP_CHAIN_ID).toBe(84532);
       expect(result.data.MCP_TRANSPORT).toBe('stdio');
-      expect(result.data.MCP_RECORDING_POLICY).toBe('explicit');
+      // MCP_RECORDING_POLICY removed in v0.2.0 — was dead code
       expect(result.data.MCP_REQUIRE_MODEL_ID).toBe(true);
       expect(result.data.MCP_MAX_CONTENT_BYTES).toBe(65536);
       expect(result.data.MCP_MAX_RECORDS_PER_DAY).toBe(20);
@@ -95,7 +95,7 @@ describe('Config Schema Validation', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.MCP_ENABLE_BATCH_TOOLS).toBe(false);
-      expect(result.data.MCP_MAX_BATCH_SIZE).toBe(20);
+      expect(result.data.MCP_MAX_BATCH_SIZE).toBe(10);
       expect(result.data.MCP_BATCH_DEDUP_BEFORE_PAY).toBe(true);
     }
   });

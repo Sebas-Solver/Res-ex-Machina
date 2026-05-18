@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -27,7 +28,8 @@ export const envSchema = z.object({
   // To enable in testnet, set MCP_ALLOW_AUTO_MODE=true in .env.local
   MCP_ALLOW_AUTO_MODE: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
   MCP_PAYMENT_MODE: z.enum(['legacy', 'x402']).default('x402'),
-  MCP_RECORDING_POLICY: z.enum(['explicit', 'implicit']).default('explicit'),
+  // MCP_RECORDING_POLICY removed in v0.2.0 — was dead code (never used by any tool).
+  // Recording behavior is now governed by tool enablement and confirmation mode.
 
   // Financial Guardrails (in WEI strings to prevent precision loss, parsed as BigInt)
   MCP_MAX_RXM_FEE_WEI: z.string().default('10000000000000000'), // 0.01 ETH
@@ -45,7 +47,7 @@ export const envSchema = z.object({
 
   // Batch Processing
   MCP_ENABLE_BATCH_TOOLS: z.enum(['true', 'false']).transform(v => v === 'true').default('false'),
-  MCP_MAX_BATCH_SIZE: z.coerce.number().min(1).max(100).default(20),
+  MCP_MAX_BATCH_SIZE: z.coerce.number().min(1).max(100).default(10),
   MCP_BATCH_DEDUP_BEFORE_PAY: z.enum(['true', 'false']).transform(v => v === 'true').default('true'),
 });
 
@@ -72,7 +74,7 @@ export function getConfig(): EnvConfig {
     
     // Safety check: Cannot enable write tools without a private key
     if (cachedConfig.MCP_ENABLE_WRITE_TOOLS && !cachedConfig.MCP_PRIVATE_KEY) {
-      logger.error('MCP_ENABLE_WRITE_TOOLS is true but MCP_PRIVATE_KEY is missing — forcing read-only mode');
+      logger.warn('Write tools requested but no signer configured; falling back to read-only');
       cachedConfig.MCP_ENABLE_WRITE_TOOLS = false;
     }
     
@@ -85,6 +87,15 @@ export function getConfig(): EnvConfig {
          process.exit(1);
       }
     }
+
+    // Startup mode log
+    const mode = cachedConfig.MCP_ENABLE_WRITE_TOOLS ? 'READ-WRITE' : 'READ-ONLY';
+    logger.info(`MCP config loaded — mode: ${mode}`, {
+      writeTools: cachedConfig.MCP_ENABLE_WRITE_TOOLS,
+      batchTools: cachedConfig.MCP_ENABLE_BATCH_TOOLS,
+      confirmationMode: cachedConfig.MCP_CONFIRMATION_MODE,
+      chainId: cachedConfig.MCP_CHAIN_ID,
+    });
   }
   return cachedConfig;
 }

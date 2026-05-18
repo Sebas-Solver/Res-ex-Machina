@@ -1,28 +1,37 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: Apache-2.0
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import express from "express";
 import { getConfig } from "./config.js";
-import { registerTools } from "./tools.js";
+import { initCryptoSidecar } from "./crypto-sidecar.js";
+import { registerAllTools } from "./tools/index.js";
 import { logger } from "./logger.js";
 
 async function main() {
   // Config validates automatically on get
   const config = getConfig();
 
+  // Initialize crypto sidecar (isolates key material)
+  initCryptoSidecar();
+
   const server = new McpServer({
     name: "Res-ex-Machina MCP",
-    version: "1.0.0",
+    version: "0.2.0",
   });
 
-  // Register all the Tools (Read-Only + Write if enabled)
-  registerTools(server);
+  // Register tools based on configuration and sidecar state
+  const tools = registerAllTools(server);
 
   if (config.MCP_TRANSPORT === 'stdio') {
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    logger.info('MCP Server started', { transport: 'stdio', writeTools: config.MCP_ENABLE_WRITE_TOOLS });
+    logger.info('MCP Server started', {
+      transport: 'stdio',
+      mode: tools.write.length > 0 ? 'READ-WRITE' : 'READ-ONLY',
+      tools: tools.total,
+    });
   } else if (config.MCP_TRANSPORT === 'sse') {
     const app = express();
 
@@ -68,7 +77,12 @@ async function main() {
 
     const port = process.env.MCP_HTTP_PORT || 8787;
     app.listen(port, () => {
-      logger.info('MCP Server started', { transport: 'sse', port, writeTools: config.MCP_ENABLE_WRITE_TOOLS });
+      logger.info('MCP Server started', {
+        transport: 'sse',
+        port,
+        mode: tools.write.length > 0 ? 'READ-WRITE' : 'READ-ONLY',
+        tools: tools.total,
+      });
     });
   } else {
     logger.fatal('Unsupported transport', { transport: config.MCP_TRANSPORT });

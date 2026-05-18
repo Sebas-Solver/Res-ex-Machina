@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: Apache-2.0
 import { getConfig } from '../config.js';
 import { Ledger, LedgerStats, GuardrailResult, SpendingRecord, FailedAttemptRecord, BatchJobStatus, BatchItemRecord, BatchJobResult, BatchJob, AuditEvent, AuditEventType } from './Ledger.js';
 
