@@ -48,6 +48,15 @@ private/
 scripts/_*
 scripts/smoke-test-*.ts
 scripts/check-db-*.ts
+scripts/migrate-*.ts
+scripts/obliterate-*.ts
+scripts/inspect-*.ts
+
+# Operational utilities (not part of the project)
+add_spdx.py
+
+# Diary / session logs (auto-generated, never publish)
+diary/
 
 # Test output with potential production data
 test-results.txt
