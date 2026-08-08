@@ -97,7 +97,7 @@ jobs:
       - name: SDK - Install
         run: |
           cd packages/sdk
-          npm ci
+          npm install
 
       - name: SDK - Build & Typecheck
         run: |
@@ -113,7 +113,7 @@ jobs:
       - name: MCP Server - Install
         run: |
           cd packages/mcp-server
-          npm ci
+          npm install
 
       - name: MCP Server - Build (tsc)
         run: |
@@ -149,13 +149,13 @@ jobs:
       - name: SDK - Build
         run: |
           cd packages/sdk
-          npm ci
+          npm install
           npm run build
 
       - name: MCP Server - Install
         run: |
           cd packages/mcp-server
-          npm ci
+          npm install
 
       - name: MCP Server - tsc --noEmit
         env:
