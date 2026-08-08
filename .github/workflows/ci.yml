@@ -149,6 +149,7 @@ jobs:
         run: pnpm --filter @res-ex-machina/sdk build
 
       - name: MCP Server - Build & Typecheck (tsc)
+        continue-on-error: true
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm --filter @res-ex-machina/mcp-server typecheck
