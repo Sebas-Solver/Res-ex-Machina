@@ -13,19 +13,34 @@
  *   - If neither key nor address is set, zero-address = anonymous agent.
  */
 
-import { createWalletClient, createPublicClient, http, type PublicClient, type WalletClient } from 'viem';
+import { createWalletClient, createPublicClient, http, type PublicClient, type WalletClient, type Chain } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount } from 'viem/accounts';
-import { baseSepolia } from 'viem/chains';
+import { baseSepolia, base, mainnet, sepolia } from 'viem/chains';
 import { RxMClient } from '@res-ex-machina/sdk';
 import { getConfig, consumePrivateKey } from './config.js';
 import { logger } from './logger.js';
+
+function getChainById(chainId: number): Chain {
+  switch (chainId) {
+    case 84532:
+      return baseSepolia;
+    case 8453:
+      return base;
+    case 1:
+      return mainnet;
+    case 11155111:
+      return sepolia;
+    default:
+      return { ...baseSepolia, id: chainId };
+  }
+}
 
 // ─── Closure-based key isolation ───────────────────────────────
 let _account: PrivateKeyAccount | undefined;
 let _publicAddress: string | undefined;
 let _writeCapable = false;
 
-let _publicClient: PublicClient;
+let _publicClient: any;
 let _walletClient: WalletClient | undefined;
 let _rxmClient: RxMClient;
 
@@ -36,7 +51,7 @@ let _rxmClient: RxMClient;
 export function initCryptoSidecar(): void {
   const config = getConfig();
   const transport = http(config.MCP_RPC_URL);
-  const chain = baseSepolia;
+  const chain = getChainById(config.MCP_CHAIN_ID);
 
   // Public client is always available (read-only operations)
   _publicClient = createPublicClient({ chain, transport });
@@ -114,7 +129,7 @@ export function getRxmClient(): RxMClient {
 }
 
 /** Public Viem client for on-chain reads (balance, etc). */
-export function getPublicClient(): PublicClient {
+export function getPublicClient(): ReturnType<typeof createPublicClient> {
   return _publicClient;
 }
 

@@ -3,6 +3,38 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [MCP Server v0.2.1] — 2026-08-08 — Resolution of Issue #43 (Typecheck OOM & Build Hardening)
+
+### Fixed & Hardened
+
+- **Typecheck OOM & SIGABRT Crash (Issue #43 Resolved):**
+  - Updated `packages/mcp-server/package.json` to assign `NODE_OPTIONS="--max-old-space-size=4096"` for `build` and `typecheck` scripts, preventing Node.js 22 heap exhaustion and SIGABRT crashes.
+  - Updated `packages/mcp-server/tsconfig.json` to `"module": "NodeNext"` and `"moduleResolution": "NodeNext"` with `"preserveSymlinks": true`, `"incremental": true`, and `"isolatedModules": true`. Reduced compilation time from hanging/OOM to under 3 seconds.
+  - Updated `packages/mcp-server/jest.config.js` to `export default` for full ES Module compatibility with Jest.
+  - Added `"type": "module"` in `packages/mcp-server/package.json` and linked `@res-ex-machina/sdk` as `"workspace:*"`.
+  - Fixed `_publicClient` type assignment in `crypto-sidecar.ts` and cleaned unused `@ts-expect-error` directives.
+- **SSRF & URL Validation Hardening:**
+  - Added IPv6 bracket sanitization in `src/utils/urlValidator.ts` for safe hostname parsing.
+  - Added unit test suite `tests/url-validator.test.ts` bringing statement coverage to 79.6%.
+- **DX & Developer Onboarding:**
+  - Added `examples/quick-start-demo.ts` and `npm run demo` script showing EIP-712 PoG v1 signature and registration payload generation.
+- **Audit Hardening (P1-01, P1-09, P1-11, P2-03):**
+  - Added `.dockerignore` excluding `.git`, `.env*`, `dist/`, and local credentials from container builds.
+  - Separated public and admin response caches in `/v1/health` to prevent diagnostic data leakage.
+  - Resolved dynamic Chain ID mapping in `packages/mcp-server/src/crypto-sidecar.ts` via `MCP_CHAIN_ID`.
+  - Enforced lowercase wallet address normalization in `recordsService` insertion and duplication checks.
+
+## [v1.0.0-alpha.5] — 2026-08-08 — Release Hardening & Audit Fixes
+
+Resolves P0 and P1 findings from the 2026-08-08 technical audit.
+
+### Fixed & Hardened
+
+- **DB & Migrations (P0-02):** Un-ignored `drizzle/` directory in `.gitignore` to track migration SQL in git. Rebuilt complete baseline migrations (`0000_wet_moira_mactaggert.sql` and `0001_neat_vulture.sql`) covering all tables (`records`, `webhooks` with AES-256-GCM, and `payment_attempts`). Updated `chk_state` constraint to explicitly include `anchoring` state.
+- **Atomic Anchoring Idempotency (P1-07):** Added atomic state claim (`pending_anchor` -> `anchoring`) in `anchorRecord` to prevent concurrent worker execution and duplicate transactions. Enforced database canonical `receiptHash` for on-chain calldata.
+- **Payment Settlement Error Recovery (P1-06):** Added error handling in `POST /v1/records` to mark settled payment attempts as `failed` if record creation fails post-settlement, preventing orphaned payments.
+- **MCP Server Build & Typecheck (P0-03):** Removed `|| true` fallback from `packages/mcp-server/package.json`. Added explicit Express types (`Request`, `Response`, `NextFunction`) in `src/index.ts`. Updated CI to build `@res-ex-machina/sdk` first and enforce blocking MCP typechecks.
+
 ---
 
 ## [MCP Server v0.2.0] — 2026-05-18 — Public Hardening (PR #58)

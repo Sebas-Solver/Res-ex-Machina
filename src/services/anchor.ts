@@ -5,7 +5,7 @@ import { env } from '../config/env.js';
 import { publicClient, walletClient } from '../config/blockchain.js';
 import { db } from '../db/index.js';
 import { records } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { enqueueWebhookDispatch } from './webhookDispatcher.js';
 import { logger } from '../utils/logger.js';
 import { Sentry } from '../config/monitoring.js';
@@ -27,6 +27,9 @@ export interface AnchorResult {
  * con 0 valor, pero con el receipt_hash codificado en el input data.
  * Esto crea una huella inmutable en la blockchain.
  *
+ * P1-07 Atomic Idempotency: Uses DB canonical receiptHash and performs
+ * an atomic claim (pending_anchor -> anchoring) to prevent double execution.
+ *
  * @param recordId - UUID del record
  * @param receiptHash - Hash a grabar on-chain (en el calldata)
  * @returns AnchorResult con tx hash, bloque y chain ID
@@ -36,12 +39,12 @@ export async function anchorRecord(
     receiptHash: string,
     agentWallet?: string,
 ): Promise<AnchorResult> {
-    // IDEMPOTENCY CHECK (Audit fix: prevents duplicate on-chain txs when
-    // BullMQ re-executes stalled/retried jobs). If the record is already
-    // anchored, return existing data without sending a new transaction.
+    // 1. Fetch DB record for canonical receiptHash and wallet
     const [existing] = await db
         .select({
             state: records.state,
+            receiptHash: records.receiptHash,
+            agentWallet: records.agentWallet,
             anchorTxHash: records.anchorTxHash,
             anchorBlock: records.anchorBlock,
             anchorChainId: records.anchorChainId,
@@ -50,7 +53,11 @@ export async function anchorRecord(
         .where(eq(records.recordId, recordId))
         .limit(1);
 
-    if (existing?.state === 'anchored' && existing.anchorTxHash) {
+    if (!existing) {
+        throw new Error(`Record ${recordId} not found`);
+    }
+
+    if (existing.state === 'anchored' && existing.anchorTxHash) {
         return {
             txHash: existing.anchorTxHash,
             block: Number(existing.anchorBlock),
@@ -58,9 +65,32 @@ export async function anchorRecord(
         };
     }
 
-    // Codificar el receipt_hash como bytes para el calldata
+    // Always use canonical receiptHash from DB
+    const canonicalReceiptHash = existing.receiptHash || receiptHash;
+    const wallet = agentWallet || existing.agentWallet;
+
+    // 2. ATOMIC CLAIM: transition from pending_anchor to anchoring
+    const claimed = await db
+        .update(records)
+        .set({ state: 'anchoring' })
+        .where(and(eq(records.recordId, recordId), eq(records.state, 'pending_anchor')))
+        .returning({ recordId: records.recordId });
+
+    if (claimed.length === 0 && existing.state !== 'anchored') {
+        if (existing.anchorTxHash) {
+            return {
+                txHash: existing.anchorTxHash,
+                block: Number(existing.anchorBlock),
+                chainId: existing.anchorChainId ?? env.L2_CHAIN_ID,
+            };
+        }
+        logger.info({ recordId }, '[anchor] Record is already being anchored by another worker');
+        throw new Error(`Record ${recordId} is currently being anchored by another process`);
+    }
+
+    // Codificar el receipt_hash canónico como bytes para el calldata
     const encoder = new TextEncoder();
-    const data = `0x${Buffer.from(encoder.encode(receiptHash)).toString('hex')}` as Hex;
+    const data = `0x${Buffer.from(encoder.encode(canonicalReceiptHash)).toString('hex')}` as Hex;
 
     // Send transaction with receipt_hash in calldata
     const txHash = await walletClient.sendTransaction({
@@ -80,7 +110,7 @@ export async function anchorRecord(
         chainId: env.L2_CHAIN_ID,
     };
 
-    // Actualizar el record en la DB
+    // Actualizar el record en la DB a 'anchored'
     await db
         .update(records)
         .set({
@@ -94,13 +124,6 @@ export async function anchorRecord(
 
     // Disparar webhooks (async, no bloquea) — Issue #13
     try {
-        // Use agentWallet from job data if available, otherwise fetch from DB
-        let wallet = agentWallet;
-        if (!wallet) {
-            const [record] = await db.select({ agentWallet: records.agentWallet })
-                .from(records).where(eq(records.recordId, recordId)).limit(1);
-            wallet = record?.agentWallet;
-        }
         if (wallet) {
             await enqueueWebhookDispatch(
                 wallet, recordId, 'pending_anchor', 'anchored',

@@ -31,10 +31,12 @@ function getRedisClient() {
     return redisClient;
 }
 
-// --- Health cache (Issue #16) ---
+// --- Health cache (Issue #16 & P1-09) ---
 const HEALTH_CACHE_TTL_MS = 30_000;
-let cachedHealth: { body: Record<string, unknown>; statusCode: number } | null = null;
-let cachedAt = 0;
+let cachedPublicHealth: { body: Record<string, unknown>; statusCode: number } | null = null;
+let cachedAdminHealth: { body: Record<string, unknown>; statusCode: number } | null = null;
+let cachedPublicAt = 0;
+let cachedAdminAt = 0;
 
 /**
  * Timing-safe admin key check for health endpoint.
@@ -54,14 +56,23 @@ function isAdminAuthenticated(headerValue: string | string[] | undefined, adminK
 
 export default async function healthRoutes(app: FastifyInstance): Promise<void> {
     app.get('/health', async (request, reply) => {
-        // Return cache if valid
         const now = Date.now();
-        if (cachedHealth && (now - cachedAt) < HEALTH_CACHE_TTL_MS) {
+        const adminKey = process.env.ADMIN_API_KEY;
+        const isAdmin = isAdminAuthenticated(request.headers['x-admin-key'], adminKey);
+
+        // Check appropriate tier cache (P1-09: separate caches for admin vs public)
+        if (isAdmin && cachedAdminHealth && (now - cachedAdminAt) < HEALTH_CACHE_TTL_MS) {
             return reply
-                .status(cachedHealth.statusCode)
+                .status(cachedAdminHealth.statusCode)
+                .header('Cache-Control', 'private, max-age=30')
+                .header('X-Cache', 'HIT')
+                .send(cachedAdminHealth.body);
+        } else if (!isAdmin && cachedPublicHealth && (now - cachedPublicAt) < HEALTH_CACHE_TTL_MS) {
+            return reply
+                .status(cachedPublicHealth.statusCode)
                 .header('Cache-Control', 'public, max-age=30')
                 .header('X-Cache', 'HIT')
-                .send(cachedHealth.body);
+                .send(cachedPublicHealth.body);
         }
 
         const checks = await Promise.allSettled([
@@ -77,10 +88,6 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
         const allHealthy = dbStatus.status === 'ok' && redisStatus.status === 'ok' && l2Status.status === 'ok';
         const statusCode = allHealthy ? 200 : 503;
 
-        // L-03: Check if requester is admin (has valid X-Admin-Key)
-        const adminKey = process.env.ADMIN_API_KEY;
-        const isAdmin = isAdminAuthenticated(request.headers['x-admin-key'], adminKey);
-
         // Build response — detailed info only for admins
         const body: Record<string, unknown> = {
             status: allHealthy ? 'ok' : 'degraded',
@@ -95,14 +102,15 @@ export default async function healthRoutes(app: FastifyInstance): Promise<void> 
                 redis: redisStatus,
                 blockchain: l2Status,
             };
+            cachedAdminHealth = { body, statusCode };
+            cachedAdminAt = now;
+        } else {
+            cachedPublicHealth = { body, statusCode };
+            cachedPublicAt = now;
         }
 
-        // Guardar en cache
-        cachedHealth = { body, statusCode };
-        cachedAt = now;
-
         const headers: Record<string, string> = {
-            'Cache-Control': 'public, max-age=30',
+            'Cache-Control': isAdmin ? 'private, max-age=30' : 'public, max-age=30',
             'X-Cache': 'MISS',
         };
 

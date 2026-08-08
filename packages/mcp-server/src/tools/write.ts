@@ -44,7 +44,6 @@ export function registerWriteTools(server: McpServer): string[] {
   const config = getConfig();
   const rxmClient = getRxmClient();
 
-  // @ts-expect-error — TS2589: Known MCP SDK issue with deep Zod schema inference
   server.tool(
     "rxm_prepare_record_generation",
     "Phase 1 of 2: Prepares a record for generation, runs checks, and returns a confirmation_id.",

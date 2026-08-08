@@ -5,10 +5,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-Private%20Alpha-brightgreen" alt="Status: Private Alpha"/>
-  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.4-blue" alt="Version: v1.0.0-alpha.4"/>
-  <img src="https://img.shields.io/badge/tests-376%20passing-brightgreen" alt="Tests: 376 passing"/>
+  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.5-blue" alt="Version: v1.0.0-alpha.5"/>
+  <img src="https://img.shields.io/badge/tests-394%20passing-brightgreen" alt="Tests: 394 passing"/>
   <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2020%2B22)-success" alt="CI: GitHub Actions (Node 20+22)"/>
-  <img src="https://img.shields.io/badge/security-P0%20Hardening%20Complete-brightgreen" alt="Security: P0 Hardening Complete"/>
+  <img src="https://img.shields.io/badge/security-P0%2BP1%20Hardening%20Complete-brightgreen" alt="Security: P0+P1 Hardening Complete"/>
   <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
   <img src="https://img.shields.io/badge/status_page-live-brightgreen" alt="Status Page: Live"/>
@@ -21,7 +21,11 @@ Who certifies what was generated, by whom, and when?<br/>
 </em></p>
 
 > [!IMPORTANT]
-> **This project is in early alpha (testing phase).** It runs on **Base Sepolia testnet** — records are not permanent and may be reset. The API, SDK, and data formats may change without notice. Use it to experiment and integrate, but do not rely on it for production workloads yet.
+> **Network & Permanence Disclaimer:**  
+> This project currently operates on **Base Sepolia Testnet** for development and testing.  
+> - **Testnet (Base Sepolia):** Records demonstrate full cryptographic proof of generation, but testnet states are subject to upstream resets and do not guarantee perpetual persistence.
+> - **Mainnet (Base Mainnet / EVM L2):** Mainnet deployment guarantees immutable, non-resetting, and perpetual on-chain anchoring.
+> - API, SDK, and data schemas remain backward-compatible across versions.
 
 ---
 
@@ -354,6 +358,7 @@ Docs/
 | [`quick-start.md`](Docs/40-guides/quick-start.md) | Zero to first record in 5 minutes |
 | [`human-guide-v1.md`](Docs/40-guides/human-guide-v1.md) | Guide for non-technical users |
 | [`developer-guide-v1.md`](Docs/40-guides/developer-guide-v1.md) | Full developer guide |
+| [`agent-skills-index.md`](Docs/40-guides/agent-skills-index.md) | Skills útiles y routing recomendado para agentes |
 | [`api-examples.md`](Docs/40-guides/api-examples.md) | curl examples for all endpoints |
 | [`pog-v1-spec.md`](Docs/10-specs/pog-v1-spec.md) | Proof of Generation v1 specification |
 | [`fee-flow-v1.md`](Docs/10-specs/fee-flow-v1.md) | On-chain fee verification flow |
@@ -361,7 +366,8 @@ Docs/
 | [`error-catalog.md`](Docs/10-specs/error-catalog.md) | API error catalog |
 | [`c2pa-interoperability.md`](Docs/10-specs/c2pa-interoperability.md) | Interoperability with C2PA standards |
 | [`receipt-verification-spec.md`](Docs/10-specs/receipt-verification-spec.md) | Receipt verification specification (v1.2) |
-| [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Security audit report (v2 — 14/14 findings resolved) |
+| [`audit-report-2026-08-08.md`](Docs/20-security/audit-report-2026-08-08.md) | Latest technical and release audit (current verdict: BLOCKED) |
+| [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Historical security audit (14/14 findings resolved) |
 | `admin-key-rotation.md` | ADMIN_API_KEY rotation procedure (private repo) |
 | [`integrator-guide.md`](Docs/60-operations/integrator-guide.md) | Integrator troubleshooting guide |
 

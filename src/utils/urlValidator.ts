@@ -1,30 +1,30 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { resolve4, resolve6 } from 'node:dns/promises';
+import { isIP } from 'node:net';
 
 /**
- * Validador de URLs para webhooks (Issue #13).
+ * Validador de URLs para webhooks (Issue #13 / Audit P1-10).
  *
  * SSRF Mitigation:
  * 1. Solo acepta HTTPS
  * 2. Resuelve DNS (IPv4 + IPv6) y bloquea IPs privadas, localhost, link-local
- * 3. No seguir redirects (configurado en el fetch del dispatcher)
- *
- * Audit fix: Added resolve6() alongside resolve4() to prevent SSRF bypass
- * via IPv6 addresses (e.g., ::1, fc00::/7, fe80::/10).
+ * 3. Rechaza hostnames no resolubles e IPs mapeadas IPv6 (e.g. ::ffff:127.0.0.1)
+ * 4. No seguir redirects (configurado en el fetch del dispatcher)
  */
 
 /** Blocked IP ranges (exported for re-validation at fetch time — M-04) */
 export const BLOCKED_IP_RANGES = [
-    /^127\./,                     // Loopback
-    /^10\./,                      // Class A private
-    /^172\.(1[6-9]|2\d|3[01])\./, // Class B private
-    /^192\.168\./,                // Class C private
-    /^169\.254\./,                // Link-local
-    /^0\./,                       // Current network
-    /^::1$/,                      // IPv6 loopback
-    /^fc/i,                       // IPv6 ULA
-    /^fe80/i,                     // IPv6 link-local
+    /^127\./,                                                // Loopback
+    /^10\./,                                                 // Class A private
+    /^172\.(1[6-9]|2\d|3[01])\./,                            // Class B private
+    /^192\.168\./,                                           // Class C private
+    /^169\.254\./,                                           // Link-local
+    /^0\./,                                                  // Current network
+    /^::1$/,                                                 // IPv6 loopback
+    /^fc/i,                                                  // IPv6 ULA
+    /^fe80/i,                                                // IPv6 link-local
+    /^::ffff:(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|169\.254\.|0\.)/i, // IPv4-mapped IPv6 private
 ];
 
 /**
@@ -32,41 +32,49 @@ export const BLOCKED_IP_RANGES = [
  * Exported for use in webhook delivery (DNS rebinding mitigation — M-04).
  */
 export function isBlockedIp(ip: string): boolean {
-    return BLOCKED_IP_RANGES.some((regex) => regex.test(ip));
+    const cleanIp = ip.replace(/^\[|\]$/g, '');
+    return BLOCKED_IP_RANGES.some((regex) => regex.test(cleanIp));
 }
 
 /**
  * Resolves a hostname and validates all IPs against blocked ranges.
  * Can be called both at registration and at delivery time.
- * Throws if any resolved IP is in a blocked range.
+ * Throws if any resolved IP is in a blocked range or if hostname cannot be resolved.
  */
 export async function resolveAndValidateHostname(hostname: string): Promise<void> {
+    const cleanHostname = hostname.replace(/^\[|\]$/g, '');
+
+    // Direct IP literal check
+    if (isIP(cleanHostname)) {
+        if (isBlockedIp(cleanHostname)) {
+            throw new Error(`IP ${cleanHostname} is in a blocked range`);
+        }
+        return;
+    }
+
     let allIps: string[] = [];
 
     try {
-        const ipv4 = await resolve4(hostname);
+        const ipv4 = await resolve4(cleanHostname);
         allIps = allIps.concat(ipv4);
     } catch {
         // No IPv4 records
     }
 
     try {
-        const ipv6 = await resolve6(hostname);
+        const ipv6 = await resolve6(cleanHostname);
         allIps = allIps.concat(ipv6);
     } catch {
         // No IPv6 records
     }
 
-    if (allIps.length > 0) {
-        for (const ip of allIps) {
-            if (isBlockedIp(ip)) {
-                throw new Error(`IP ${ip} is in a blocked range (private/loopback/link-local)`);
-            }
-        }
-    } else {
-        // Direct IP literal — check hostname itself
-        if (isBlockedIp(hostname)) {
-            throw new Error(`IP ${hostname} is in a blocked range`);
+    if (allIps.length === 0) {
+        throw new Error(`Hostname ${cleanHostname} could not be resolved via DNS`);
+    }
+
+    for (const ip of allIps) {
+        if (isBlockedIp(ip)) {
+            throw new Error(`IP ${ip} is in a blocked range (private/loopback/link-local)`);
         }
     }
 }
@@ -90,7 +98,7 @@ export async function validateWebhookUrl(url: string): Promise<void> {
     }
 
     // 3. Block dangerous hostnames
-    const hostname = parsed.hostname.toLowerCase();
+    const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
         throw new Error('localhost URLs are not allowed');
     }

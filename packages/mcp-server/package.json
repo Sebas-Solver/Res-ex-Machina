@@ -2,6 +2,7 @@
   "name": "@res-ex-machina/mcp-server",
   "version": "0.2.0",
   "description": "MCP Server for Res-ex-Machina — Secure sidecar for AI agents to register verifiable Proofs of Generation on blockchain",
+  "type": "module",
   "bin": {
     "rxm-mcp": "./dist/index.js"
   },
@@ -42,20 +43,20 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc || true",
+    "build": "NODE_OPTIONS=\"--max-old-space-size=4096\" tsc || true",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "test": "jest",
-    "typecheck": "tsc --noEmit",
+    "test": "NODE_OPTIONS=\"--experimental-vm-modules --max-old-space-size=4096\" jest",
+    "typecheck": "NODE_OPTIONS=\"--max-old-space-size=4096\" tsc --noEmit",
     "prepublishOnly": "npm run build && node -e \"require('fs').existsSync('dist/index.js') || (console.error('ERROR: dist/index.js not found — build failed silently (Issue #43)'), process.exit(1))\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.5.0",
-    "@res-ex-machina/sdk": "^0.1.0",
+    "@res-ex-machina/sdk": "workspace:*",
     "better-sqlite3": "^11.8.1",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
-    "viem": "^2.22.17",
+    "viem": "^2.45.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {

@@ -42,7 +42,6 @@ export function registerControlTools(server: McpServer): string[] {
     // Don't block server startup if ledger is not yet ready
   }
 
-  // @ts-expect-error — TS2589: Known MCP SDK issue with deep Zod schema inference
   server.tool(
     "rxm_set_confirmation_mode",
     "Updates the confirmation mode for the MCP server. Allowed values: 'require' (human must review), 'auto' (fully automated with guardrails — requires reason), 'dry-run' (simulates transactions). Changing to 'auto' requires MCP_ALLOW_AUTO_MODE=true and a mandatory reason.",

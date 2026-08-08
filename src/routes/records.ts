@@ -3,7 +3,7 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { records } from '../db/schema.js';
+import { records, paymentAttempts } from '../db/schema.js';
 import type { PaymentEvidence } from '../types/payment.js';
 import { env } from '../config/env.js';
 import {
@@ -176,10 +176,23 @@ export default async function recordRoutes(fastify: FastifyInstance) {
         );
 
         // 6. Crear record (INSERT DB + enqueue anchor)
-        const result = await createRecord(input, attempt);
-
-        // 7. Enlazar Record al Attempt
-        await paymentVerifier.linkRecord(attempt.id, result.record_id);
+        let result;
+        try {
+            result = await createRecord(input, attempt);
+            // 7. Enlazar Record al Attempt
+            await paymentVerifier.linkRecord(attempt.id, result.record_id);
+        } catch (createError) {
+            // Si la creación del record falla tras liquidar el pago, marcar el intento como fallido
+            // para evitar que el pago quede huérfano en estado settled sin record.
+            await db.update(paymentAttempts)
+                .set({
+                    status: 'failed',
+                    error: createError instanceof Error ? createError.message : String(createError),
+                    updatedAt: new Date(),
+                })
+                .where(eq(paymentAttempts.id, attempt.id));
+            throw createError;
+        }
 
         if (evidence.method === 'x402_usdc' && attempt.receipt) {
             const paymentResponse = { receipt: attempt.receipt };

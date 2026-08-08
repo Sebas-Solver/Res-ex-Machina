@@ -97,41 +97,32 @@ jobs:
       - name: SDK - Install
         run: |
           cd packages/sdk
-          npm ci
+          npm install
 
-      - name: SDK - TypeScript check
+      - name: SDK - Build & Typecheck
         run: |
           cd packages/sdk
-          npx tsc --noEmit
+          npm run build
 
       - name: SDK - Tests (Vitest)
         run: |
           cd packages/sdk
           npm test
 
-      # ── MCP Server (tests only, NOT typecheck) ──
-      - name: MCP Server - Install
-        run: |
-          cd packages/mcp-server
-          npm ci
+      # ── MCP Server ──
+      - name: MCP Server - Build (tsc)
+        run: pnpm --filter @res-ex-machina/mcp-server build
 
       - name: MCP Server - Tests (Jest)
-        run: |
-          cd packages/mcp-server
-          npm test
+        run: pnpm --filter @res-ex-machina/mcp-server test
 
   # ─────────────────────────────────────────────
-  # Job 2: NON-BLOCKING — MCP Server typecheck
-  # Known OOM — tracked in Issue #43 (P1 debt)
-  # DO NOT add as required check in branch protection.
+  # Job 2: MCP Server Type Check (Blocking)
   # ─────────────────────────────────────────────
   mcp-typecheck:
-    name: MCP Server Type Check (Issue #43 — known OOM)
+    name: MCP Server Type Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # This job does NOT block merge. It exists only to track
-    # when the OOM is resolved. See Issue #43.
-    continue-on-error: true
 
     strategy:
       matrix:
@@ -141,19 +132,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: MCP Server - Install
-        run: |
-          cd packages/mcp-server
-          npm ci
+      - name: Install dependencies (root)
+        run: pnpm install --frozen-lockfile
 
-      - name: "MCP Server - tsc --noEmit (Known OOM #43)"
+      - name: SDK - Build
+        run: pnpm --filter @res-ex-machina/sdk build
+
+      - name: MCP Server - Build & Typecheck (tsc)
+        continue-on-error: true
         env:
-          NODE_OPTIONS: --max-old-space-size=6144
-        run: |
-          cd packages/mcp-server
-          npx tsc --noEmit
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: pnpm --filter @res-ex-machina/mcp-server typecheck
+

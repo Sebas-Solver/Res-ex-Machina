@@ -45,7 +45,6 @@ export function registerBatchTools(server: McpServer): string[] {
   const config = getConfig();
   const rxmClient = getRxmClient();
 
-  // @ts-expect-error — TS2589: Known MCP SDK issue with deep Zod schema inference
   server.tool(
     "rxm_prepare_batch",
     "Phase 1 of 2 (Batch): Prepares multiple records for registration. Deduplicates, estimates costs, and returns a batch_confirmation_id.",
