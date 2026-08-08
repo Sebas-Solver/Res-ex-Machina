@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { jest } from '@jest/globals';
 import { envSchema } from '../src/config';
 
 describe('Config Schema Validation', () => {

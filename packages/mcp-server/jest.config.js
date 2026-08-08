@@ -1,7 +1,8 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 export default {
-  preset: 'ts-jest',
+  preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
+  injectGlobals: true,
   testMatch: ['**/*.test.ts'],
   moduleNameMapper: {
     // ts-jest cannot resolve .js extensions in TS imports; remap to .ts
@@ -11,6 +12,7 @@ export default {
     '^.+\\.tsx?$': [
       'ts-jest',
       {
+        useESM: true,
         diagnostics: {
           ignoreCodes: [2589, 151002],
         },

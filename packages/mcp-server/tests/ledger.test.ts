@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
-import { MemoryLedger } from '../src/ledger/MemoryLedger';
+import { jest } from '@jest/globals';
 
-// We need to mock getConfig to control guardrail values
-jest.mock('../src/config', () => ({
+jest.unstable_mockModule('../src/config.js', () => ({
   getConfig: () => ({
     MCP_MAX_RXM_FEE_WEI: '10000000000000000',     // 0.01 ETH
     MCP_MAX_GAS_COST_WEI: '500000000000000',       // 0.0005 ETH
@@ -11,6 +10,8 @@ jest.mock('../src/config', () => ({
     MCP_MAX_RECORDS_PER_DAY: 5,
   }),
 }));
+
+const { MemoryLedger } = await import('../src/ledger/MemoryLedger');
 
 describe('MemoryLedger', () => {
   let ledger: MemoryLedger;
