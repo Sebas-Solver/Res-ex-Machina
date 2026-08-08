@@ -3,7 +3,7 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { records } from '../db/schema.js';
+import { records, paymentAttempts } from '../db/schema.js';
 import type { PaymentEvidence } from '../types/payment.js';
 import { env } from '../config/env.js';
 import {
