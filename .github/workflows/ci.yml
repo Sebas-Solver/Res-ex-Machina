@@ -110,20 +110,11 @@ jobs:
           npm test
 
       # ── MCP Server ──
-      - name: MCP Server - Install
-        run: |
-          cd packages/mcp-server
-          npm install
-
       - name: MCP Server - Build (tsc)
-        run: |
-          cd packages/mcp-server
-          npm run build
+        run: pnpm --filter @res-ex-machina/mcp-server build
 
       - name: MCP Server - Tests (Jest)
-        run: |
-          cd packages/mcp-server
-          npm test
+        run: pnpm --filter @res-ex-machina/mcp-server test
 
   # ─────────────────────────────────────────────
   # Job 2: MCP Server Type Check (Blocking)
@@ -155,20 +146,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: SDK - Build
-        run: |
-          cd packages/sdk
-          npm run build
-
-      - name: MCP Server - Install
-        run: |
-          cd packages/mcp-server
-          npm install
+        run: pnpm --filter @res-ex-machina/sdk build
 
       - name: MCP Server - Build & Typecheck (tsc)
-        continue-on-error: true
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-        run: |
-          cd packages/mcp-server
-          npm run build
+        run: pnpm --filter @res-ex-machina/mcp-server typecheck
 
