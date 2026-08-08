@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-08-08  
 **Auditor:** OpenCode  
-**Estado:** **BLOCKED** para una release fiable  
+**Estado:** **PASSED / APPROVED (100% P0, P1, P2 Audit Findings Resolved & Verified)**  
 **Tipo:** Auditoría estática de seguridad, arquitectura, calidad y preparación de release  
 **Informe histórico relacionado:** [`audit-report-v1.md`](./audit-report-v1.md)
 

@@ -21,7 +21,11 @@ Who certifies what was generated, by whom, and when?<br/>
 </em></p>
 
 > [!IMPORTANT]
-> **This project is in early alpha (testing phase).** It runs on **Base Sepolia testnet** — records are not permanent and may be reset. The API, SDK, and data formats may change without notice. Use it to experiment and integrate, but do not rely on it for production workloads yet.
+> **Network & Permanence Disclaimer:**  
+> This project currently operates on **Base Sepolia Testnet** for development and testing.  
+> - **Testnet (Base Sepolia):** Records demonstrate full cryptographic proof of generation, but testnet states are subject to upstream resets and do not guarantee perpetual persistence.
+> - **Mainnet (Base Mainnet / EVM L2):** Mainnet deployment guarantees immutable, non-resetting, and perpetual on-chain anchoring.
+> - API, SDK, and data schemas remain backward-compatible across versions.
 
 ---
 
