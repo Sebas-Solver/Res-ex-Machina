@@ -7,4 +7,14 @@ export default {
     // ts-jest cannot resolve .js extensions in TS imports; remap to .ts
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
+  transform: {
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        diagnostics: {
+          ignoreCodes: [2589, 151002],
+        },
+      },
+    ],
+  },
 };
