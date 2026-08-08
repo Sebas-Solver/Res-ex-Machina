@@ -20,11 +20,7 @@ An **MCP (Model Context Protocol) Server** that lets AI agents register verifiab
 
 Works with **any MCP-compatible client**: Claude Desktop, Google Antigravity, Cursor, VS Code (Copilot), and more.
 
-> **⚠️ EXPERIMENTAL** — This package is under active development and is **not production-stable**.
-> Known issue: TypeScript typecheck fails under OOM ([#43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)).
-> Use for **development and testnet integration only**. API surface may change without notice.
->
-> **v0.2.0** — Read-only by default. Write operations require explicit opt-in.
+> **v0.2.1** — Read-only by default. Write operations require explicit opt-in. Full TypeScript ESM build & typecheck hardening completed ([#43](https://github.com/Sebas-Solver/Res-ex-Machina/issues/43)).
 
 ---
 
