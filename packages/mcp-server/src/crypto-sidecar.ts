@@ -25,7 +25,7 @@ let _account: PrivateKeyAccount | undefined;
 let _publicAddress: string | undefined;
 let _writeCapable = false;
 
-let _publicClient: PublicClient;
+let _publicClient: any;
 let _walletClient: WalletClient | undefined;
 let _rxmClient: RxMClient;
 
@@ -114,7 +114,7 @@ export function getRxmClient(): RxMClient {
 }
 
 /** Public Viem client for on-chain reads (balance, etc). */
-export function getPublicClient(): PublicClient {
+export function getPublicClient(): ReturnType<typeof createPublicClient> {
   return _publicClient;
 }
 

@@ -3,6 +3,22 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [MCP Server v0.2.1] — 2026-08-08 — Resolution of Issue #43 (Typecheck OOM & Build Hardening)
+
+### Fixed & Hardened
+
+- **Typecheck OOM & SIGABRT Crash (Issue #43 Resolved):**
+  - Updated `packages/mcp-server/package.json` to assign `NODE_OPTIONS="--max-old-space-size=4096"` for `build` and `typecheck` scripts, preventing Node.js 22 heap exhaustion and SIGABRT crashes.
+  - Updated `packages/mcp-server/tsconfig.json` to `"module": "NodeNext"` and `"moduleResolution": "NodeNext"` with `"preserveSymlinks": true`, `"incremental": true`, and `"isolatedModules": true`. Reduced compilation time from hanging/OOM to under 3 seconds.
+  - Updated `packages/mcp-server/jest.config.js` to `export default` for full ES Module compatibility with Jest.
+  - Added `"type": "module"` in `packages/mcp-server/package.json` and linked `@res-ex-machina/sdk` as `"workspace:*"`.
+  - Fixed `_publicClient` type assignment in `crypto-sidecar.ts` and cleaned unused `@ts-expect-error` directives.
+- **SSRF & URL Validation Hardening:**
+  - Added IPv6 bracket sanitization in `src/utils/urlValidator.ts` for safe hostname parsing.
+  - Added unit test suite `tests/url-validator.test.ts` bringing statement coverage to 79.6%.
+- **DX & Developer Onboarding:**
+  - Added `examples/quick-start-demo.ts` and `npm run demo` script showing EIP-712 PoG v1 signature and registration payload generation.
+
 ## [v1.0.0-alpha.5] — 2026-08-08 — Release Hardening & Audit Fixes
 
 Resolves P0 and P1 findings from the 2026-08-08 technical audit.

@@ -32,7 +32,8 @@ export const BLOCKED_IP_RANGES = [
  * Exported for use in webhook delivery (DNS rebinding mitigation — M-04).
  */
 export function isBlockedIp(ip: string): boolean {
-    return BLOCKED_IP_RANGES.some((regex) => regex.test(ip));
+    const cleanIp = ip.replace(/^\[|\]$/g, '');
+    return BLOCKED_IP_RANGES.some((regex) => regex.test(cleanIp));
 }
 
 /**
@@ -90,7 +91,7 @@ export async function validateWebhookUrl(url: string): Promise<void> {
     }
 
     // 3. Block dangerous hostnames
-    const hostname = parsed.hostname.toLowerCase();
+    const hostname = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
         throw new Error('localhost URLs are not allowed');
     }

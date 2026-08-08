@@ -103,8 +103,8 @@ importers:
         specifier: ^1.5.0
         version: 1.30.0(zod@3.25.76)
       '@res-ex-machina/sdk':
-        specifier: ^0.1.0
-        version: 0.1.0(viem@2.49.2(typescript@5.9.3)(zod@3.25.76))
+        specifier: workspace:*
+        version: link:../sdk
       better-sqlite3:
         specifier: ^11.8.1
         version: 11.10.0
@@ -115,7 +115,7 @@ importers:
         specifier: ^5.2.1
         version: 5.2.1
       viem:
-        specifier: ^2.22.17
+        specifier: ^2.45.2
         version: 2.49.2(typescript@5.9.3)(zod@3.25.76)
       zod:
         specifier: ^3.24.1
@@ -4937,10 +4937,6 @@ snapshots:
       '@opentelemetry/instrumentation': 0.207.0(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - supports-color
-
-  '@res-ex-machina/sdk@0.1.0(viem@2.49.2(typescript@5.9.3)(zod@3.25.76))':
-    dependencies:
-      viem: 2.49.2(typescript@5.9.3)(zod@3.25.76)
 
   '@res-ex-machina/sdk@0.1.0(viem@2.49.2(typescript@5.9.3)(zod@4.4.3))':
     dependencies:
