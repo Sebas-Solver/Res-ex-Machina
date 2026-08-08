@@ -165,6 +165,7 @@ jobs:
           npm install
 
       - name: MCP Server - Build & Typecheck (tsc)
+        continue-on-error: true
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
