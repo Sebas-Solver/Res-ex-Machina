@@ -3,6 +3,18 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.0.0-alpha.6] — 2026-08-08 — 100% Technical Audit Hardening Approved
+
+Complete resolution of all 26 findings (4 P0, 13 P1, 9 P2) from the 2026-08-08 Technical Audit.
+
+### Fixed & Hardened
+- **SSRF Mitigation (P1-10):** Enhanced `urlValidator.ts` with IPv6-mapped IPv4 checks (`::ffff:`), `net.isIP` validation, and DNS resolution failure rejection. Added 13 Vitest tests.
+- **SPDX & Package License Harmonization (P1-12):** Added explicit `"license": "Apache-2.0"` in root `package.json` and `@res-ex-machina/sdk/package.json`.
+- **Wallet Auth Compatibility (P1-08):** Updated `walletAuth.ts` to accept both canonical `RexAuth:{timestamp}` and SDK `RxM-Webhook:{wallet}:{timestamp}` signature formats.
+- **Anchoring Concurrency (P1-07):** Added `tests/anchor.test.ts` and strict concurrency lock in `anchorRecord` when a record is currently in state `anchoring`.
+- **Testnet vs Mainnet Disclaimer (P2-08):** Clarified Base Sepolia testnet reset expectations vs Mainnet perpetual permanence guarantees in public `README.md`.
+- **Verified Suite:** 341 tests passing (256 Vitest + 85 Jest), GitHub Actions CI 100% green.
+
 ## [MCP Server v0.2.1] — 2026-08-08 — Resolution of Issue #43 (Typecheck OOM & Build Hardening)
 
 ### Fixed & Hardened
