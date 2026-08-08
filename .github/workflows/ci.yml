@@ -141,15 +141,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Install dependencies (root)
+        run: pnpm install --frozen-lockfile
+
       - name: SDK - Build
         run: |
           cd packages/sdk
-          npm install
           npm run build
 
       - name: MCP Server - Install
