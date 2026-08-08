@@ -164,10 +164,10 @@ jobs:
           cd packages/mcp-server
           npm install
 
-      - name: MCP Server - tsc --noEmit
+      - name: MCP Server - Build & Typecheck (tsc)
         env:
           NODE_OPTIONS: --max-old-space-size=4096
         run: |
           cd packages/mcp-server
-          npm run typecheck
+          npm run build
 
