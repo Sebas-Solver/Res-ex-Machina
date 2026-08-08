@@ -38,9 +38,9 @@ async function main() {
     // Audit H-03: Limit request body size to prevent memory exhaustion
     app.use(express.json({ limit: '64kb' }));
 
-    app.use((req: Request, res: Response, next: NextFunction) => {
+    app.use((req: any, res: any, next: any) => {
       if (!config.MCP_ALLOW_REMOTE_HTTP) {
-        const clientIp = req.ip || req.socket.remoteAddress || '';
+        const clientIp = (req.ip || req.socket?.remoteAddress || '') as string;
         if (!clientIp.includes('127.0.0.1') && !clientIp.includes('::1')) {
           res.status(403).send('Forbidden: Remote connections are disabled');
           return;
@@ -62,12 +62,12 @@ async function main() {
 
     let transport: SSEServerTransport;
 
-    app.get("/sse", async (req: Request, res: Response) => {
+    app.get("/sse", async (req: any, res: any) => {
       transport = new SSEServerTransport("/message", res);
       await server.connect(transport);
     });
 
-    app.post("/message", async (req: Request, res: Response) => {
+    app.post("/message", async (req: any, res: any) => {
       if (transport) {
         await transport.handlePostMessage(req, res);
       } else {
