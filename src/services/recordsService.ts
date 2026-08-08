@@ -76,12 +76,13 @@ export async function checkDuplicates(
     nonce: string,
     feeTxHash?: string,
 ) {
+    const normalizedWallet = agentWallet.toLowerCase();
     // Parallelize the 2 checks — they are independent of each other.
     // Race conditions protegidas por UNIQUE constraints en DB.
     const promises = [
         db.select({ recordId: records.recordId })
             .from(records)
-            .where(and(eq(records.agentWallet, agentWallet), eq(records.nonce, nonce)))
+            .where(and(eq(records.agentWallet, normalizedWallet), eq(records.nonce, nonce)))
             .limit(1)
     ];
     
@@ -98,8 +99,12 @@ export async function checkDuplicates(
     const existingByNonce = results[0];
     const existingByFee = results.length > 1 ? results[1] : [];
 
-    if (existingByNonce.length > 0) throw duplicateNonce();
-    if (existingByFee.length > 0) throw feeTxReused();
+    if (existingByNonce.length > 0) {
+        throw duplicateNonce();
+    }
+    if (existingByFee.length > 0) {
+        throw feeTxReused();
+    }
 }
 
 // -------------------------------------------------------------------
@@ -136,7 +141,7 @@ export async function createRecord(
             visibility: input.visibility,
             pogBundle: pog_bundle,
             nonce: pog_bundle.nonce,
-            agentWallet: pog_bundle.agent_wallet,
+            agentWallet: pog_bundle.agent_wallet.toLowerCase(),
             state: 'pending_anchor',
             createdAt,
             receiptHash,

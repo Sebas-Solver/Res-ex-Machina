@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Environment & Secrets
+.env
+.env.*
+!.env.example
+
+# Git & IDE
+.git/
+.gitignore
+.github/
+.vscode/
+.idea/
+
+# Test outputs & Coverage
+coverage/
+semgrep-results.json
+testsprite_tests/
+
+# Temporary & Local
+*.log
+pgdata/
+redisdata/
+Docs/_internal/
+private/
+.gemini/
+.agents/
+
+# Operational scripts (NEVER include in container build)
+scripts/_*
+scripts/smoke-test-*.ts
+scripts/check-db-*.ts
+scripts/migrate-*.ts

@@ -18,6 +18,11 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added unit test suite `tests/url-validator.test.ts` bringing statement coverage to 79.6%.
 - **DX & Developer Onboarding:**
   - Added `examples/quick-start-demo.ts` and `npm run demo` script showing EIP-712 PoG v1 signature and registration payload generation.
+- **Audit Hardening (P1-01, P1-09, P1-11, P2-03):**
+  - Added `.dockerignore` excluding `.git`, `.env*`, `dist/`, and local credentials from container builds.
+  - Separated public and admin response caches in `/v1/health` to prevent diagnostic data leakage.
+  - Resolved dynamic Chain ID mapping in `packages/mcp-server/src/crypto-sidecar.ts` via `MCP_CHAIN_ID`.
+  - Enforced lowercase wallet address normalization in `recordsService` insertion and duplication checks.
 
 ## [v1.0.0-alpha.5] — 2026-08-08 — Release Hardening & Audit Fixes
 
