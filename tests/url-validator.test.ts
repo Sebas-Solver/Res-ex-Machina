@@ -43,6 +43,8 @@ describe('urlValidator (SSRF Mitigation)', () => {
             expect(isBlockedIp('::1')).toBe(true);
             expect(isBlockedIp('fc00::1')).toBe(true);
             expect(isBlockedIp('fe80::1')).toBe(true);
+            expect(isBlockedIp('::ffff:127.0.0.1')).toBe(true);
+            expect(isBlockedIp('::ffff:10.0.0.1')).toBe(true);
         });
 
         it('allows legitimate public IP addresses', () => {

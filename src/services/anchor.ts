@@ -85,6 +85,7 @@ export async function anchorRecord(
             };
         }
         logger.info({ recordId }, '[anchor] Record is already being anchored by another worker');
+        throw new Error(`Record ${recordId} is currently being anchored by another process`);
     }
 
     // Codificar el receipt_hash canónico como bytes para el calldata

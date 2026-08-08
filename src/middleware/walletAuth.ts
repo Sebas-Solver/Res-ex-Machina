@@ -79,24 +79,30 @@ export async function walletAuth(request: FastifyRequest): Promise<void> {
     }
 
     // 4. Reconstruct message and verify signature
-    const message = `${AUTH_MESSAGE_PREFIX}${timestamp}`;
+    // Supports canonical formats: 'RexAuth:{timestamp}', 'RexAuth:{wallet}:{timestamp}', and SDK format 'RxM-Webhook:{wallet}:{timestamp}'
+    const messagesToTry = [
+        `${AUTH_MESSAGE_PREFIX}${timestamp}`,
+        `${AUTH_MESSAGE_PREFIX}${walletAddress}:${timestamp}`,
+        `${AUTH_MESSAGE_PREFIX}${normalizedAddress}:${timestamp}`,
+        `RxM-Webhook:${walletAddress}:${timestamp}`,
+        `RxM-Webhook:${normalizedAddress}:${timestamp}`,
+    ];
 
-    try {
-        const isValid = await verifyMessage({
-            address: normalizedAddress,
-            message,
-            signature: signature as Hex,
-        });
+    let isValid = false;
+    for (const msg of messagesToTry) {
+        try {
+            isValid = await verifyMessage({
+                address: normalizedAddress,
+                message: msg,
+                signature: signature as Hex,
+            });
+            if (isValid) break;
+        } catch {
+            // continue trying
+        }
+    }
 
-        if (!isValid) {
-            throw authSignatureInvalid();
-        }
-    } catch (error) {
-        // Re-throw if already an ApiError
-        if (error instanceof Error && error.name === 'ApiError') {
-            throw error;
-        }
-        // viem error (malformed signature, etc.)
+    if (!isValid) {
         throw authSignatureInvalid();
     }
 
