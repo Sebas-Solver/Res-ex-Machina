@@ -131,10 +131,10 @@ export const records = pgTable(
         /** content_hash must follow the format sha256:{64 hex chars} */
         check('chk_content_hash', sql`${table.contentHash} ~ '^sha256:[a-f0-9]{64}$'`),
 
-        /** state can only be one of these 3 values */
+        /** state can only be one of these 4 values */
         check(
             'chk_state',
-            sql`${table.state} IN ('pending_anchor', 'anchored', 'anchor_failed')`,
+            sql`${table.state} IN ('pending_anchor', 'anchoring', 'anchored', 'anchor_failed')`,
         ),
 
         /** visibility can only be one of these 3 values */

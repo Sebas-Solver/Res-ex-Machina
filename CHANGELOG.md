@@ -3,6 +3,17 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v1.0.0-alpha.5] — 2026-08-08 — Release Hardening & Audit Fixes
+
+Resolves P0 and P1 findings from the 2026-08-08 technical audit.
+
+### Fixed & Hardened
+
+- **DB & Migrations (P0-02):** Un-ignored `drizzle/` directory in `.gitignore` to track migration SQL in git. Rebuilt complete baseline migrations (`0000_wet_moira_mactaggert.sql` and `0001_neat_vulture.sql`) covering all tables (`records`, `webhooks` with AES-256-GCM, and `payment_attempts`). Updated `chk_state` constraint to explicitly include `anchoring` state.
+- **Atomic Anchoring Idempotency (P1-07):** Added atomic state claim (`pending_anchor` -> `anchoring`) in `anchorRecord` to prevent concurrent worker execution and duplicate transactions. Enforced database canonical `receiptHash` for on-chain calldata.
+- **Payment Settlement Error Recovery (P1-06):** Added error handling in `POST /v1/records` to mark settled payment attempts as `failed` if record creation fails post-settlement, preventing orphaned payments.
+- **MCP Server Build & Typecheck (P0-03):** Removed `|| true` fallback from `packages/mcp-server/package.json`. Added explicit Express types (`Request`, `Response`, `NextFunction`) in `src/index.ts`. Updated CI to build `@res-ex-machina/sdk` first and enforce blocking MCP typechecks.
+
 ---
 
 ## [MCP Server v0.2.0] — 2026-05-18 — Public Hardening (PR #58)

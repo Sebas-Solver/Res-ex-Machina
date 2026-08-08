@@ -354,6 +354,7 @@ Docs/
 | [`quick-start.md`](Docs/40-guides/quick-start.md) | Zero to first record in 5 minutes |
 | [`human-guide-v1.md`](Docs/40-guides/human-guide-v1.md) | Guide for non-technical users |
 | [`developer-guide-v1.md`](Docs/40-guides/developer-guide-v1.md) | Full developer guide |
+| [`agent-skills-index.md`](Docs/40-guides/agent-skills-index.md) | Skills útiles y routing recomendado para agentes |
 | [`api-examples.md`](Docs/40-guides/api-examples.md) | curl examples for all endpoints |
 | [`pog-v1-spec.md`](Docs/10-specs/pog-v1-spec.md) | Proof of Generation v1 specification |
 | [`fee-flow-v1.md`](Docs/10-specs/fee-flow-v1.md) | On-chain fee verification flow |
@@ -361,7 +362,8 @@ Docs/
 | [`error-catalog.md`](Docs/10-specs/error-catalog.md) | API error catalog |
 | [`c2pa-interoperability.md`](Docs/10-specs/c2pa-interoperability.md) | Interoperability with C2PA standards |
 | [`receipt-verification-spec.md`](Docs/10-specs/receipt-verification-spec.md) | Receipt verification specification (v1.2) |
-| [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Security audit report (v2 — 14/14 findings resolved) |
+| [`audit-report-2026-08-08.md`](Docs/20-security/audit-report-2026-08-08.md) | Latest technical and release audit (current verdict: BLOCKED) |
+| [`audit-report-v1.md`](Docs/20-security/audit-report-v1.md) | Historical security audit (14/14 findings resolved) |
 | `admin-key-rotation.md` | ADMIN_API_KEY rotation procedure (private repo) |
 | [`integrator-guide.md`](Docs/60-operations/integrator-guide.md) | Integrator troubleshooting guide |
 

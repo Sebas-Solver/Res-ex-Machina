@@ -1,0 +1,2 @@
+ALTER TABLE "records" DROP CONSTRAINT "chk_state";--> statement-breakpoint
+ALTER TABLE "records" ADD CONSTRAINT "chk_state" CHECK ("records"."state" IN ('pending_anchor', 'anchoring', 'anchored', 'anchor_failed'));

@@ -3,7 +3,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import express from "express";
+import express, { type Request, type Response, type NextFunction } from "express";
 import { getConfig } from "./config.js";
 import { initCryptoSidecar } from "./crypto-sidecar.js";
 import { registerAllTools } from "./tools/index.js";
@@ -38,7 +38,7 @@ async function main() {
     // Audit H-03: Limit request body size to prevent memory exhaustion
     app.use(express.json({ limit: '64kb' }));
 
-    app.use((req, res, next) => {
+    app.use((req: Request, res: Response, next: NextFunction) => {
       if (!config.MCP_ALLOW_REMOTE_HTTP) {
         const clientIp = req.ip || req.socket.remoteAddress || '';
         if (!clientIp.includes('127.0.0.1') && !clientIp.includes('::1')) {
@@ -62,12 +62,12 @@ async function main() {
 
     let transport: SSEServerTransport;
 
-    app.get("/sse", async (req, res) => {
+    app.get("/sse", async (req: Request, res: Response) => {
       transport = new SSEServerTransport("/message", res);
       await server.connect(transport);
     });
 
-    app.post("/message", async (req, res) => {
+    app.post("/message", async (req: Request, res: Response) => {
       if (transport) {
         await transport.handlePostMessage(req, res);
       } else {

@@ -5,43 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1770731525206,
-      "tag": "0000_nebulous_slayback",
+      "when": 1786203188564,
+      "tag": "0000_wet_moira_mactaggert",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1771856043122,
-      "tag": "0001_motionless_exodus",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1778630406207,
-      "tag": "0002_ancient_red_wolf",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1778630801052,
-      "tag": "0003_tiny_the_hood",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1778877594235,
-      "tag": "0004_organic_ghost_rider",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1779128434952,
-      "tag": "0005_greedy_the_fallen",
+      "when": 1786203237958,
+      "tag": "0001_neat_vulture",
       "breakpoints": true
     }
   ]

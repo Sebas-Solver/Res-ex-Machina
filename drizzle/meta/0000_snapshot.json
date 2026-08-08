@@ -1,6 +1,6 @@
 {
-  "id": "87782332-53fa-49a4-a1d2-5404b243bd78",
-  "prevId": "412499c1-5f8e-48b4-a526-1319b583a355",
+  "id": "412499c1-5f8e-48b4-a526-1319b583a355",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -396,7 +396,7 @@
         },
         "chk_state": {
           "name": "chk_state",
-          "value": "\"records\".\"state\" IN ('pending_anchor', 'anchoring', 'anchored', 'anchor_failed')"
+          "value": "\"records\".\"state\" IN ('pending_anchor', 'anchored', 'anchor_failed')"
         },
         "chk_visibility": {
           "name": "chk_visibility",

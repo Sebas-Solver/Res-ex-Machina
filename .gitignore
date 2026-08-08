@@ -20,8 +20,7 @@ Thumbs.db
 # Test coverage
 coverage/
 
-# Drizzle generated
-drizzle/
+# Drizzle generated (tracked in git)
 
 # Docker volumes
 pgdata/
