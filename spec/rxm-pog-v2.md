@@ -28,6 +28,15 @@ event AnchorProof(uint8 agentIdScheme, bytes32 indexed agentId,
 
 The ERC deliberately leaves the meaning of `proofHash` to profiles and states that `operator` is **not** an authorization claim. This profile supplies the missing authorization: the agent's own signature over the full declaration, carried in `aux`, so that anyone can check from chain data alone who made the declaration, whoever paid for the transaction.
 
+### 2.1 Independence from ERC-8263
+
+ERC-8263 is a draft and may change, stall or be replaced. This profile is split so that does not matter:
+
+- **Core (§3, §7 steps 3–5 and 8, §8):** the declaration, its EIP-712 digest and the agent's signature. Independent of any anchoring standard.
+- **Binding (§4, §5, §6, §7 steps 1–2 and 6–7):** how the digest and signature are put on chain. The only binding today emits the ERC-8263 `AnchorProof` event from a contract deployed for this purpose, so it works whether or not the ERC is ever finalised.
+
+If another anchoring standard appears, it gets its own binding (its own `verifyingContract` and event format). Anchors made under earlier bindings stay verifiable with their binding.
+
 ## 3. The declaration
 
 ### 3.1 EIP-712 domain
