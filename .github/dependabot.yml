@@ -5,8 +5,9 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+  # packages/sdk (v1 SDK) is frozen and not tracked. The v2 client is packages/pog.
   - package-ecosystem: "npm"
-    directory: "/packages/sdk"
+    directory: "/packages/pog"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
