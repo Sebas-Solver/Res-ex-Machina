@@ -11,6 +11,10 @@ import healthRoutes from './routes/health.js';
 import recordRoutes from './routes/records.js';
 import webhookRoutes from './routes/webhooks.js';
 import adminRoutes from './routes/admin.js';
+import v2Routes from './routes/v2.js';
+import { env } from './config/env.js';
+import { db } from './db/index.js';
+import type { Db } from './v2/store.js';
 import { apiErrorHandler } from './utils/errors.js';
 import { registerRateLimit } from './middleware/rateLimit.js';
 import { client } from './db/index.js';
@@ -128,6 +132,21 @@ app.register(healthRoutes, { prefix: '/v1' });
 app.register(recordRoutes, { prefix: '/v1/records' });
 app.register(webhookRoutes, { prefix: '/v1/webhooks' });
 app.register(adminRoutes, { prefix: '/admin' });
+app.register(v2Routes, {
+    prefix: '/v2',
+    config: {
+        enabled: env.V2_ENABLED,
+        chainId: env.L2_CHAIN_ID,
+        contract: env.ANCHOR_CONTRACT_ADDRESS as `0x${string}` | undefined,
+        agentDailyQuota: env.V2_AGENT_DAILY_QUOTA,
+        globalDailyQuota: env.V2_GLOBAL_DAILY_QUOTA,
+    },
+    deps: {
+        db: db as unknown as Db,
+        // Lazy: the v2 queue (Redis) is only touched when a declaration is actually accepted.
+        enqueue: async (id: string) => (await import('./workers/anchorV2.worker.js')).enqueueAnchorV2(id),
+    },
+});
 
 // --- Root route ---
 app.get('/', async () => {
@@ -158,6 +177,12 @@ const start = async () => {
                 const { startWebhookWorker } = await import('./workers/webhook.worker.js');
                 startWebhookWorker();
                 app.log.info('🚀 Webhook dispatch worker started (inline, same process)');
+
+                if (env.V2_ENABLED) {
+                    const { startAnchorV2Worker } = await import('./workers/anchorV2.worker.js');
+                    startAnchorV2Worker();
+                    app.log.info('⚓ rxm-pog-v2 anchor worker started (inline, concurrency 1)');
+                }
             } catch (workerErr) {
                 app.log.error(workerErr, '❌ Worker(s) failed to start (Redis available?)');
                 // Don't process.exit — the API can work without the worker,
