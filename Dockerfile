@@ -2,31 +2,42 @@
 
 # ============================================
 # Res ex Machina — Dockerfile
+# Single package manager: pnpm workspace (packageManager in package.json).
 # ============================================
 
-# --- Stage: development ---
-FROM node:22-alpine AS development
+FROM node:22-alpine AS base
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+RUN corepack enable
+
+# --- Stage: deps (all workspace dependencies, from the lockfile) ---
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/pog/package.json packages/pog/
+COPY packages/sdk/package.json packages/sdk/
+COPY packages/mcp-server/package.json packages/mcp-server/
+RUN pnpm install --frozen-lockfile --filter . --filter @res-ex-machina/pog
+
+# --- Stage: development (docker-compose) ---
+FROM deps AS development
 COPY . .
-CMD ["npm", "run", "dev"]
+RUN pnpm --filter @res-ex-machina/pog build
+CMD ["pnpm", "run", "dev"]
 
 # --- Stage: build ---
-FROM node:22-alpine AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+FROM deps AS build
 COPY . .
-RUN npm run build
+RUN pnpm --filter @res-ex-machina/pog build && pnpm run build
 
 # --- Stage: production ---
-FROM node:22-alpine AS production
-WORKDIR /app
+FROM base AS production
 ENV NODE_ENV=production
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/pog/package.json packages/pog/
+COPY packages/sdk/package.json packages/sdk/
+COPY packages/mcp-server/package.json packages/mcp-server/
+RUN pnpm install --frozen-lockfile --prod --filter . --filter @res-ex-machina/pog && pnpm store prune
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/packages/pog/dist ./packages/pog/dist
 
 # Security: run as non-root user (node user exists in alpine images)
 USER node
