@@ -1,3 +1,6 @@
+> [!CAUTION]
+> **ERRATUM (2026-10-02). The verdict of this report is withdrawn.** It declared all findings resolved and the release "approved for production". An independent review on 2026-08-19, re-verified on 2026-10-02, reproduced several of those findings as still open and found new payment and verification issues. This file is kept unchanged below as a historical record. Rule adopted since then: a finding is closed only with the command that reproduces it and its output, reviewed by someone other than its author.
+
 # Auditoría Técnica y de Release — Res ex Machina
 
 **Fecha:** 2026-08-08  

@@ -3,6 +3,20 @@
 All notable changes to this project are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Erratum (2026-10-02)
+
+- The "100% Technical Audit Hardening Approved" claim of v1.0.0-alpha.6 is **withdrawn**. Several findings listed below as fixed were reproduced as still open on 2026-08-19 and 2026-10-02.
+- **Correction to P0-03:** the `|| true` fallback was **not** removed from `packages/mcp-server/package.json`; the MCP typecheck still fails (TS2589) and CI does not block on it.
+- **License metadata:** both `package.json` files declared `"license"` twice and the last key (`ISC`) won. Fixed in this release: only `Apache-2.0` remains.
+
+### Changed
+
+- README now states the real project status (prototype on testnet, hosted API offline) and drops unverified badges.
+- Added `SECURITY.md` (private vulnerability reporting) and Dependabot configuration.
+- Archived orphan migrations `drizzle/0002`–`0005` (pre-squash lineage, not in `_journal.json`, broke `drizzle-kit generate`) to `Docs/_archive/drizzle-orphaned-2026-09/`.
+
 ## [v1.0.0-alpha.6] — 2026-08-08 — 100% Technical Audit Hardening Approved
 
 Complete resolution of all 26 findings (4 P0, 13 P1, 9 P2) from the 2026-08-08 Technical Audit.
