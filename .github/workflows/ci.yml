@@ -132,6 +132,12 @@ jobs:
           cd packages/pog
           npm test
 
+      - name: PoG - Web verifier bundle is up to date
+        run: |
+          cd packages/pog
+          npm run build:web
+          git diff --exit-code ../../docs/verify/rxm-pog.bundle.js
+
       # ── MCP Server ──
       - name: MCP Server - Build (tsc)
         run: pnpm --filter @res-ex-machina/mcp-server build
