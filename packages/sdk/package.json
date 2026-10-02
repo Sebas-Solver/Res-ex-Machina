@@ -46,7 +46,6 @@
     ],
     "author": "Sebas-Solver <sebas.solver@gmail.com>",
     "homepage": "https://github.com/Sebas-Solver/Res-ex-Machina/tree/main/packages/sdk#readme",
-    "license": "ISC",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/Sebas-Solver/Res-ex-Machina.git",

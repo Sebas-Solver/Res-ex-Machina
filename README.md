@@ -4,14 +4,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-Private%20Alpha-brightgreen" alt="Status: Private Alpha"/>
-  <img src="https://img.shields.io/badge/version-v1.0.0--alpha.6-blue" alt="Version: v1.0.0-alpha.6"/>
-  <img src="https://img.shields.io/badge/tests-341%20passing-brightgreen" alt="Tests: 341 passing"/>
-  <img src="https://img.shields.io/badge/CI-GitHub%20Actions%20(Node%2022)-success" alt="CI: GitHub Actions (Node 22)"/>
-  <img src="https://img.shields.io/badge/security-P0%2BP1%2BP2%20100%25%20Passed-brightgreen" alt="Security: P0+P1+P2 100% Passed"/>
-  <img src="https://img.shields.io/badge/coverage-v8-informational" alt="Coverage: v8"/>
+  <img src="https://img.shields.io/badge/status-prototype%20(testnet)-orange" alt="Status: prototype on testnet"/>
+  <img src="https://img.shields.io/badge/hosted%20API-offline-lightgrey" alt="Hosted API: offline"/>
   <img src="https://img.shields.io/badge/license-Apache%202.0-lightgrey" alt="License: Apache 2.0"/>
-  <img src="https://img.shields.io/badge/status_page-live-brightgreen" alt="Status Page: Live"/>
 </p>
 
 <p align="center"><em>
@@ -19,6 +14,13 @@ By 2026, over 90% of digital content will be AI-generated.<br/>
 Who certifies what was generated, by whom, and when?<br/>
 <strong>Res ex Machina — the technical trail AI agents leave behind.</strong>
 </em></p>
+
+
+> [!WARNING]
+> **Project status (2026-10-02): prototype, not production-ready.**
+> - The hosted API at `res-ex-machina-api.onrender.com` is **offline**. The MCP server is **not published** on npm, and the SDK on npm (`0.1.0`) is older than this repository.
+> - An independent review on 2026-10-02 found open security and payment issues. The report `Docs/20-security/audit-report-2026-08-09.md` declared "APPROVED FOR PRODUCTION"; **that verdict was wrong and has been withdrawn** (see the erratum at the top of that file).
+> - Next steps: the Proof of Generation is being redesigned as a signed-declaration profile on top of the open anchoring draft [ERC-8263](https://github.com/ethereum/ERCs/pull/1748). See [ROADMAP.md](ROADMAP.md).
 
 > [!IMPORTANT]
 > **Network & Permanence Disclaimer:**  
@@ -52,7 +54,7 @@ When an AI agent generates an output (text, image, code, audio...), it can regis
 | AI outputs have no verifiable traceability | Immutable record with cryptographic signature |
 | No **positive** registration system for AI exists | PoG: the agent proactively declares what it generates |
 | Agents generate without leaving verifiable memory | Verifiable timeline by hash or record ID |
-| Regulatory compliance (EU AI Act) requires traceability | Neutral, public, and auditable registry |
+| Embedded provenance (C2PA metadata, watermarks) is lost when files are re-encoded or stripped | External, signed declaration that survives metadata stripping. It complements, and does not replace, the marking duties of EU AI Act Art. 50 |
 
 ---
 
@@ -394,6 +396,8 @@ Key security controls: EIP-712/EIP-191 cryptographic verification, SSRF protecti
 
 ## 🗺️ Roadmap
 
+> **Superseded on 2026-10-02 by [ROADMAP.md](ROADMAP.md).** The table below is kept as history.
+
 | Version | Status | Scope |
 |---|---|---|
 | **v1.0 (MVP)** | ✅ Completed | Registration, PoG v1, L2 anchoring, REST API, on-chain fee, 63 tests, CI/CD |
@@ -449,7 +453,7 @@ This is deliberate. In a world where AI generation is increasingly ubiquitous, w
 
 ## 📜 Current Status
 
-🟢 **v1.0.0-alpha.4** — API deployed at [`https://res-ex-machina-api.onrender.com`](https://res-ex-machina-api.onrender.com) · [📊 Live Status Page](https://sebas-solver.github.io/Res-ex-Machina/). SDK published on [npm](https://www.npmjs.com/package/@res-ex-machina/sdk) with **read-only mode**. MCP Server v0.2.0 hardened (PR #58). **376 tests** (100% passing: 236 server + 55 SDK + 85 MCP). P0 security hardening complete. P1-1 webhook secrets migration complete. Batch endpoint, webhooks (AES-256-GCM encrypted secrets), dual temporal attestation, wallet auth, C2PA interoperability. CI/CD (GitHub Actions). Public status page.
+🟠 **Prototype on Base Sepolia testnet.** Hosted API offline; MCP server unpublished; SDK on npm out of date. Known open issues are tracked privately until fixed (see [SECURITY.md](SECURITY.md)). Plan: [ROADMAP.md](ROADMAP.md).
 
 ---
 
