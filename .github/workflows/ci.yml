@@ -209,6 +209,7 @@ jobs:
           for i in $(seq 1 30); do curl -sf -X POST -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' http://127.0.0.1:8545 && break; sleep 1; done
           cd packages/pog
           npm ci
+          npm run build
           RXM_E2E_RPC=http://127.0.0.1:8545 RXM_E2E_ARTIFACT=../../contracts/out/RxMAnchor.sol/RxMAnchor.json npm test
 
       - name: Install pnpm
