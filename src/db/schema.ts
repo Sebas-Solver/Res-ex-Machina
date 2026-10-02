@@ -14,6 +14,7 @@ import {
     index,
     unique,
     check,
+    smallint,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
@@ -262,3 +263,64 @@ export type PaymentAttempt = typeof paymentAttempts.$inferSelect;
 export type NewPaymentAttempt = typeof paymentAttempts.$inferInsert;
 
 
+
+// =============================================
+// Table: declarations (rxm-pog-v2, spec/rxm-pog-v2.md)
+// =============================================
+
+/**
+ * Signed generation declarations, anchored through the RxMAnchor contract.
+ *
+ * Differences with `records` (v1), on purpose:
+ * - No fee: RxM acts as a relayer that pays gas; abuse is bounded by quotas.
+ * - content_hash is NOT unique: two agents may declare the same content (fixes A-01 for v2).
+ * - The agent's signature and the full declaration are what gets anchored, so a receipt is
+ *   verifiable from chain state alone.
+ * - anchor_tx_hash is stored right after sending, before waiting, so a retry never anchors twice.
+ */
+export const declarations = pgTable(
+    'declarations',
+    {
+        id: uuid('id').primaryKey(),
+        /** EIP-712 digest = proofHash anchored on chain (0x + 64 hex, lowercase) */
+        digest: varchar('digest', { length: 66 }).notNull().unique(),
+        /** Signer address, lowercase */
+        agent: varchar('agent', { length: 42 }).notNull(),
+        nonce: varchar('nonce', { length: 66 }).notNull(),
+        contentHash: varchar('content_hash', { length: 66 }).notNull(),
+        /** The declaration as submitted (declaredAt as a decimal string) */
+        declaration: jsonb('declaration').notNull(),
+        /** 65-byte r‖s‖v signature, low-s */
+        signature: varchar('signature', { length: 132 }).notNull(),
+        /** Optional plaintext metadata whose RFC 8785 hash is metadataHash. Deletable on request. */
+        metadata: jsonb('metadata'),
+        chainId: integer('chain_id').notNull(),
+        contract: varchar('contract', { length: 42 }).notNull(),
+        agentIdScheme: smallint('agent_id_scheme').notNull(),
+        agentId: varchar('agent_id', { length: 66 }).notNull(),
+
+        state: varchar('state', { length: 16 }).notNull().default('pending'),
+        attempts: integer('attempts').notNull().default(0),
+        leaseUntil: timestamp('lease_until', { withTimezone: true }),
+        lastError: text('last_error'),
+
+        anchorTxHash: varchar('anchor_tx_hash', { length: 66 }),
+        anchorLogIndex: integer('anchor_log_index'),
+        anchorBlock: bigint('anchor_block', { mode: 'bigint' }),
+        anchorBlockTime: timestamp('anchor_block_time', { withTimezone: true }),
+
+        createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+        anchoredAt: timestamp('anchored_at', { withTimezone: true }),
+    },
+    (table) => [
+        unique('uq_declarations_agent_nonce').on(table.agent, table.nonce),
+        index('idx_declarations_agent_created').on(table.agent, table.createdAt),
+        index('idx_declarations_content_hash').on(table.contentHash),
+        index('idx_declarations_state').on(table.state),
+        check('chk_declarations_state', sql`${table.state} IN ('pending', 'anchoring', 'anchored', 'failed')`),
+        check('chk_declarations_hex', sql`${table.digest} ~ '^0x[0-9a-f]{64}$' AND ${table.agent} ~ '^0x[0-9a-f]{40}$'`),
+    ],
+);
+
+export type DbDeclaration = typeof declarations.$inferSelect;
+export type NewDeclaration = typeof declarations.$inferInsert;

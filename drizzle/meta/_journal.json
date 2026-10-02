@@ -15,6 +15,13 @@
       "when": 1786203237958,
       "tag": "0001_neat_vulture",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790906417541,
+      "tag": "0002_declarations_v2",
+      "breakpoints": true
     }
   ]
 }

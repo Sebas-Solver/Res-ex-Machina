@@ -85,6 +85,9 @@ jobs:
       - name: Install dependencies (root)
         run: pnpm install --frozen-lockfile
 
+      - name: Build @res-ex-machina/pog (imported by the server)
+        run: pnpm --filter @res-ex-machina/pog build
+
       - name: TypeScript type check (root)
         run: pnpm run typecheck
 
