@@ -11,6 +11,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Correction to P0-03:** the `|| true` fallback was **not** removed from `packages/mcp-server/package.json`; the MCP typecheck still fails (TS2589) and CI does not block on it.
 - **License metadata:** both `package.json` files declared `"license"` twice and the last key (`ISC`) won. Fixed in this release: only `Apache-2.0` remains.
 
+### Added (rxm-pog-v2)
+
+- `spec/rxm-pog-v2.md`: signed generation declarations as a profile of the ERC-8263 draft, with test vectors and an independent EIP-712 check (#87).
+- `packages/pog` (`@res-ex-machina/pog`): build, sign and **verify from chain state alone**; ERC-8263 as a replaceable anchoring binding (#90).
+- In review: `RxMAnchor` contract (#92), v2 API and relayer anchoring (#94), `rxm-verify` CLI (#95), web verifier (#96), v2 client (#97).
+
+### Security
+
+- `fastify` 5.8.5 → 5.12.5 (high-severity advisories) (#75).
+- CodeQL, Dependabot alerts and security updates, secret scanning with push protection and private vulnerability reporting enabled.
+
 ### Changed
 
 - README now states the real project status (prototype on testnet, hosted API offline) and drops unverified badges.

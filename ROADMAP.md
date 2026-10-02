@@ -1,6 +1,6 @@
 # Roadmap
 
-_Updated 2026-10-02. Replaces the roadmap section of the README._
+_Updated 2026-10-02 (evening). Replaces the roadmap section of the README._
 
 ## Where the project stands
 
@@ -16,6 +16,23 @@ A working prototype on Base Sepolia: signed Proof of Generation (EIP-712), fee v
    - agent identity through ERC-8004 records or CAIP-10 account URIs.
 3. **Verification without trusting the operator.** A strict verifier (CLI and static web page) that checks the event, the signer and the content hash using chain state only.
 4. **Fix before reopening the hosted API.** Payment binding and normalisation, verifier correctness, webhook URL validation and rate limiting.
+
+## Progress
+
+| Step | State | Where |
+|---|---|---|
+| Honest baseline (erratum, license, SECURITY.md, Dependabot, branch rules, CodeQL) | Done | #67 |
+| rxm-pog-v2 specification with verified test vectors | Done | `spec/rxm-pog-v2.md`, #87 |
+| Core package `@res-ex-machina/pog`: sign and verify from chain state only | Done | `packages/pog`, #90 |
+| Anchoring contract `RxMAnchor` (ERC-8263-compatible, stateless) + e2e on a local chain | In review | #92 |
+| One package manager (pnpm) for CI and Docker | In review | #93 |
+| v2 API: `POST/GET /v2/declarations`, relayer with quotas, idempotent anchoring | In review | #94 |
+| `rxm-verify` CLI and receipt verification | In review | #95 |
+| Web verifier on GitHub Pages (`/verify/`) | In review | #96 |
+| v2 client (`RxMClient`) | In review | #97 |
+| Deploy `RxMAnchor` on Base Sepolia | Waiting for a funded deployer account | #98 |
+
+The v2 format does not depend on ERC-8263 being finalised: the declaration and its signature are the core, and anchoring is a replaceable binding (spec §2.1).
 
 ## Frozen until further notice
 
