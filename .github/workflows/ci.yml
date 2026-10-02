@@ -211,6 +211,15 @@ jobs:
           npm ci
           RXM_E2E_RPC=http://127.0.0.1:8545 RXM_E2E_ARTIFACT=../../contracts/out/RxMAnchor.sol/RxMAnchor.json npm test
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Server v2 pipeline e2e on Anvil (accept, anchor, receipt, verify from chain)
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter @res-ex-machina/pog build
+          RXM_E2E_RPC=http://127.0.0.1:8545 RXM_E2E_ARTIFACT=contracts/out/RxMAnchor.sol/RxMAnchor.json pnpm exec vitest run tests/v2/e2e.anvil.test.ts
+
   # ─────────────────────────────────────────────
   # Job 4: Production image builds and resolves the workspace
   # ─────────────────────────────────────────────
