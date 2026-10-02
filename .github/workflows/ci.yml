@@ -207,3 +207,21 @@ jobs:
           cd packages/pog
           npm ci
           RXM_E2E_RPC=http://127.0.0.1:8545 RXM_E2E_ARTIFACT=../../contracts/out/RxMAnchor.sol/RxMAnchor.json npm test
+
+  # ─────────────────────────────────────────────
+  # Job 4: Production image builds and resolves the workspace
+  # ─────────────────────────────────────────────
+  docker:
+    name: Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build production image
+        run: docker build --target production -t rxm:ci .
+
+      - name: Image loads the server dependencies and @res-ex-machina/pog
+        run: |
+          docker run --rm --entrypoint node rxm:ci -e "Promise.all([import('@res-ex-machina/pog'), import('fastify'), import('viem')]).then(([p]) => { if (!p.verifyDeclaration) process.exit(1); console.log('ok'); })"

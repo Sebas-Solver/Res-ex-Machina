@@ -40,7 +40,8 @@ git clone https://github.com/<your-username>/Res-ex-Machina.git
 cd Res-ex-Machina
 
 # 2. Install dependencies
-npm install
+corepack enable   # uses the pnpm version pinned in package.json
+pnpm install
 
 # 3. Create environment config
 cp .env.example .env

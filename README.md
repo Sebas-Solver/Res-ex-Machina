@@ -250,7 +250,8 @@ Want to test the API without setting up a dev environment? → **[Testing Quicks
 # 1. Clone and install
 git clone https://github.com/Sebas-Solver/Res-ex-Machina.git
 cd Res-ex-Machina
-npm install
+corepack enable   # uses the pnpm version pinned in package.json
+pnpm install
 
 # 2. Configure environment
 cp .env.example .env
