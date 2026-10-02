@@ -1,0 +1,97 @@
+{
+  "warning": "Test vectors only. The key is the public Hardhat/Anvil account #0.",
+  "erc8263_topic0": "0x9fe832d83a52f83bd7d54181e4cc7ff8b4e227cc1d3a0144376894b5df6c23cc",
+  "selectors": {
+    "single": "0xf0b2fcb5",
+    "batch": "0xbc7db884"
+  },
+  "domain": {
+    "name": "ResExMachina PoG",
+    "version": "2",
+    "chainId": 84532,
+    "verifyingContract": "0x0000000000000000000000000000000000008263"
+  },
+  "types": {
+    "PoGDeclaration": [
+      {
+        "name": "agent",
+        "type": "address"
+      },
+      {
+        "name": "contentHash",
+        "type": "bytes32"
+      },
+      {
+        "name": "inputHash",
+        "type": "bytes32"
+      },
+      {
+        "name": "modelId",
+        "type": "string"
+      },
+      {
+        "name": "runtimeId",
+        "type": "string"
+      },
+      {
+        "name": "processType",
+        "type": "uint8"
+      },
+      {
+        "name": "humanIntervention",
+        "type": "uint8"
+      },
+      {
+        "name": "pipelineSteps",
+        "type": "uint16"
+      },
+      {
+        "name": "declaredAt",
+        "type": "uint64"
+      },
+      {
+        "name": "nonce",
+        "type": "bytes32"
+      },
+      {
+        "name": "metadataHash",
+        "type": "bytes32"
+      }
+    ]
+  },
+  "single": {
+    "content": "Hello from an AI agent.\n",
+    "input": "Write a one-line greeting.",
+    "metadataJcs": "{\"provenance\":{\"manifestHash\":\"sha256:5b1a0c6e0f5d3c8b2a4e1f7d9c0b8a6e4d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a\",\"standard\":\"c2pa\"},\"tags\":[\"demo\",\"vector\"]}",
+    "declaration": {
+      "agent": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      "contentHash": "0x23bd7478c7053fd21b21009cace53ff36ee78d945a682e9dd35d8a04848866d0",
+      "inputHash": "0x9807d0f1c6852396e7bb4be0e6ef1817f079639b319300803aeaf285007d369a",
+      "modelId": "anthropic:claude-opus-5-5",
+      "runtimeId": "rxm-sdk-ts/0.2.0",
+      "processType": 0,
+      "humanIntervention": 1,
+      "pipelineSteps": 1,
+      "declaredAt": "1790899200",
+      "nonce": "0x54e747d7eefbe99b1fe61268ba488a503a7d294da886ae93ad39574d1ce3c6ad",
+      "metadataHash": "0x8c0c4c7ebda7fae620eafe32c8df3d63c2089c7cde9cc655d30f04fdebb7f01e"
+    },
+    "eip712Digest_proofHash": "0xb1e674eb93eb80fc751abe7c6ca2a0c9b52d3c87a4baa1da7ef9cf505a8c4319",
+    "signature": "0x0e59150899c04c887aca78fc5249c375a8fc928a949a84fc1d9772091bf96d710ded78f97178f1b67af4cad018f52bfaab3c7024b206dd00a68e7371441894f31b",
+    "aux": "0xf0b2fcb50e59150899c04c887aca78fc5249c375a8fc928a949a84fc1d9772091bf96d710ded78f97178f1b67af4cad018f52bfaab3c7024b206dd00a68e7371441894f31b",
+    "agentIdScheme": 2,
+    "agentId": "0x61ae526667885cb4c65b90a75ab6f7aa240c9cee91d879667584c0715c896281",
+    "caip10": "eip155:84532:0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266",
+    "anchorCalldata_example": "0x000000000000000000000000000000000000000000000000000000000000000261ae526667885cb4c65b90a75ab6f7aa240c9cee91d879667584c0715c896281b1e674eb93eb80fc751abe7c6ca2a0c9b52d3c87a4baa1da7ef9cf505a8c431900000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000045f0b2fcb50e59150899c04c887aca78fc5249c375a8fc928a949a84fc1d9772091bf96d710ded78f97178f1b67af4cad018f52bfaab3c7024b206dd00a68e7371441894f31b000000000000000000000000000000000000000000000000000000"
+  },
+  "batch": {
+    "leaves_eip712Digests": [
+      "0xb1e674eb93eb80fc751abe7c6ca2a0c9b52d3c87a4baa1da7ef9cf505a8c4319",
+      "0xaffbe54629fd8c9f11119874d461b3d2ce5e85a88a85fe46155c7a4fb577563c",
+      "0xc109a6af1a2dbb13e575f8c2b91525201f9cf3e11e45947f7c3cbfc861afe651"
+    ],
+    "merkleRoot_proofHash": "0xcb8fc1f96e50bbfedf3f665230ac5718c48ff0fa0e5dfa66a715531cee82fb60",
+    "agentIdScheme": 0,
+    "agentId": "0x0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}
