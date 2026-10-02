@@ -17,7 +17,8 @@ import { pogDomain, signDeclaration, declarationDigest, sha256, agentIdForKey, e
 
 const RPC = process.env.RXM_E2E_RPC;
 const ARTIFACT = process.env.RXM_E2E_ARTIFACT;
-const RELAYER_KEY = '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d'; // public Anvil #1
+// Public Anvil account #2: each e2e file uses its own account, so parallel files never share a nonce.
+const RELAYER_KEY = '0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a';
 
 describe.skipIf(!RPC || !ARTIFACT)('rxm-verify on Anvil', () => {
     it('exit 0 for a genuine receipt, 1 for a tampered one, 1 for the wrong content', async () => {
