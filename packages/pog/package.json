@@ -1,0 +1,49 @@
+{
+    "name": "@res-ex-machina/pog",
+    "version": "0.1.0",
+    "description": "Signed AI generation declarations (rxm-pog-v2): build, sign, anchor-encode and verify from chain state alone",
+    "license": "Apache-2.0",
+    "type": "module",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "engines": {
+        "node": ">=18"
+    },
+    "scripts": {
+        "build": "tsc",
+        "test": "vitest run",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "npm run build"
+    },
+    "peerDependencies": {
+        "viem": "^2.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^25.8.0",
+        "typescript": "^5.9.3",
+        "viem": "^2.45.2",
+        "vitest": "^4.0.18"
+    },
+    "keywords": [
+        "res-ex-machina",
+        "proof-of-generation",
+        "eip-712",
+        "erc-8263",
+        "ai-agents",
+        "provenance"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Sebas-Solver/Res-ex-Machina.git",
+        "directory": "packages/pog"
+    }
+}

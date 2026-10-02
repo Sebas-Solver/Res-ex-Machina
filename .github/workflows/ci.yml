@@ -109,6 +109,22 @@ jobs:
           cd packages/sdk
           npm test
 
+      # ── PoG v2 core package ──
+      - name: PoG - Install
+        run: |
+          cd packages/pog
+          npm ci
+
+      - name: PoG - Build & Typecheck
+        run: |
+          cd packages/pog
+          npm run build
+
+      - name: PoG - Tests (Vitest)
+        run: |
+          cd packages/pog
+          npm test
+
       # ── MCP Server ──
       - name: MCP Server - Build (tsc)
         run: pnpm --filter @res-ex-machina/mcp-server build
