@@ -30,6 +30,10 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege for the GITHUB_TOKEN: CI only reads the repository.
+permissions:
+  contents: read
+
 # Cancel previous runs of the same branch/PR
 # to avoid wasting CI minutes unnecessarily
 concurrency:
