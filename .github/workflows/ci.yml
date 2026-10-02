@@ -174,3 +174,36 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=4096
         run: pnpm --filter @res-ex-machina/mcp-server typecheck
 
+
+  # ─────────────────────────────────────────────
+  # Job 3: Anchoring contract + end-to-end on a local chain
+  # ─────────────────────────────────────────────
+  contracts:
+    name: Contracts and e2e (Foundry)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Forge tests
+        working-directory: contracts
+        run: |
+          forge build
+          forge test -vv
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: PoG e2e on Anvil (deploy, anchor via relayer, verify from chain)
+        run: |
+          anvil --silent --port 8545 &
+          for i in $(seq 1 30); do curl -sf -X POST -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' http://127.0.0.1:8545 && break; sleep 1; done
+          cd packages/pog
+          npm ci
+          RXM_E2E_RPC=http://127.0.0.1:8545 RXM_E2E_ARTIFACT=../../contracts/out/RxMAnchor.sol/RxMAnchor.json npm test
