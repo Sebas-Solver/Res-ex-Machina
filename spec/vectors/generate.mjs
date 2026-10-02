@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-/* global process, console */
+/* global console */
 // Generates the rxm-pog-v2 test vectors (spec/rxm-pog-v2.md §9).
 // Usage: node spec/vectors/generate.mjs > spec/vectors/rxm-pog-v2.json
 // The signing key is Hardhat/Anvil test account #0: PUBLIC, never use it with real funds.
