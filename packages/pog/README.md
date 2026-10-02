@@ -26,6 +26,15 @@ result.valid;      // all mandatory checks passed
 result.statement;  // the only claim a valid result supports
 ```
 
+## Command line: `rxm-verify`
+
+```bash
+npx -p @res-ex-machina/pog rxm-verify receipt.json --content output.txt
+rxm-verify https://<api>/v2/declarations/0x… --rpc https://sepolia.base.org --json
+```
+
+It reads a receipt (file or URL), ignores the receipt's own `state`, `anchor` claims and `statement`, re-derives everything from the chain, and prints each check. Exit code: `0` valid, `1` not valid, `2` usage or I/O error. Default RPCs: Base (8453), Base Sepolia (84532), local Anvil (31337).
+
 ## What a valid result means
 
 The key signed the declaration and the declaration existed no later than the anchor block. Model, runtime, process and declared time are **the signer's claims**, not verified facts.

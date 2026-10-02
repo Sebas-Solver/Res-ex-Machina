@@ -1,7 +1,7 @@
 {
     "name": "@res-ex-machina/pog",
     "version": "0.1.0",
-    "description": "Signed AI generation declarations (rxm-pog-v2): build, sign, anchor-encode and verify from chain state alone",
+    "description": "Signed AI generation declarations (rxm-pog-v2): build, sign, verify from chain state alone. Includes the rxm-verify CLI.",
     "license": "Apache-2.0",
     "type": "module",
     "main": "dist/index.js",
@@ -45,5 +45,8 @@
         "type": "git",
         "url": "https://github.com/Sebas-Solver/Res-ex-Machina.git",
         "directory": "packages/pog"
+    },
+    "bin": {
+        "rxm-verify": "dist/cli.js"
     }
 }
