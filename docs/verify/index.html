@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Res ex Machina — Verify a receipt</title>
+  <meta name="description" content="Verify a Res ex Machina (rxm-pog-v2) receipt in your browser, against the public chain. No Res ex Machina server is involved." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0F1115; --surface: #1a1d24; --border: #2d323c; --text: #e6edf3; --text-muted: #8b949e;
+      --accent: #0066FF; --green: #3fb950; --green-dim: #1a3a22; --red: #f85149; --red-dim: #3d1418;
+      --yellow: #d29922; --yellow-dim: #3d2f0a;
+      --font: 'Sora', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.55; }
+    main { max-width: 52rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; display: grid; gap: 1.5rem; }
+    header img { height: 44px; }
+    h1 { font-size: 1.6rem; font-weight: 600; margin: .4rem 0 .2rem; text-wrap: balance; }
+    .lede { color: var(--text-muted); margin: 0; max-width: 62ch; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.2rem; display: grid; gap: .8rem; min-width: 0; }
+    label { font-size: .8rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+    textarea, input[type=text] { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: .6rem .7rem; font: .85rem/1.45 var(--mono); }
+    textarea { min-height: 9rem; resize: vertical; }
+    textarea:focus, input:focus, button:focus-visible, .drop:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .row { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+    .row input[type=text] { flex: 1 1 18rem; min-width: 0; }
+    button { font: 600 .9rem var(--font); border-radius: 6px; padding: .6rem 1rem; cursor: pointer; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button:disabled { opacity: .6; cursor: progress; }
+    .drop { border: 1px dashed var(--border); border-radius: 8px; padding: 1rem; text-align: center; color: var(--text-muted); cursor: pointer; }
+    .drop.over { border-color: var(--accent); color: var(--text); }
+    .hint { font-size: .85rem; color: var(--text-muted); margin: 0; }
+    .verdict { font-size: 1.25rem; font-weight: 700; padding: .7rem 1rem; border-radius: 8px; }
+    .verdict.ok { background: var(--green-dim); color: var(--green); }
+    .verdict.bad { background: var(--red-dim); color: var(--red); }
+    ul.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; font-size: .9rem; }
+    ul.checks li { display: grid; grid-template-columns: 3.4rem minmax(0, 1fr); gap: .6rem; }
+    .tag { font: 700 .7rem/1.6 var(--font); letter-spacing: .05em; text-align: center; border-radius: 4px; }
+    .tag.pass { background: var(--green-dim); color: var(--green); }
+    .tag.fail { background: var(--red-dim); color: var(--red); }
+    .tag.warn { background: var(--yellow-dim); color: var(--yellow); }
+    .detail { overflow-wrap: anywhere; }
+    .detail b { font-weight: 600; }
+    .statement { border-left: 3px solid var(--accent); padding-left: .9rem; margin: 0; }
+    .err { color: var(--red); margin: 0; }
+    footer { color: var(--text-muted); font-size: .85rem; }
+    footer a, .lede a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <a href="../"><img src="../assets/Logo%20lazo%20-%20RxM.png" alt="Res ex Machina" /></a>
+    <h1>Verify a receipt</h1>
+    <p class="lede">Checks an <a href="https://github.com/Sebas-Solver/Res-ex-Machina/blob/main/spec/rxm-pog-v2.md">rxm-pog-v2</a> receipt in your browser against a public blockchain node. Res ex Machina's servers are not involved, and nothing you load here leaves your browser except the read-only queries to the node.</p>
+  </header>
+
+  <section class="card" aria-labelledby="l-receipt">
+    <label id="l-receipt" for="receipt">Receipt</label>
+    <textarea id="receipt" spellcheck="false" placeholder='Paste the receipt JSON here ({"profile":"rxm-pog-v2", …})'></textarea>
+    <div class="row">
+      <input type="text" id="receipt-url" placeholder="…or a receipt URL (https://…/v2/declarations/0x…)" aria-label="Receipt URL" />
+      <button type="button" id="load-url">Load</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="l-content">
+    <label id="l-content">Content (optional)</label>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-describedby="drop-hint">Drop the file here, or click to choose it</div>
+    <input type="file" id="file" hidden />
+    <p class="hint" id="drop-hint">If you add the file, its SHA-256 is computed locally and compared with the declared content hash. The file is not uploaded.</p>
+  </section>
+
+  <section class="card" aria-labelledby="l-rpc">
+    <label id="l-rpc" for="rpc">Blockchain node (RPC)</label>
+    <input type="text" id="rpc" placeholder="Filled in from the receipt's chain; you can use your own node" />
+    <div class="row"><button type="button" class="primary" id="verify">Verify</button></div>
+    <p class="err" id="error" hidden></p>
+  </section>
+
+  <section class="card" id="result" aria-live="polite" hidden>
+    <div class="verdict" id="verdict"></div>
+    <ul class="checks" id="checks"></ul>
+    <p class="statement" id="statement" hidden></p>
+    <p class="hint">A valid result proves only what the statement says. The model, runtime, process and declared time are the signer's own claims, not verified facts.</p>
+  </section>
+
+  <footer>Open source verifier: <code>@res-ex-machina/pog</code>. Prefer the command line? <code>rxm-verify receipt.json --content file</code>.</footer>
+</main>
+
+<script type="module">
+  import { parseReceipt, verifyReceipt, DEFAULT_RPC } from './rxm-pog.bundle.js';
+
+  const $ = (id) => document.getElementById(id);
+  let contentBytes;
+
+  function showError(msg) { const e = $('error'); e.textContent = msg; e.hidden = !msg; }
+
+  function fillRpc() {
+    try {
+      const p = parseReceipt(JSON.parse($('receipt').value));
+      if (!$('rpc').value && DEFAULT_RPC[p.domain.chainId]) $('rpc').value = DEFAULT_RPC[p.domain.chainId];
+    } catch { /* not parseable yet */ }
+  }
+  $('receipt').addEventListener('input', fillRpc);
+
+  $('load-url').addEventListener('click', async () => {
+    showError('');
+    try {
+      const res = await fetch($('receipt-url').value.trim());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      $('receipt').value = JSON.stringify(await res.json(), null, 2);
+      fillRpc();
+    } catch (e) { showError(`Could not load the receipt: ${e.message}. You can paste it instead.`); }
+  });
+
+  async function takeFile(file) {
+    contentBytes = new Uint8Array(await file.arrayBuffer());
+    $('drop').textContent = `${file.name} · ${contentBytes.length.toLocaleString()} bytes · will be hashed locally`;
+  }
+  const drop = $('drop');
+  drop.addEventListener('click', () => $('file').click());
+  drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
+  $('file').addEventListener('change', (e) => e.target.files[0] && takeFile(e.target.files[0]));
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) takeFile(e.dataTransfer.files[0]); });
+
+  function render(r) {
+    $('result').hidden = false;
+    const v = $('verdict');
+    v.textContent = r.valid ? 'Valid' : 'Not valid';
+    v.className = 'verdict ' + (r.valid ? 'ok' : 'bad');
+    const ul = $('checks'); ul.replaceChildren();
+    const add = (cls, text, name) => {
+      const li = document.createElement('li');
+      const t = document.createElement('span'); t.className = 'tag ' + cls; t.textContent = cls.toUpperCase();
+      const d = document.createElement('span'); d.className = 'detail';
+      if (name) { const b = document.createElement('b'); b.textContent = name + ' '; d.append(b); }
+      d.append(text); li.append(t, d); ul.append(li);
+    };
+    for (const c of r.checks) add(c.ok ? 'pass' : 'fail', c.detail, c.name);
+    for (const w of r.warnings) add('warn', w);
+    const s = $('statement'); s.textContent = r.statement ?? ''; s.hidden = !r.statement;
+  }
+
+  $('verify').addEventListener('click', async () => {
+    showError(''); $('result').hidden = true;
+    let json;
+    try { json = JSON.parse($('receipt').value); } catch { return showError('The receipt is not valid JSON.'); }
+    const btn = $('verify'); btn.disabled = true; btn.textContent = 'Verifying…';
+    try {
+      render(await verifyReceipt(json, { rpcUrl: $('rpc').value.trim() || undefined, content: contentBytes }));
+    } catch (e) {
+      showError(e.message);
+    } finally { btn.disabled = false; btn.textContent = 'Verify'; }
+  });
+</script>
+</body>
+</html>

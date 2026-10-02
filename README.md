@@ -20,6 +20,7 @@ Who certifies what was generated, by whom, and when?<br/>
 > **Project status (2026-10-02): prototype, not production-ready.**
 > - The hosted API at `res-ex-machina-api.onrender.com` is **offline**. The MCP server is **not published** on npm, and the SDK on npm (`0.1.0`) is older than this repository.
 > - An independent review on 2026-10-02 found open security and payment issues. The report `Docs/20-security/audit-report-2026-08-09.md` declared "APPROVED FOR PRODUCTION"; **that verdict was wrong and has been withdrawn** (see the erratum at the top of that file).
+> - **Verify a receipt in your browser**, without trusting this project: https://sebas-solver.github.io/Res-ex-Machina/verify/ (or `rxm-verify` from `@res-ex-machina/pog`).
 > - Next steps: the Proof of Generation is being redesigned as a signed-declaration profile on top of the open anchoring draft [ERC-8263](https://github.com/ethereum/ERCs/pull/1748). See [ROADMAP.md](ROADMAP.md).
 
 > [!IMPORTANT]
