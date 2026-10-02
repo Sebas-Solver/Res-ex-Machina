@@ -15,11 +15,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `spec/rxm-pog-v2.md`: signed generation declarations as a profile of the ERC-8263 draft, with test vectors and an independent EIP-712 check (#87).
 - `packages/pog` (`@res-ex-machina/pog`): build, sign and **verify from chain state alone**; ERC-8263 as a replaceable anchoring binding (#90).
-- In review: `RxMAnchor` contract (#92), v2 API and relayer anchoring (#94), `rxm-verify` CLI (#95), web verifier (#96), v2 client (#97).
+- `RxMAnchor`, stateless ERC-8263-compatible anchoring contract, with Foundry tests and e2e on a local chain (#92). Not deployed yet.
+- v2 API: `POST /v2/declarations`, `GET /v2/declarations/:digest`; RxM pays gas as a relayer within quotas; lease-based, idempotent anchoring with a reconciler; `V2_ENABLED` off by default (#94).
+- `rxm-verify` CLI and `verifyReceipt`; receipts are re-derived from chain data, never trusted (#95).
+- Web verifier at `/verify/` on GitHub Pages; CI checks the published bundle matches the source (#96).
+- `RxMClient`, the v2 client (#97).
+
+### Fixed
+
+- Boolean env vars are parsed explicitly: `X402_ENABLED=false` no longer enables x402 (NV-03) (#94).
+- Docker installs from the same pnpm lockfile CI tests; root `package-lock.json` removed (Q-05) (#93).
 
 ### Security
 
 - `fastify` 5.8.5 → 5.12.5 (high-severity advisories) (#75).
+- CI `GITHUB_TOKEN` restricted to `contents: read` (#100).
 - CodeQL, Dependabot alerts and security updates, secret scanning with push protection and private vulnerability reporting enabled.
 
 ### Changed
