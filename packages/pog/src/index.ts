@@ -7,4 +7,5 @@ export * from './identity.js';
 export * from './merkle.js';
 export * from './verify.js';
 export * from './receipt.js';
+export * from './client.js';
 export * as erc8263 from './bindings/erc8263.js';

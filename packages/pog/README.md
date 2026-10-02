@@ -35,6 +35,19 @@ rxm-verify https://<api>/v2/declarations/0x… --rpc https://sepolia.base.org --
 
 It reads a receipt (file or URL), ignores the receipt's own `state`, `anchor` claims and `statement`, re-derives everything from the chain, and prints each check. Exit code: `0` valid, `1` not valid, `2` usage or I/O error. Default RPCs: Base (8453), Base Sepolia (84532), local Anvil (31337).
 
+## Using the hosted API
+
+```ts
+import { RxMClient } from '@res-ex-machina/pog';
+
+const rxm = new RxMClient({ apiUrl, chainId: 84532, contract: ANCHOR_CONTRACT });
+const pending = await rxm.declare(account, { content: output, input: prompt, modelId: 'provider:model', runtimeId: 'my-agent/1.0' });
+const receipt = await rxm.waitForAnchor(pending.digest);
+// Then verify it yourself: verifyReceipt(receipt, { content: output })
+```
+
+The API pays the gas (no fee) within per-agent quotas. Keep the receipt: with it and any node, anyone can verify the declaration even if the API disappears.
+
 ## What a valid result means
 
 The key signed the declaration and the declaration existed no later than the anchor block. Model, runtime, process and declared time are **the signer's claims**, not verified facts.
