@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-import { createHash } from 'node:crypto';
-import type { Hex } from 'viem';
+import { sha256 as viemSha256, toBytes, type Hex } from 'viem';
 import { ZERO_HASH } from './types.js';
 
-/** SHA-256 of the exact bytes (strings are UTF-8 encoded). */
+/** SHA-256 of the exact bytes (strings are UTF-8 encoded). Works in Node and in browsers. */
 export function sha256(data: Uint8Array | string): Hex {
-    return `0x${createHash('sha256').update(data).digest('hex')}`;
+    return viemSha256(typeof data === 'string' ? toBytes(data) : data);
 }
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
