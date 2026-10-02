@@ -71,7 +71,10 @@ export class RxMClient {
     private readonly base: string;
     private readonly f: typeof fetch;
     constructor(private readonly opts: ClientOptions) {
-        this.base = opts.apiUrl.replace(/\/+$/, '');
+        // Strip trailing slashes without a regex (avoids polynomial backtracking on long '/' runs).
+        let end = opts.apiUrl.length;
+        while (end > 0 && opts.apiUrl[end - 1] === '/') end--;
+        this.base = opts.apiUrl.slice(0, end);
         this.f = opts.fetch ?? globalThis.fetch.bind(globalThis);
     }
 

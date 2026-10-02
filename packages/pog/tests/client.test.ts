@@ -39,6 +39,9 @@ describe('RxMClient', () => {
         const r = await c.declare(account, { content: 'hello', modelId: 'm:x', runtimeId: 'r/1', metadata: { tag: 'a' } });
         expect(r.state).toBe('pending');
         expect(calls[0].url).toBe('https://api.example/v2/declarations');
+        const slashes = fakeFetch([{ status: 200, body: { digest: '0x01', state: 'pending' } }]);
+        await new RxMClient({ apiUrl: 'https://api.example' + '/'.repeat(50_000), chainId: 1, contract: CONTRACT, fetch: slashes.f }).get('0x01');
+        expect(slashes.calls[0].url).toBe('https://api.example/v2/declarations/0x01');
         const sent = JSON.parse(String(calls[0].init.body));
         const decl: PoGDeclaration = { ...sent.declaration, declaredAt: BigInt(sent.declaration.declaredAt) };
         const signer = await recoverDeclarationSigner(declarationDigest(c.domain, decl), sent.signature);
