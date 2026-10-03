@@ -166,7 +166,6 @@
             fetchAPI('/admin/stats').then(() => {
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
-                localStorage.setItem('rex_admin_key', API_KEY);
                 loadAll();
                 setInterval(loadAll, 60000);
             }).catch(() => {
@@ -174,18 +173,11 @@
             });
         }
 
-        // Auto-login from localStorage
+        // The admin key lives only in memory for this page. It used to be kept in localStorage,
+        // where any script on the origin could read it (CodeQL js/clear-text-storage-of-sensitive-data);
+        // remove a copy left by older versions.
         window.addEventListener('DOMContentLoaded', () => {
-            const saved = localStorage.getItem('rex_admin_key');
-            if (saved) {
-                API_KEY = saved;
-                fetchAPI('/admin/stats').then(() => {
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('dashboard').style.display = 'block';
-                    loadAll();
-                    setInterval(loadAll, 60000);
-                }).catch(() => localStorage.removeItem('rex_admin_key'));
-            }
+            try { localStorage.removeItem('rex_admin_key'); } catch { /* storage unavailable */ }
             document.getElementById('apiKeyInput').addEventListener('keydown', e => {
                 if (e.key === 'Enter') attemptLogin();
             });

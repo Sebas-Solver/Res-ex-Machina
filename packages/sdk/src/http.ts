@@ -12,8 +12,10 @@ export class RxMHttpClient {
     private readonly maxRetries: number;
 
     constructor(baseUrl: string, timeoutMs = 10_000, maxRetries = 3) {
-        // Remove trailing slash
-        this.baseUrl = baseUrl.replace(/\/+$/, '');
+        // Remove trailing slashes without a regex (polynomial backtracking on long '/' runs, CodeQL js/polynomial-redos)
+        let end = baseUrl.length;
+        while (end > 0 && baseUrl[end - 1] === '/') end--;
+        this.baseUrl = baseUrl.slice(0, end);
         this.timeoutMs = timeoutMs;
         this.maxRetries = maxRetries;
     }
