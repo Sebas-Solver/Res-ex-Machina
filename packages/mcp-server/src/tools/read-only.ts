@@ -7,7 +7,7 @@
  *
  * Tools:
  *   - rxm_hash_content        — Offline SHA-256 hash
- *   - rxm_verify_hash         — Check on-chain status of a hash
+ *   - rxm_verify_hash         — Look up a hash in the RxM API (not an on-chain check)
  *   - rxm_verify_content      — Hash + verify in one step
  *   - rxm_get_record          — Retrieve an existing record
  *   - rxm_get_receipt         — Retrieve receipt of a record
@@ -47,7 +47,7 @@ export function registerReadOnlyTools(server: McpServer): string[] {
 
   server.tool(
     "rxm_verify_hash",
-    "Verifies the on-chain status of a given content hash.",
+    "Looks up a content hash in the Res ex Machina API. This is a registry lookup, not an independent on-chain verification.",
     { content_hash: z.string().startsWith('sha256:').describe("The content hash to verify") },
     async ({ content_hash }) => {
       try {
@@ -62,7 +62,7 @@ export function registerReadOnlyTools(server: McpServer): string[] {
 
   server.tool(
     "rxm_verify_content",
-    "Hashes the provided content and verifies its on-chain status.",
+    "Hashes the provided content and looks it up in the Res ex Machina API (registry lookup, not an on-chain verification).",
     { content: z.string().describe("The content to verify") },
     async ({ content }) => {
       try {

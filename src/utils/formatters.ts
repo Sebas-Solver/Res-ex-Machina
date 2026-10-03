@@ -153,7 +153,7 @@ export function formatFullExport(record: DbRecord) {
 
 /**
  * Formatea el export compacto (mode=compact).
- * Only includes fields necessary for cryptographic verification.
+ * Compact summary for agents. It does NOT include everything needed to verify the signature; use the full export for that.
  * Optimizado para contextos de LLM donde cada token cuenta.
  * No incluye links (ahorro de tokens).
  */

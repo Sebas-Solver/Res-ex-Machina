@@ -1,5 +1,9 @@
 # Proof of Generation v1 — Technical Specification
 
+> [!WARNING]
+> **v1 document (legacy), reviewed 2026-10-03.** An independent review found that several statements in the v1 documents claimed more than the system proves (signed fields not anchored, server clocks presented as on-chain time, a verifier that accepted forged receipts). The most serious ones are corrected below; the rest of the text is historical. What a record actually proves, and the current design, are in [`spec/rxm-pog-v2.md`](../../spec/rxm-pog-v2.md) §1.
+
+
 > **Version**: 1.0  
 > **Status**: Draft  
 > **Date**: 2026-02-10  

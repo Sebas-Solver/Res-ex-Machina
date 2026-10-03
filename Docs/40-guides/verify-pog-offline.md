@@ -1,5 +1,9 @@
 # How to verify a PoG offline
 
+> [!WARNING]
+> **v1 document (legacy), reviewed 2026-10-03.** An independent review found that several statements in the v1 documents claimed more than the system proves (signed fields not anchored, server clocks presented as on-chain time, a verifier that accepted forged receipts). The most serious ones are corrected below; the rest of the text is historical. What a record actually proves, and the current design, are in [`spec/rxm-pog-v2.md`](../../spec/rxm-pog-v2.md) §1.
+
+
 This document explains how to verify that a Proof of Generation (PoG) is authentic **without relying on the Res ex Machina server**.
 
 ---

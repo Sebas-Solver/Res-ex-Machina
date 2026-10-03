@@ -205,7 +205,7 @@ See [SECURITY.md](./SECURITY.md) for full details.
 1. **Read-only by default** — No private key required. Zero-config start.
 2. **Crypto sidecar** — Private keys isolated in closure; sanitized from `process.env` on init.
 3. **Financial guardrails** — Daily spend limits, per-transaction caps, record counters.
-4. **Two-phase confirmation** — `prepare` → human review → `confirm` (default mode).
+4. **Two-phase confirmation** — `prepare` → `confirm` (default mode). The agent can call both: a human only reviews the operation if the MCP client shows the `prepare` result and asks for approval.
 5. **Auth token** — Required for SSE transport when write tools are enabled.
 6. **Mainnet protection** — Mainnet chain IDs blocked unless explicitly enabled.
 7. **Audit ledger** — All mode changes and transactions recorded in SQLite.
