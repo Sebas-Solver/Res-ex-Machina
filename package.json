@@ -41,7 +41,7 @@
   },
   "homepage": "https://github.com/Sebas-Solver/Res-ex-Machina#readme",
   "dependencies": {
-    "@fastify/cors": "^11.2.0",
+    "@fastify/cors": "^11.3.0",
     "@fastify/helmet": "^13.1.1",
     "@fastify/rate-limit": "^10.3.0",
     "@res-ex-machina/pog": "workspace:*",
