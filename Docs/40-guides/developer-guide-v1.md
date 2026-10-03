@@ -738,9 +738,12 @@ ANCHOR_WALLET_PRIVATE_KEY=0x_YOUR_DEV_PRIVATE_KEY_HERE
 
 Receipts exported via `/records/:id/export` are self-contained and can be verified without the API.
 
-### CLI Verifier (recommended)
+### CLI Verifier (withdrawn)
 
-The easiest way to verify:
+> [!WARNING]
+> **Withdrawn on 2026-10-03.** `scripts/verify-receipt.ts` compared the anchor against a hash supplied by the receipt itself and did not check who sent the transaction, so it reported forged receipts as authentic. It has been removed. v1 receipts cannot be verified independently in a trustworthy way. For v2 receipts use `rxm-verify` from `@res-ex-machina/pog` or the web verifier at https://sebas-solver.github.io/Res-ex-Machina/verify/. The text below is kept as history.
+
+The easiest way to verify (historical):
 
 ```bash
 # From a JSON file

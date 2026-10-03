@@ -284,7 +284,7 @@ npm run worker:anchor    # Anchoring worker
 | `npm run alpha:happy` | Happy path test (Agent A) |
 | `npm run alpha:adversarial` | Adversarial test (Agent D) |
 | `npm run alpha:all` | Both alpha tests |
-| `npx tsx scripts/verify-receipt.ts` | CLI receipt verifier |
+| `npx -p @res-ex-machina/pog rxm-verify receipt.json` | v2 receipt verifier (the v1 script was withdrawn: it accepted forged receipts) |
 
 ---
 

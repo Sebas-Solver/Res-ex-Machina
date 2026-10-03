@@ -5,17 +5,29 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # Major versions are tested deliberately in their own PR, not proposed automatically.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   # packages/sdk (v1 SDK) is frozen and not tracked. The v2 client is packages/pog.
   - package-ecosystem: "npm"
     directory: "/packages/pog"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # Major versions are tested deliberately in their own PR, not proposed automatically.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "npm"
     directory: "/packages/mcp-server"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    ignore:
+      # Major versions are tested deliberately in their own PR, not proposed automatically.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
