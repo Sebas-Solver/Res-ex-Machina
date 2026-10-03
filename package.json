@@ -43,7 +43,7 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.1.1",
-    "@fastify/rate-limit": "^10.3.0",
+    "@fastify/rate-limit": "^11.2.0",
     "@res-ex-machina/pog": "workspace:*",
     "@res-ex-machina/sdk": "^0.1.0",
     "@sentry/node": "^10.39.0",
