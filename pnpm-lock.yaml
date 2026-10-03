@@ -27,8 +27,8 @@ importers:
         specifier: ^10.39.0
         version: 10.53.1
       '@x402/core':
-        specifier: ^2.11.0
-        version: 2.12.0
+        specifier: ^2.28.0
+        version: 2.28.0
       bullmq:
         specifier: ^5.67.3
         version: 5.76.8
@@ -173,8 +173,8 @@ importers:
   packages/sdk:
     dependencies:
       '@x402/core':
-        specifier: ^2.11.0
-        version: 2.12.0
+        specifier: ^2.28.0
+        version: 2.28.0
       '@x402/evm':
         specifier: ^2.11.0
         version: 2.21.0(typescript@5.9.3)
@@ -1671,11 +1671,11 @@ packages:
   '@vitest/utils@4.1.6':
     resolution: {integrity: sha512-FxIY+U81R3LGKCxaHHFRQ5+g6/iRgGLmeHWdp2Amj4ljQRrEIWHmZyDfDYBRZlpyqA7qKxtS9DD1dhk8RnRIVQ==}
 
-  '@x402/core@2.12.0':
-    resolution: {integrity: sha512-dLae9AbZRN/W7GsKe9ngqGsflnP+esE72s0GjmqDZbPihM/tlHCA6UnDdgM0qfOiDOf9iL+mmCs1OyLWpwnGLQ==}
-
   '@x402/core@2.21.0':
     resolution: {integrity: sha512-0djKE7V5/JKDMrjRe5he3DoMFzlbVnUcvMmLAb2j6OoAJDamupkFh6fFrXeoHwjkBIxOFUzjGI4FVixz2dMxSA==}
+
+  '@x402/core@2.28.0':
+    resolution: {integrity: sha512-Da/7zKxCKqpBoB4Msc9tFgkAv7tJTD8nG+DSSm+QdXAyJS4PQsmgVSKe17rDJTtlu0pwNbLcOje6MyQ6kaDkig==}
 
   '@x402/evm@2.21.0':
     resolution: {integrity: sha512-VZtPz26IxhfAQbHHmyG7nCY/0jLH9QIgNqRztT1ae93dc9uSGUyn5bofzA3Wxq7lND3WDFir0QAQ2LBqoFeMrg==}
@@ -5429,11 +5429,11 @@ snapshots:
       convert-source-map: 2.0.0
       tinyrainbow: 3.1.0
 
-  '@x402/core@2.12.0':
+  '@x402/core@2.21.0':
     dependencies:
       zod: 3.25.76
 
-  '@x402/core@2.21.0':
+  '@x402/core@2.28.0':
     dependencies:
       zod: 3.25.76
 
