@@ -1,5 +1,9 @@
 # Res ex Machina — Guide for Humans
 
+> [!WARNING]
+> **v1 document (legacy), reviewed 2026-10-03.** An independent review found that several statements in the v1 documents claimed more than the system proves (signed fields not anchored, server clocks presented as on-chain time, a verifier that accepted forged receipts). The most serious ones are corrected below; the rest of the text is historical. What a record actually proves, and the current design, are in [`spec/rxm-pog-v2.md`](../../spec/rxm-pog-v2.md) §1.
+
+
 > * Means in Latin "Thing made by the machine"* — A registry where AIs leave a trail of what they create.
 >
 > **⚠️ Alpha version** — This is a testing version. Data may be wiped. It runs on the Base Sepolia test network.
@@ -19,7 +23,7 @@ RxM is a **public, neutral and immutable registry** where AI agents (or the peop
 | Traditional notary/registry | Res ex Machina |
 |---------------------|----------------|
 | You go to the notary/registry with a document | Your AI sends the output data to RxM |
-| The notary/registrar puts a seal with a date | RxM generates a receipt with an immutable timestamp |
+| The notary/registrar puts a seal with a date | RxM anchors the declaration; the chain gives an upper bound on when it existed |
 | The seal stays in the notary's/registry's books | The record is anchored on blockchain |
 | You can request a certified copy | You can export the verifiable receipt |
 | You cannot erase a notary act or registry certificate | You cannot erase an RxM record |
@@ -71,7 +75,7 @@ The process has 4 steps:
 5. **RxM registers everything** and returns an immediate receipt
 6. **In the background**, RxM anchors the record on blockchain to make it permanent
 
-> **Result:** You have a receipt that proves your AI generated that content at that time. No one can erase that record, not even us.
+> **Result:** You have a receipt showing that your key declared this content, and that the declaration existed no later than the anchor block. It does not prove which model generated it.
 
 ---
 
@@ -193,7 +197,7 @@ Imagine you have an AI agent that generates reports. You want every report to be
 
 ### How does it work?
 
-The API needs to check that you are actually the one requesting the data (so no one can see another's records). It does this through a simple authentication mechanism:
+The API needs to check that you are actually the one requesting the data (in v1, records were nevertheless listable by wallet through a public endpoint; v2 has no such listing). It does this through a simple authentication mechanism:
 
 1. Your agent generates a current timestamp
 2. Your agent signs a message with its wallet that says: "It's me, and I'm asking for this right now"
@@ -293,10 +297,10 @@ The current fee is **~$0.01 per record** (one US cent). It is paid in cryptocurr
 Blockchain anchoring allows independent verification, even without relying on the original server. Records anchored on the public blockchain can be verified by anyone with access to that blockchain and the exported receipt, without needing RxM to be operational.
 
 ### Can someone alter a record?
-**No.** Once registered and anchored on blockchain, the information is immutable. Not even RxM administrators can modify an existing record.
+**Partly.** What is anchored on chain cannot be changed. The copy in this service's database is protected only by application rules, and off-chain metadata can be deleted on request.
 
 ### Does it count as legal proof?
-RxM generates **verifiable technical evidence** (who, what, when, how). The legal value of that evidence depends on the jurisdiction and context. It is comparable to a certified timestamp: it is not a court sentence, but it is an objective technical proof that an expert can verify.
+RxM generates **verifiable technical evidence** (who, what, when, how). The legal value of that evidence depends on the jurisdiction and context. It is **not** a qualified timestamp (eIDAS): it is admissible as evidence but carries no legal presumption, and an expert can verify the signature and the anchor, not the declared model or time.
 
 ### Does it only work with AI?
 In principle yes, it is designed to register outputs from AI agents. But technically, any digital content can generate a hash and be registered. What differentiates RxM from a simple timestamp is the **Proof of Generation (PoG)** — the specific data about the AI generative process.

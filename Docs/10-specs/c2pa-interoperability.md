@@ -1,5 +1,9 @@
 # Interoperability with Provenance Standards
 
+> [!WARNING]
+> **v1 document (legacy), reviewed 2026-10-03.** An independent review found that several statements in the v1 documents claimed more than the system proves (signed fields not anchored, server clocks presented as on-chain time, a verifier that accepted forged receipts). The most serious ones are corrected below; the rest of the text is historical. What a record actually proves, and the current design, are in [`spec/rxm-pog-v2.md`](../../spec/rxm-pog-v2.md) §1.
+
+
 > **Version**: v1.1 (February 2026)
 > **Status**: Approved design, implementation starting v1.1
 
@@ -52,7 +56,7 @@ Two identity levels that don't compete, they complement:
 |---|---|---|
 | **Type** | Organizational identity | Technical identity |
 | **Mechanism** | X.509 Certificate (PKI) | EIP-712 Wallet (crypto) |
-| **Example** | "Adobe signed this manifest" | "This wallet generated this content" |
+| **Example** | "Adobe signed this manifest" | "This wallet declared that it generated this content" |
 | **Model** | Centralized (CA issues cert) | Decentralized (agent creates wallet) |
 
 This reinforces **OP-4** (technical identity ≠ legal personality):
@@ -203,7 +207,7 @@ Combining timestamps from two independent systems:
 | C2PA / IPTC | PKI timestamp authority (RFC 3161) | Centralized infrastructure |
 | RxM | Blockchain anchor (block + txHash) | Decentralized infrastructure |
 
-**Result:** To forge the date one would have to compromise **both systems** independently → extremely difficult.
+**Correction (2026-10-03):** in v1, `pki_timestamp` is a string sent by the client and is not verified, so this double attestation did not exist. A real one needs an RFC 3161 token checked against a trusted (ideally eIDAS-qualified) TSA.
 
 ---
 
@@ -236,7 +240,7 @@ File (C2PA)                 Registry (RxM)
 |---|---|---|
 | News Agencies | Verify origin of AI images | Double provenance + anti-deepfake |
 | Creative Studios | License AI outputs | Registry + do_not_train + traceability |
-| Publishers | Prove human vs AI authorship | PoG with human_intervention_level |
+| Publishers | Record the declared level of human intervention (a claim, not a proof) | PoG with human_intervention_level |
 | Historial Archive | Preserve creation context | Immutable registry + offline export |
 | AI Marketplaces | Monetize outputs with trust | Verifiable receipt + embedded C2PA |
 

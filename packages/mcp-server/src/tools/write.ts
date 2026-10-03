@@ -74,7 +74,7 @@ export function registerWriteTools(server: McpServer): string[] {
               type: "text",
               text: JSON.stringify({
                 ok: true,
-                message: "Record already exists on-chain. Skipping registration.",
+                message: "A record for this content already exists in the registry (it may not be anchored yet). Skipping registration.",
                 record: { recordId: verify.recordId, state: verify.state, receiptHash: verify.receiptHash }
               }, null, 2)
             }]
