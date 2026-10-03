@@ -39,6 +39,8 @@ const envSchema = z.object({
     V2_AGENT_DAILY_QUOTA: z.coerce.number().int().positive().default(50),
     /** Declarations accepted in total per rolling 24 h */
     V2_GLOBAL_DAILY_QUOTA: z.coerce.number().int().positive().default(2000),
+    /** Anchoring pauses while the relayer holds less than this (wei). Default 0.002 ETH. */
+    V2_MIN_RELAYER_BALANCE_WEI: z.string().regex(/^\d+$/).default('2000000000000000'),
 
     // API (optional — for auto-generated links in responses)
     API_BASE_URL: z.string().url().optional(),

@@ -16,7 +16,7 @@ afterEach(async () => { await t.close(); });
 const TX = ('0x' + '1a'.repeat(32)) as Hex;
 
 /** Fake chain: writeContract returns TX; the receipt carries the AnchorProof log for `digest`. */
-function fakeChain(digest: string, opts: { failSend?: number; failReceiptOnce?: boolean } = {}) {
+function fakeChain(digest: string, opts: { failSend?: number; failReceiptOnce?: boolean; balance?: bigint } = {}) {
     let sends = 0; let receiptFailed = false;
     const writeContract = vi.fn(async () => {
         if (opts.failSend && sends++ < opts.failSend) throw new Error('rpc down');
@@ -31,8 +31,8 @@ function fakeChain(digest: string, opts: { failSend?: number; failReceiptOnce?: 
     });
     const deps = {
         db: t.db,
-        walletClient: { writeContract },
-        publicClient: { waitForTransactionReceipt, getBlock: vi.fn(async () => ({ timestamp: 1790900000n })) },
+        walletClient: { writeContract, account: { address: '0x00000000000000000000000000000000000000a1' } },
+        publicClient: { waitForTransactionReceipt, getBlock: vi.fn(async () => ({ timestamp: 1790900000n })), getBalance: vi.fn(async () => opts.balance ?? 10n ** 18n) },
         maxAttempts: 2,
     } as unknown as AnchorDeps;
     return { deps, writeContract, waitForTransactionReceipt };
@@ -91,5 +91,19 @@ describe('anchorDeclaration', () => {
         const c = fakeChain('0x' + 'ff'.repeat(32));
         expect((await anchorDeclaration(c.deps, row.id)).status).toBe('retry');
         expect((await getById(t.db, row.id))?.state).toBe('pending');
+    });
+
+    it('pauses without spending attempts while the relayer balance is below the minimum (V2-2)', async () => {
+        const row = await accepted();
+        const low = fakeChain(row.digest, { balance: 10n });
+        const deps = { ...low.deps, minRelayerBalanceWei: 1000n };
+        expect((await anchorDeclaration(deps, row.id)).status).toBe('paused');
+        const after = await getById(t.db, row.id);
+        expect(after?.state).toBe('pending');
+        expect(after?.attempts).toBe(0);
+        expect(after?.lastError).toMatch(/relayer_low_balance/);
+        expect(low.writeContract).not.toHaveBeenCalled();
+        const ok = fakeChain(row.digest, { balance: 10n ** 18n });
+        expect((await anchorDeclaration({ ...ok.deps, minRelayerBalanceWei: 1000n }, row.id)).status).toBe('anchored');
     });
 });

@@ -11,6 +11,7 @@ import { db } from '../db/index.js';
 import { anchorDeclaration } from '../v2/anchor.js';
 import { listToReconcile, type Db } from '../v2/store.js';
 import { logger } from '../utils/logger.js';
+import { env } from '../config/env.js';
 
 export const anchorV2Queue = new Queue('anchor-v2', {
     connection: redisConnectionConfig,
@@ -24,7 +25,16 @@ export async function enqueueAnchorV2(id: string): Promise<void> {
 
 export function startAnchorV2Worker(): { close: () => Promise<void> } {
     const worker = new Worker('anchor-v2', async (job) => {
-        const out = await anchorDeclaration({ db: db as unknown as Db, publicClient, walletClient }, job.data.id as string);
+        const out = await anchorDeclaration(
+            { db: db as unknown as Db, publicClient, walletClient, minRelayerBalanceWei: BigInt(env.V2_MIN_RELAYER_BALANCE_WEI) },
+            job.data.id as string,
+        );
+        if (out.status === 'paused') {
+            // Loud on purpose: nothing gets anchored until someone tops up the relayer.
+            logger.error({ id: job.data.id, reason: out.reason }, '[anchor-v2] PAUSED: relayer balance below minimum');
+            await anchorV2Queue.add('anchor', { id: job.data.id }, { delay: 300_000 });
+            return out.status;
+        }
         logger.info({ id: job.data.id, status: out.status }, '[anchor-v2] processed');
         if (out.status === 'retry') await anchorV2Queue.add('anchor', { id: job.data.id }, { delay: 30_000 });
         return out.status;

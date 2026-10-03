@@ -107,3 +107,10 @@ export async function listToReconcile(db: Db, limit = 100): Promise<string[]> {
         .limit(limit);
     return rows.map((r) => r.id);
 }
+
+/** Give a claimed row back without counting the attempt (e.g. the relayer is paused for low balance). */
+export async function releaseClaim(db: Db, id: string, reason: string): Promise<void> {
+    await db.update(declarations)
+        .set({ state: 'pending', leaseUntil: null, lastError: reason.slice(0, 500), attempts: sql`greatest(${declarations.attempts} - 1, 0)` })
+        .where(and(eq(declarations.id, id), eq(declarations.state, 'anchoring')));
+}
