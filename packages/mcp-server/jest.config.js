@@ -14,7 +14,7 @@ export default {
       {
         useESM: true,
         diagnostics: {
-          ignoreCodes: [2589, 151002],
+          ignoreCodes: [151002],
         },
       },
     ],

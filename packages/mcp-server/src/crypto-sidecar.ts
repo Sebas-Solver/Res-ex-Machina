@@ -40,7 +40,15 @@ let _account: PrivateKeyAccount | undefined;
 let _publicAddress: string | undefined;
 let _writeCapable = false;
 
-let _publicClient: any;
+/**
+ * Minimal read surface the tools use. Exposing viem's full client type made `tsc` hit
+ * TS2589 ("type instantiation is excessively deep"), which CI used to mask (issue #72).
+ */
+export interface ChainReader {
+  getBalance(args: { address: `0x${string}` }): Promise<bigint>;
+}
+
+let _publicClient: ChainReader;
 let _walletClient: WalletClient | undefined;
 let _rxmClient: RxMClient;
 
@@ -54,7 +62,8 @@ export function initCryptoSidecar(): void {
   const chain = getChainById(config.MCP_CHAIN_ID);
 
   // Public client is always available (read-only operations)
-  _publicClient = createPublicClient({ chain, transport });
+  const publicClient = createPublicClient({ chain, transport });
+  _publicClient = { getBalance: (args) => publicClient.getBalance(args) };
 
   // CTO Blocker 1: Consume the private key — wipes it from cachedConfig.
   // After this call, the key exists ONLY in this closure scope.
@@ -129,7 +138,7 @@ export function getRxmClient(): RxMClient {
 }
 
 /** Public Viem client for on-chain reads (balance, etc). */
-export function getPublicClient(): ReturnType<typeof createPublicClient> {
+export function getPublicClient(): ChainReader {
   return _publicClient;
 }
 
