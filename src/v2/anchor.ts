@@ -9,7 +9,7 @@
  */
 import type { Account, Chain, Hex, PublicClient, Transport, WalletClient } from 'viem';
 import { erc8263 } from '@res-ex-machina/pog';
-import { claimForAnchoring, recordSentTx, markAnchored, markAttemptFailed, type Db } from './store.js';
+import { claimForAnchoring, recordSentTx, markAnchored, markAttemptFailed, releaseClaim, type Db } from './store.js';
 
 export interface AnchorDeps {
     db: Db;
@@ -18,11 +18,14 @@ export interface AnchorDeps {
     maxAttempts?: number;
     leaseSeconds?: number;
     receiptTimeoutMs?: number;
+    /** Pause anchoring (without spending attempts) while the relayer holds less than this. Threat model V2-2. */
+    minRelayerBalanceWei?: bigint;
 }
 
 export type AnchorOutcome =
     | { status: 'anchored'; txHash: Hex; logIndex: number; block: bigint }
     | { status: 'skipped' }
+    | { status: 'paused'; reason: string }
     | { status: 'retry' | 'failed'; error: string };
 
 async function findAnchorLog(deps: AnchorDeps, txHash: Hex, contract: string, digest: string) {
@@ -49,6 +52,15 @@ export async function anchorDeclaration(deps: AnchorDeps, id: string): Promise<A
             if (prev && !prev.reverted) {
                 await markAnchored(deps.db, id, { txHash: row.anchorTxHash, ...prev });
                 return { status: 'anchored', txHash: row.anchorTxHash as Hex, logIndex: prev.logIndex, block: prev.block };
+            }
+        }
+
+        if (deps.minRelayerBalanceWei !== undefined && deps.minRelayerBalanceWei > 0n) {
+            const balance = await deps.publicClient.getBalance({ address: deps.walletClient.account.address });
+            if (balance < deps.minRelayerBalanceWei) {
+                const reason = `relayer_low_balance: ${balance} wei < ${deps.minRelayerBalanceWei} wei`;
+                await releaseClaim(deps.db, id, reason);
+                return { status: 'paused', reason };
             }
         }
 
